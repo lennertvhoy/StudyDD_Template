@@ -5,6 +5,14 @@ skill_id: demo-search-basics
 cognitive_level: explain
 difficulty: 2
 source_ref: demo-source
+source_ids:
+  - mslearn_ai_search_overview
+volatility: volatile
+question_mode: authoritative_current
+question_quality:
+  generated_from_memory_allowed: false
+  quality_gate: pass
+  quality_gate_reason: "Fresh official source available."
 public_prompt: >
   Explain the difference between keyword search and vector search, and describe one situation
   where you would combine them.

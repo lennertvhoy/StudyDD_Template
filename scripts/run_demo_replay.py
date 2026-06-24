@@ -98,6 +98,25 @@ def initialize_sources(target: Path) -> None:
         encoding="utf-8",
     )
 
+    source_state_path = target / "sources" / "SOURCE_STATE.yaml"
+    source_state_path.write_text(
+        "---\n"
+        "sources:\n"
+        "  - id: mslearn_ai_search_overview\n"
+        "    title: \"Azure AI Search overview\"\n"
+        "    url: \"https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search\"\n"
+        "    authority: official\n"
+        "    target_ids:\n"
+        "      - demo-ai-search-exam\n"
+        "    volatility: volatile\n"
+        "    last_checked_at: \"2026-06-24T12:00:00+00:00\"\n"
+        "    expires_at: \"2026-07-24T12:00:00+00:00\"\n"
+        "    checked_by: \"demo_replay\"\n"
+        "    notes: \"Demo fixture. Timestamp is deterministic test metadata, not a live source refresh.\"\n"
+        "    usable_for_questions: true\n",
+        encoding="utf-8",
+    )
+
 
 def initialize_target(target: Path) -> None:
     target_dir = target / "targets" / "demo-ai-search-exam"
@@ -105,9 +124,10 @@ def initialize_target(target: Path) -> None:
     (target_dir / "TARGET.yaml").write_text(
         "---\n"
         "id: demo-ai-search-exam\n"
-        "type: certification\n"
+        "type: skill\n"
         "title: AI Search Fundamentals Demo\n"
         "description: A fictional, public-safe demo target for showing the StudyDD learning loop.\n"
+        "volatility: volatile\n"
         "study_skill: it_certification\n",
         encoding="utf-8",
     )
@@ -155,6 +175,14 @@ def initialize_target(target: Path) -> None:
         "cognitive_level: explain\n"
         "difficulty: 2\n"
         "source_ref: demo-source\n"
+        "source_ids:\n"
+        "  - mslearn_ai_search_overview\n"
+        "volatility: volatile\n"
+        "question_mode: authoritative_current\n"
+        "question_quality:\n"
+        "  generated_from_memory_allowed: false\n"
+        "  quality_gate: pass\n"
+        "  quality_gate_reason: \"Fresh official source available.\"\n"
         "public_prompt: >\n"
         "  Explain the difference between keyword search and vector search, and describe one situation\n"
         "  where you would combine them.\n"
@@ -249,6 +277,26 @@ def print_source_freshness_check() -> None:
     print("The demo uses a demo official source marked fresh.")
     print("The agent does not search the web because the cached source is fresh enough.")
     print("If the source were stale, StudyDD would ask to refresh or choose a stable review instead.")
+
+
+def check_source_freshness(target: Path, now: str) -> None:
+    print("Running source freshness check...")
+    result = run(
+        [
+            sys.executable,
+            "scripts/check_source_freshness.py",
+            "--target-id",
+            "demo-ai-search-exam",
+            "--now",
+            now,
+        ],
+        target,
+        check=False,
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(result.stderr)
+        raise subprocess.CalledProcessError(result.returncode, ["scripts/check_source_freshness.py"])
 
 
 def print_learner_adaptation() -> None:
@@ -437,6 +485,7 @@ def main() -> int:
         initialize_sources(target)
         initialize_target(target)
         print_source_freshness_check()
+        check_source_freshness(target, "2026-06-24T12:00:00+00:00")
         build_and_show_context_pack(target)
         record_evidence(target)
         print_learner_adaptation()
