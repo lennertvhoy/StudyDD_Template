@@ -146,8 +146,6 @@ def test_learner_profile_remains_generic_and_unmutated() -> None:
 def test_adaptation_is_evidence_based_and_non_spammy() -> None:
     with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
         tmp_root = Path(tmp)
-        write_mode(tmp_root, "learner_instance")
-        write_learner_profile(tmp_root, personalized=True)
         write_review_state(tmp_root, [])
         write_evidence_log(
             tmp_root,
@@ -188,8 +186,6 @@ def test_demo_output_is_deterministic() -> None:
 def test_insufficient_evidence_yields_no_recommendation() -> None:
     with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
         tmp_root = Path(tmp)
-        write_mode(tmp_root, "learner_instance")
-        write_learner_profile(tmp_root, personalized=True)
         write_review_state(tmp_root, [])
         write_evidence_log(tmp_root, [])
 
@@ -205,8 +201,6 @@ def test_insufficient_evidence_yields_no_recommendation() -> None:
 def test_repeated_mistake_tag_produces_strong_recommendation() -> None:
     with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
         tmp_root = Path(tmp)
-        write_mode(tmp_root, "learner_instance")
-        write_learner_profile(tmp_root, personalized=True)
         write_review_state(tmp_root, [])
         items = [
             {
@@ -233,8 +227,6 @@ def test_repeated_mistake_tag_produces_strong_recommendation() -> None:
 def test_two_weak_evidence_items_produce_moderate_recommendation() -> None:
     with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
         tmp_root = Path(tmp)
-        write_mode(tmp_root, "learner_instance")
-        write_learner_profile(tmp_root, personalized=True)
         write_review_state(tmp_root, [])
         items = [
             {
@@ -258,11 +250,35 @@ def test_two_weak_evidence_items_produce_moderate_recommendation() -> None:
         assert "Learner control:" in result.stdout
 
 
+def test_compound_repaired_verdict_counts_as_weak_evidence() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
+        tmp_root = Path(tmp)
+        write_review_state(tmp_root, [])
+        items = [
+            {
+                "date": f"2026-06-{22 + i:02d}T10:00:00+00:00",
+                "verdict": "partial -> correct after repair",
+                "mistake_type": "service-boundary-confusion",
+            }
+            for i in range(2)
+        ]
+        write_evidence_log(tmp_root, items)
+
+        result = run_script(tmp_root, "--now", "2026-06-24T12:00:00+00:00")
+        print("--- test_compound_repaired_verdict_counts_as_weak_evidence stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "service-boundary" in result.stdout
+        assert "Recommendation strength: moderate" in result.stdout
+        assert "Recommended adjustment:" in result.stdout
+        assert "Learner control:" in result.stdout
+
+
 def test_overdue_reviews_produce_moderate_recommendation() -> None:
     with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
         tmp_root = Path(tmp)
-        write_mode(tmp_root, "learner_instance")
-        write_learner_profile(tmp_root, personalized=True)
         write_review_state(
             tmp_root,
             [
@@ -295,6 +311,7 @@ def test_overdue_reviews_produce_moderate_recommendation() -> None:
         assert "overdue reviews" in result.stdout.lower()
         assert "Recommendation strength: moderate" in result.stdout
         assert "due reviews" in result.stdout.lower()
+        assert "There is 1 review item past its due date." in result.stdout
         assert "Learner control:" in result.stdout
 
 
@@ -306,6 +323,7 @@ def main() -> int:
         test_insufficient_evidence_yields_no_recommendation,
         test_repeated_mistake_tag_produces_strong_recommendation,
         test_two_weak_evidence_items_produce_moderate_recommendation,
+        test_compound_repaired_verdict_counts_as_weak_evidence,
         test_overdue_reviews_produce_moderate_recommendation,
     ]
 
