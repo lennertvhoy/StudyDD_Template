@@ -62,7 +62,50 @@ skills:
     evidence: []
     next_validation_question: "Interpret Azure Monitor metrics for an OpenAI deployment."
 
+status_values:
+  confirmed: "Demonstrated by repeated or strong evidence."
+  practiced: "Answered correctly at least once but not yet stable."
+  weak: "Answered incorrectly or incompletely."
+  pending: "Not yet assessed."
+  blocked: "Held back by a confusion that must be resolved first."
+
+readiness_policy:
+  evidence_required: true
+  default_new_skill_readiness: 0
+  single_repair_max_readiness: 55
+  confirmed_requires_varied_evidence: true
+  bands:
+    - range: "0-30"
+      label: "exposed / new"
+    - range: "31-50"
+      label: "familiar"
+    - range: "51-70"
+      label: "practiced"
+    - range: "71-80"
+      label: "demonstrated"
+    - range: "81-90"
+      label: "mixed-checkpoint ready"
+    - range: "91-100"
+      label: "exam ready"
+
+mistake_types:
+  - missed-constraint
+  - stale-source-assumption
+  - service-boundary-confusion
+  - chose-training-when-retrieval-was-better
+  - ignored-cost
+  - ignored-monitoring
+  - ignored-security
+  - overconfident-guess
+  - keyword-trap
+  - vague-answer
+  - correct-concept-weak-implementation
+  - repaired-after-hint
+  - source-confusion
+  - memorized-wording-without-transfer
+  - answer-changed-after-feedback
+
 metadata:
-  template_version: "0.1.0"
+  template_version: "0.4.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"

@@ -2,6 +2,12 @@
 
 Run a StudyDD reflection session.
 
+## Path Verification
+
+1. Run `pwd` and `git rev-parse --show-toplevel`. Confirm the repo root.
+2. Run `git remote -v` and confirm it matches the learner's StudyDD repo.
+3. Run `python3 scripts/check_studydd.py`.
+
 ## Purpose
 
 Help the learner think about what they learned, what confused them, and what to focus on next. Reflection is evidence too, but usually lower-confidence evidence unless it includes a concrete demonstration.
@@ -22,6 +28,7 @@ Ask one at a time:
 - Capture the learner's own words.
 - Link reflections back to target IDs and skill IDs when possible.
 - Record reflection as low or medium confidence unless it includes a concrete demonstration.
+- Do not inflate readiness from reflection alone.
 
 ## Output
 
@@ -32,3 +39,5 @@ Propose updates to:
 - `state/SKILL_MAP.yaml`
 - `reviews/REVIEW_QUEUE.md`
 - `NEXT_ACTIONS.md`
+
+Run `python3 scripts/check_studydd.py` after writing.
