@@ -27,19 +27,26 @@
 5. **Read required files.**
    - All files listed in `AGENTS.md` "Required First Actions".
 
-6. **Report a short orientation.**
+6. **Check time-aware review state.**
+   - Read the current date/time.
+   - Read `reviews/REVIEW_STATE.yaml`.
+   - Run or perform the equivalent of `scripts/select_next_study_action.py`.
+   - If reviews are due or overdue, recommend review first before new material.
+
+7. **Report a short orientation.**
    - Active target.
    - Session mode proposed (normal, deep, low-energy, recovery).
-   - Due reviews.
+   - Due reviews and overdue reviews.
    - Last session focus.
    - Weakest skill.
 
-7. **Choose session mode.**
+8. **Choose session mode.**
    - Default: normal.
    - Use low-energy if the learner says they are tired, busy, or want something light.
    - Use recovery if the learner is stuck or wants to absorb without testing.
    - Use deep if the learner wants a hard scenario or exam-style drill.
 
-8. **Confirm the first action with the learner.**
+9. **Confirm the first action with the learner.**
    - State the proposed next action.
+   - If a review is due, say: "Recommended by StudyDD: review first. You can override, but this is the highest-retention move."
    - Wait for confirmation before asking the first question.

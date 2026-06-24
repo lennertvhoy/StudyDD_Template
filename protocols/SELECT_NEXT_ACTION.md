@@ -2,16 +2,34 @@
 
 > **Agent action.** Use this protocol to pick exactly one next study action.
 
+## Review-First Doctrine
+
+> **Due reviews are not reminders. They are learning debt.**
+
+Before choosing any new material, check the current time and `reviews/REVIEW_STATE.yaml`. If any review is due or overdue, strongly prefer that review.
+
+> **Spaced repetition is the default. Human override is allowed. Silent neglect is not.**
+
 ## Selection Priority
 
 Choose the first item that applies:
 
-1. **Due review item** — a review in `reviews/REVIEW_QUEUE.md` with due date `<= today`.
+1. **Due or overdue review item** — a review in `reviews/REVIEW_STATE.yaml` with `due_at <= now`. Use `scripts/select_next_study_action.py` to surface the best candidate.
 2. **Blocked skill** — a skill in `state/SKILL_MAP.yaml` with status `blocked`.
 3. **Weak skill with fresh evidence** — a `weak` skill that has not been re-tested since the last failure.
 4. **Pending skill near the active focus** — a `pending` skill related to the current target.
 5. **Practiced skill needing varied evidence** — a `practiced` skill that has only one correct answer on record.
 6. **Confirmed skill needing maintenance** — only in mixed checkpoint sessions or when other items are exhausted.
+
+## Override Handling
+
+If the learner wants to skip a due review, make the tradeoff explicit:
+
+- Explain that spaced review is the highest-retention move.
+- Accept the override without shame.
+- Record the override in `reviews/REVIEW_OVERRIDES.md`.
+- Increment `override_count` on the skipped review item in `reviews/REVIEW_STATE.yaml`.
+- Propose when to revisit the skipped review.
 
 ## Match Session Mode
 

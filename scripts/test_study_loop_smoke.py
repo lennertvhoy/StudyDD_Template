@@ -131,27 +131,84 @@ def main() -> int:
         )
         evidence_path.write_text(evidence_text + evidence_entry, encoding="utf-8")
 
-        review_path = target / "reviews" / "REVIEW_QUEUE.md"
-        review_text = review_path.read_text(encoding="utf-8")
-        review_entry = (
-            "\n- **Review ID:** R-LOOP-001\n"
-            "- **Target ID:** loop-smoke-target\n"
-            "- **Skill ID:** loop-search-basics\n"
-            "- **Evidence ID:** Q-LOOP-001\n"
-            "- **Prompt:** Describe a scenario where hybrid retrieval outperforms either alone.\n"
-            "- **Due date:** 2026-06-25\n"
-            "- **Interval days:** 1\n"
-            "- **Confidence/ease:** medium\n"
-            "- **Lapse count:** 0\n"
-            "- **Last result:** partial\n"
-            "- **Mistake type:** correct-concept-weak-implementation\n"
-            "- **Review mode:** scenario\n"
+        print("Scheduling review")
+        sched = run(
+            [
+                sys.executable,
+                "scripts/schedule_review.py",
+                "--skill-id",
+                "loop-search-basics",
+                "--evidence-id",
+                "Q-LOOP-001",
+                "--target-id",
+                "loop-smoke-target",
+                "--grade",
+                "partial",
+                "--confidence",
+                "low",
+                "--now",
+                "2026-06-24T10:00:00+00:00",
+                "--prompt",
+                "Describe a scenario where hybrid retrieval outperforms either alone.",
+                "--source",
+                "partial_answer",
+            ],
+            target,
+            check=False,
         )
-        review_text = review_text.replace(
-            "## Scheduled\n\n- None.",
-            "## Scheduled" + review_entry,
+        print(sched.stdout)
+        if sched.returncode != 0:
+            print(sched.stderr)
+            return 1
+
+        review_state_path = target / "reviews" / "REVIEW_STATE.yaml"
+        review_state = yaml.safe_load(review_state_path.read_text(encoding="utf-8")) or {}
+        scheduled_items = review_state.get("review_items", [])
+        assert scheduled_items, "No review item was scheduled"
+        scheduled_review_id = scheduled_items[0]["id"]
+
+        print("Selecting next action when review is overdue")
+        selector = run(
+            [
+                sys.executable,
+                "scripts/select_next_study_action.py",
+                "--now",
+                "2026-06-25T12:00:00+00:00",
+            ],
+            target,
+            check=False,
         )
-        review_path.write_text(review_text, encoding="utf-8")
+        print(selector.stdout)
+        if selector.returncode != 0:
+            print(selector.stderr)
+            return 1
+        if "review first" not in selector.stdout.lower():
+            print("Selector did not recommend review first")
+            return 1
+
+        print("Recording override")
+        review_state = yaml.safe_load(review_state_path.read_text(encoding="utf-8")) or {}
+        for item in review_state.get("review_items", []):
+            if item.get("skill_id") == "loop-search-basics":
+                item["override_count"] = 1
+        review_state_path.write_text(yaml.safe_dump(review_state, sort_keys=False), encoding="utf-8")
+
+        overrides_path = target / "reviews" / "REVIEW_OVERRIDES.md"
+        overrides_text = overrides_path.read_text(encoding="utf-8")
+        override_entry = (
+            "\n- **Timestamp:** 2026-06-25T12:05:00+00:00\n"
+            f"- **Learner:** Loop Smoke Learner\n"
+            f"- **Skipped review IDs:** {scheduled_review_id}\n"
+            "- **Reason:** learner wanted to continue with new material\n"
+            "- **Chosen action:** answer question Q-LOOP-002\n"
+            "- **Agent recommendation:** review loop-search-basics first\n"
+            "- **Next review recommendation:** reschedule the skipped review within 24 hours\n"
+        )
+        overrides_text = overrides_text.replace(
+            "## Overrides\n\nNone yet.",
+            "## Overrides" + override_entry,
+        )
+        overrides_path.write_text(overrides_text, encoding="utf-8")
 
         session_path = target / "sessions" / "SESSION_LOG.md"
         session_text = session_path.read_text(encoding="utf-8")
@@ -162,8 +219,8 @@ def main() -> int:
             "- **Questions asked:** Q-LOOP-001\n"
             "- **Result summary:** Learner answered correctly.\n"
             "- **Evidence added:** Q-LOOP-001\n"
-            "- **Reviews added:** R-LOOP-001\n"
-            "- **State changes:** Added skill loop-search-basics, readiness 55, status practiced.\n"
+            f"- **Reviews added:** {scheduled_review_id}\n"
+            "- **State changes:** Added skill loop-search-basics, readiness 55, status practiced; scheduled review.\n"
             "- **Next action proposed:** Answer the next diagnostic question.\n"
         )
         session_text = session_text.replace(
@@ -196,7 +253,8 @@ def main() -> int:
         assert any("Q-LOOP-001" in (s.get("evidence") or []) for s in skill_data.get("skills", [])), \
             "Skill evidence reference drift"
         assert "Q-LOOP-001" in evidence_path.read_text(encoding="utf-8"), "Evidence log missing Q-LOOP-001"
-        assert "R-LOOP-001" in review_path.read_text(encoding="utf-8"), "Review queue missing R-LOOP-001"
+        review_queue_path = target / "reviews" / "REVIEW_QUEUE.md"
+        assert scheduled_review_id in review_queue_path.read_text(encoding="utf-8"), "Review queue missing scheduled review"
 
         print("Study-loop smoke test passed.")
         return 0

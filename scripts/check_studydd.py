@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -54,6 +55,8 @@ REQUIRED_TARGET_FILES = [
 REQUIRED_REVIEW_FILES = [
     "reviews/README.md",
     "reviews/REVIEW_QUEUE.md",
+    "reviews/REVIEW_STATE.yaml",
+    "reviews/REVIEW_OVERRIDES.md",
 ]
 
 REQUIRED_SESSION_FILES = [
@@ -72,6 +75,7 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/GIT_PROVENANCE.md",
     "protocols/PRIVACY_REVIEW.md",
     "protocols/WRONG_REPO_RECOVERY.md",
+    "protocols/SPACED_REPETITION_POLICY.md",
     "protocols/TUTOR_PROTOCOL.md",
     "protocols/SESSION_TEMPLATE.md",
     "protocols/START_SESSION.md",
@@ -112,6 +116,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/agent_evidence_check.py",
     "scripts/create_instance.py",
     "scripts/agent_privacy_check.py",
+    "scripts/schedule_review.py",
+    "scripts/select_next_study_action.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -163,6 +169,7 @@ YAML_FILES = [
     "state/STUDYDD_TEMPLATE_VERSION.yaml",
     "state/STUDY_STATE.yaml",
     "state/SKILL_MAP.yaml",
+    "reviews/REVIEW_STATE.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
     "EXAMPLES/ai-103-example/targets/ai-103/TARGET.yaml",
@@ -903,6 +910,115 @@ def check_question_bank(yaml: object) -> list[str]:
     return errors
 
 
+REVIEW_STATUSES = {"scheduled", "due", "overdue", "completed", "suspended"}
+
+
+def _parse_iso_timestamp(value: str) -> datetime | None:
+    try:
+        dt = datetime.fromisoformat(value)
+    except Exception:
+        return None
+    if dt.tzinfo is None:
+        return None
+    return dt
+
+
+def check_review_state(yaml: object, warnings: list[str]) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    mode_path = ROOT / "state/STUDYDD_MODE.yaml"
+    try:
+        mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        mode_data = {}
+    mode = mode_data.get("mode")
+
+    review_state_path = ROOT / "reviews/REVIEW_STATE.yaml"
+    try:
+        review_state = yaml.safe_load(review_state_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        if mode == "learner_instance":
+            errors.append(f"Could not read reviews/REVIEW_STATE.yaml: {exc}")
+        return errors
+
+    items = review_state.get("review_items") or []
+
+    if mode != "learner_instance":
+        # Template and bootstrap may have empty review state.
+        return errors
+
+    if not isinstance(items, list):
+        errors.append("reviews/REVIEW_STATE.yaml 'review_items' must be a list")
+        return errors
+
+    skill_map = _load_yaml(ROOT / "state/SKILL_MAP.yaml", yaml)
+    skill_ids = {s.get("id") for s in skill_map.get("skills") or [] if s.get("id")}
+    evidence_text = _load_evidence_log_text()
+
+    queue_text = ""
+    queue_path = ROOT / "reviews/REVIEW_QUEUE.md"
+    if queue_path.is_file():
+        queue_text = queue_path.read_text(encoding="utf-8")
+
+    next_actions_text = ""
+    next_actions_path = ROOT / "NEXT_ACTIONS.md"
+    if next_actions_path.is_file():
+        next_actions_text = next_actions_path.read_text(encoding="utf-8")
+
+    now = datetime.now(timezone.utc)
+
+    for item in items:
+        rid = item.get("id") or "<unknown>"
+        status = item.get("status")
+        if status not in REVIEW_STATUSES:
+            errors.append(
+                f"Review '{rid}' has invalid status {status!r}; must be one of {sorted(REVIEW_STATUSES)}"
+            )
+
+        interval = item.get("interval_days")
+        if interval is None or not isinstance(interval, (int, float)) or interval <= 0:
+            errors.append(f"Review '{rid}' must have a positive interval_days value")
+
+        skill_id = item.get("skill_id")
+        if skill_id and skill_id not in skill_ids:
+            errors.append(f"Review '{rid}' references unknown skill ID '{skill_id}'")
+
+        evidence_id = item.get("evidence_id")
+        if evidence_id and evidence_id not in evidence_text:
+            errors.append(
+                f"Review '{rid}' evidence reference '{evidence_id}' not found in state/EVIDENCE_LOG.md"
+            )
+
+        for field in ("due_at", "last_reviewed_at"):
+            value = item.get(field)
+            if not value:
+                continue
+            dt = _parse_iso_timestamp(value)
+            if dt is None:
+                errors.append(
+                    f"Review '{rid}' field '{field}' is not a valid timezone-aware ISO 8601 timestamp: {value!r}"
+                )
+
+        override_count = item.get("override_count") or 0
+        if override_count >= 2 and status in ("due", "overdue"):
+            warnings.append(
+                f"Review '{rid}' has been overridden {override_count} times and is still due/overdue. "
+                "Consider reviewing it soon or discussing the block with the learner."
+            )
+
+        # Warn if an overdue item is not surfaced in the human-readable queue or next actions.
+        due_at_str = item.get("due_at")
+        if due_at_str and status == "overdue":
+            if rid not in queue_text and rid not in next_actions_text:
+                warnings.append(
+                    f"Overdue review '{rid}' is not visible in reviews/REVIEW_QUEUE.md or NEXT_ACTIONS.md"
+                )
+
+    return errors
+
+
 def check_option_position_randomization() -> list[str]:
     """Lightweight warning when example session logs show obvious answer-position patterns.
 
@@ -969,6 +1085,7 @@ def main() -> int:
         errors.extend(check_active_question_consistency(yaml))
         errors.extend(check_answer_key_leakage())
         errors.extend(check_question_bank(yaml))
+        errors.extend(check_review_state(yaml, warnings))
     else:
         print("\nNote: PyYAML not installed. Skipping state-aware checks.")
         print("      Install with: pip install pyyaml")

@@ -14,7 +14,7 @@ Choose low-energy mode when the learner:
 
 ## What To Do In Low-Energy Mode
 
-1. Pick one due review item if available.
+1. Pick one due review item if available. See `protocols/SPACED_REPETITION_POLICY.md`.
 2. If no due review, pick a small recall or explain question.
 3. Keep feedback concise.
 4. Do not ask hard scenario or design questions.

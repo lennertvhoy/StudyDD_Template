@@ -209,6 +209,16 @@ GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
 test, and `git diff --check` on every push and pull request. See
 `.github/workflows/validate.yml`.
 
+### Spaced repetition by default
+
+StudyDD treats due review as learning debt. At the start of a session, the agent
+checks the current time and recommends due or overdue review before new
+material. The learner can override, but the override is recorded so the study
+state remains honest.
+
+See `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, and
+`scripts/select_next_study_action.py`.
+
 ## Future Add-Ons
 
 These are intentionally backlog items, not part of the core slice:
@@ -222,7 +232,6 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.5 — lifecycle-hardened public template: deterministic instance creation,
-template version tracking, study-loop smoke test, cross-file validation,
-answer-key leakage guard, question bank schema, upgrade/provenance/privacy/
-wrong-repo recovery protocols, and CI validation.
+v0.6 — spaced-repetition-first tutoring: time-aware review state,
+`schedule_review.py`, `select_next_study_action.py`, override logging, and
+validator support, on top of the v0.5 lifecycle hardening.

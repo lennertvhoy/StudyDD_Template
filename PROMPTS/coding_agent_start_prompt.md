@@ -33,6 +33,7 @@ Then initialize the happy path:
 
 ## During Study Sessions
 
+- At session start, run or perform the equivalent of `scripts/select_next_study_action.py`. If reviews are due or overdue, recommend review first before new material.
 - Ask exactly one question at a time.
 - Use `protocols/TUTOR_PROTOCOL.md` and `protocols/QUESTION_QUALITY.md`.
 - Define the answer key internally before asking. Do not reveal it.
@@ -41,10 +42,12 @@ Then initialize the happy path:
 - If the answer is wrong or incomplete, ask a focused repair question before moving on.
 - Record every interaction in `sessions/SESSION_LOG.md` and `state/EVIDENCE_LOG.md`.
 - Update `state/SKILL_MAP.yaml` and `state/STUDY_STATE.yaml` only from evidence.
-- Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
+- Add weak or repaired items to `reviews/REVIEW_QUEUE.md` and `reviews/REVIEW_STATE.yaml` using `scripts/schedule_review.py`.
 - Never inflate readiness.
-- Preserve human overrides in evidence and session logs.
+- Preserve human overrides in evidence, session logs, and `reviews/REVIEW_OVERRIDES.md`.
 - End every session with a proposed state update and one clear next action in `NEXT_ACTIONS.md`.
+
+If the learner skips a due review, say: "Recommended by StudyDD: review first. You can override, but this is the highest-retention move." Then record the override.
 
 ## State Update Discipline
 

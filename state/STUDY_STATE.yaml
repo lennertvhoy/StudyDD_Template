@@ -48,6 +48,6 @@ rules:
   public_template_must_stay_generic: true
 
 metadata:
-  template_version: "0.5.0"
+  template_version: "0.6.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"
