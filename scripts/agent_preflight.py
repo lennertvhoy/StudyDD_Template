@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 REQUIRED_FILES = [
     "AGENTS.md",
+    "state/STUDYDD_MODE.yaml",
     "state/STUDY_STATUS.md",
     "state/STUDY_STATE.yaml",
     "NEXT_ACTIONS.md",
@@ -31,6 +32,7 @@ REQUIRED_FILES = [
 ]
 
 REQUIRED_PROTOCOLS = [
+    "protocols/INSTANTIATE_TEMPLATE.md",
     "protocols/TUTOR_PROTOCOL.md",
     "protocols/SESSION_TEMPLATE.md",
     "protocols/START_SESSION.md",
@@ -76,6 +78,13 @@ def active_target(data: dict | None) -> str:
     if not data:
         return "(could not parse)"
     return data.get("active_target_id") or "(none — public template)"
+
+
+def current_mode() -> str:
+    data = read_yaml("state/STUDYDD_MODE.yaml")
+    if not data:
+        return "(could not parse)"
+    return data.get("mode") or "(not set)"
 
 
 def current_next_action() -> str:
@@ -141,6 +150,8 @@ def main() -> int:
         return 1
 
     print("\nRequired files: present")
+
+    print(f"\nMode: {current_mode()}")
 
     study_state = read_yaml("state/STUDY_STATE.yaml")
     print(f"\nActive target: {active_target(study_state)}")

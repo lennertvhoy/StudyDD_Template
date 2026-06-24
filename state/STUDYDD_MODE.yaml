@@ -1,0 +1,15 @@
+---
+mode: template
+template_remote: "https://github.com/lennertvhoy/StudyDD_Template.git"
+personalized: false
+public_safe: true
+
+# When this file is copied into a learner instance, update it to:
+#
+#   mode: learner_instance
+#   template_origin: "https://github.com/lennertvhoy/StudyDD_Template.git"
+#   personalized: true
+#   public_safe: false_or_review_required
+#
+# The mode field is the single source of truth for whether the current
+# repo is the public template or a personal learner instance.

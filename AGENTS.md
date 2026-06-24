@@ -2,6 +2,10 @@
 
 **Read this file before you act.**
 
+> **If this repo's remote is `https://github.com/lennertvhoy/StudyDD_Template.git`, you are editing the mold, not the learner.**
+>
+> This is the public template repo. It must stay generic and public-safe. Do not personalize learner state here. Personalization happens only in a learner-instance repo created by cloning this template, removing `.git/`, reinitializing Git, and setting a new remote.
+
 StudyDD is a repo-native study brain operated by coding agents. It is not a human-facing app. A coding agent — Codex, Kimi Code, Claude Code, ChatGPT agent, or similar — runs the learning loop inside the repository.
 
 The human says: **"Start a StudyDD session."**
@@ -9,6 +13,30 @@ The human says: **"Start a StudyDD session."**
 The agent then runs the full lifecycle: verify, read, choose, ask, wait, grade, update, validate, hand off.
 
 This public template must stay generic. Do not seed a real learner, target, exam, certification, or personal state unless the learner explicitly asks you to initialize their copy.
+
+## Template vs Instance Law
+
+`StudyDD_Template` is a factory mold, not a learner's active study repo.
+
+- **Template repo** — `https://github.com/lennertvhoy/StudyDD_Template.git`
+  - Purpose: reusable starter kit, public template, generic operating system.
+  - Must remain public-safe and unpersonalized.
+  - Edits are limited to generic docs, scripts, protocols, prompts, examples, and validation.
+
+- **Learner instance repo** — a separate directory created from the template.
+  - Purpose: real personal study brain.
+  - May contain private learner state, active targets, answer history, evidence, reviews, and sessions.
+  - Created by: clone template → remove `.git/` → `git init` → set new remote → first commit → then personalize.
+
+### Agent Rules
+
+1. Check `state/STUDYDD_MODE.yaml` and `git remote -v` before any state change.
+2. If `mode` is `template` or the remote is `StudyDD_Template`, you are in template mode.
+3. In template mode, never personalize learner state, never answer study questions, never record evidence, never update readiness, never create active targets.
+4. In template mode, only edit generic template files.
+5. If the user asks to study, initialize a learner, answer a question, update readiness, or record evidence, first confirm the repo is a learner instance. If it is the template, stop and explain the instantiation workflow from `protocols/INSTANTIATE_TEMPLATE.md`.
+6. If the user asks to create a new StudyDD repo, use `protocols/INSTANTIATE_TEMPLATE.md` to clone/copy → remove `.git` → `git init` → new remote → first commit → then initialize learner state.
+7. Never apply learner-state changes to the template repo.
 
 ## What the Agent Does
 
@@ -38,17 +66,19 @@ When the human asks for a StudyDD session, the agent must:
 Before every StudyDD session, read:
 
 1. `AGENTS.md` (this file)
-2. `state/STUDY_STATUS.md`
-3. `state/STUDY_STATE.yaml`
-4. `NEXT_ACTIONS.md`
-5. `state/STUDY_BACKLOG.md`
-6. `state/SKILL_MAP.yaml`
-7. `state/EVIDENCE_LOG.md`
-8. `targets/README.md`
-9. `reviews/REVIEW_QUEUE.md`
-10. `sessions/SESSION_LOG.md`
-11. `sources/SOURCE_INDEX.md`
-12. `protocols/TUTOR_PROTOCOL.md`
+2. `state/STUDYDD_MODE.yaml`
+3. `state/STUDY_STATUS.md`
+4. `state/STUDY_STATE.yaml`
+5. `NEXT_ACTIONS.md`
+6. `state/STUDY_BACKLOG.md`
+7. `state/SKILL_MAP.yaml`
+8. `state/EVIDENCE_LOG.md`
+9. `targets/README.md`
+10. `reviews/REVIEW_QUEUE.md`
+11. `sessions/SESSION_LOG.md`
+12. `sources/SOURCE_INDEX.md`
+13. `protocols/INSTANTIATE_TEMPLATE.md`
+14. `protocols/TUTOR_PROTOCOL.md`
 13. `protocols/SESSION_TEMPLATE.md`
 14. `protocols/START_SESSION.md`
 15. `protocols/SELECT_NEXT_ACTION.md`
