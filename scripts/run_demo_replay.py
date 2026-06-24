@@ -201,6 +201,51 @@ def initialize_target(target: Path) -> None:
     )
 
 
+def plan_and_record_activity(target: Path) -> None:
+    print("StudyDD is not only a question generator. It can assign activities and review evidence.")
+    print("Planning the next learning activity based on current state...")
+    result = run(
+        [sys.executable, "scripts/plan_learning_activity.py", "--task", "start_session"],
+        target,
+        check=False,
+    )
+    if result.returncode != 0:
+        print(result.stdout)
+        print(result.stderr)
+        raise subprocess.CalledProcessError(result.returncode, ["scripts/plan_learning_activity.py"])
+    # Show the recommendation.
+    for line in result.stdout.splitlines()[:12]:
+        print(f"  {line}")
+
+    activity_state = load_yaml(target / "state" / "ACTIVITY_STATE.yaml")
+    active = activity_state.get("active_activity") or {}
+    activity_id = active.get("id", "act_demo_unknown")
+    skill_id = active.get("skill_id", "demo-search-basics")
+
+    print("The learner completed the activity outside the chat and submitted the result.")
+    result = run(
+        [
+            sys.executable,
+            "scripts/record_activity_result.py",
+            "--activity-id",
+            activity_id,
+            "--result",
+            "partial",
+            "--evidence-id",
+            "ev_demo_activity_001",
+            "--mistake-tags",
+            "correct-concept-weak-implementation",
+        ],
+        target,
+        check=False,
+    )
+    if result.returncode != 0:
+        print(result.stdout)
+        print(result.stderr)
+        raise subprocess.CalledProcessError(result.returncode, ["scripts/record_activity_result.py"])
+    print("StudyDD reviewed the submitted evidence, updated skill state, scheduled review, and recorded the next action.")
+
+
 def record_evidence(target: Path) -> None:
     evidence_path = target / "state" / "EVIDENCE_LOG.md"
     evidence_text = evidence_path.read_text(encoding="utf-8")
@@ -429,13 +474,16 @@ def print_transcript(review_id: str, before_due: str, when_due: str) -> None:
     print("11. Learner answered: distinguished keyword and vector search, no scenario.")
     print("12. Agent graded honestly: partial.")
     print("13. Evidence recorded: ev_demo_001.")
-    print(f"14. Review scheduled: {review_id} due in 1 day.")
-    print("15. Selector before due: new material is allowed.")
+    print("14. StudyDD planned a non-question activity based on the weak skill.")
+    print("15. Learner completed the activity outside the chat and submitted evidence.")
+    print("16. StudyDD reviewed the submitted evidence and updated state.")
+    print(f"17. Review scheduled: {review_id} due in 1 day.")
+    print("18. Selector before due: new material is allowed.")
     print("   ", before_due.splitlines()[0])
-    print("16. Selector when review is due: review first.")
+    print("19. Selector when review is due: review first.")
     print("    ", when_due.splitlines()[0])
-    print("17. Learner override recorded with reason.")
-    print("18. Validation passed.")
+    print("20. Learner override recorded with reason.")
+    print("21. Validation passed.")
     print("")
     print("The repo now contains evidence, a spaced-repetition review, an override log,")
     print("a compact context pack, and a clear next action. Raw logs remain available")
@@ -490,6 +538,7 @@ def main() -> int:
         build_and_show_context_pack(target)
         record_evidence(target)
         print_learner_adaptation()
+        plan_and_record_activity(target)
         review_id = schedule_review(target)
 
         before_due = select_next_action(target, "2026-06-24T12:00:00+00:00")

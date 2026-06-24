@@ -126,7 +126,16 @@ Before every StudyDD session, read:
 46. `protocols/LEARNER_ADAPTATION_POLICY.md`
 47. `protocols/LEARNER_FEEDBACK_POLICY.md`
 48. `state/LEARNER_PROFILE.yaml`
-49. `sources/SOURCE_STATE.yaml`
+49. `state/ACTIVITY_STATE.yaml`
+50. `activities/ACTIVITY_TEMPLATES.yaml`
+51. `activities/ACTIVITY_LOG.md`
+52. `protocols/LEARNING_ACTIVITY_POLICY.md`
+53. `protocols/EVIDENCE_INTAKE_POLICY.md`
+54. `protocols/EXTERNAL_RESOURCE_POLICY.md`
+55. `protocols/VOICE_NOTE_REVIEW_POLICY.md`
+56. `protocols/INTERVIEW_PREP_POLICY.md`
+57. `protocols/PRESENTATION_PREP_POLICY.md`
+58. `sources/SOURCE_STATE.yaml`
 
 Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
@@ -147,6 +156,10 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/agent_privacy_check.py` = practical pre-push privacy scan
 - `scripts/schedule_review.py` = deterministic review scheduling
 - `scripts/select_next_study_action.py` = time-aware review-first recommendation
+- `scripts/plan_learning_activity.py` = recommends the next learning activity
+- `scripts/record_activity_result.py` = records evidence from completed activities
+- `scripts/analyze_voice_note.py` = dependency-free transcript analysis
+- `scripts/analyze_presentation_rehearsal.py` = dependency-free rehearsal analysis
 - `scripts/compact_state.py` = compacts append-only logs into derived summaries/indexes
 - `scripts/build_context_pack.py` = builds the task-specific context pack agents load
 - `scripts/validate_touched_state.py` = fast-path validator for touched IDs only
@@ -158,6 +171,9 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `state/PERFORMANCE_BUDGET.yaml` = numeric loading/writing limits per execution mode
 - `state/CURRENT_CONTEXT.md` = compact human/agent-readable learner summary
 - `state/EVIDENCE_INDEX.yaml` = machine-readable evidence lookup
+- `state/ACTIVITY_STATE.yaml` = active and recent learning activities
+- `activities/ACTIVITY_LOG.md` = append-only activity audit trail
+- `activities/ACTIVITY_TEMPLATES.yaml` = supported activity types and templates
 - `reviews/REVIEW_STATE.yaml` = machine-readable spaced-repetition state
 - `reviews/REVIEW_OVERRIDES.md` = override log for skipped due reviews
 - `sessions/SESSION_SUMMARIES.md` = compact session summaries
@@ -303,6 +319,30 @@ Choose a mode before the first question:
 
 See `protocols/LOW_ENERGY_MODE.md`.
 
+## Learning Activities
+
+StudyDD is a learning activity orchestrator, not only a question generator. The agent chooses the best next activity from the supported types in `activities/ACTIVITY_TEMPLATES.yaml`, explains why, states expected evidence, and lets the learner accept, modify, or override it.
+
+Supported activity types include:
+
+- retrieval question
+- spaced review
+- paper exercise
+- external platform exercise
+- video or reading task
+- practical lab
+- explain back
+- diagram or whiteboard
+- interview prep
+- presentation prep
+- voice note review
+- writing or essay review
+- upload and review
+
+Use `scripts/plan_learning_activity.py` to recommend an activity and `scripts/record_activity_result.py` to record evidence submitted outside the chat. Readiness only changes when evidence demonstrates competence; completion and effort are acknowledged but do not inflate readiness.
+
+See `protocols/LEARNING_ACTIVITY_POLICY.md`, `protocols/EVIDENCE_INTAKE_POLICY.md`, `protocols/EXTERNAL_RESOURCE_POLICY.md`, `protocols/VOICE_NOTE_REVIEW_POLICY.md`, `protocols/INTERVIEW_PREP_POLICY.md`, and `protocols/PRESENTATION_PREP_POLICY.md`.
+
 ## Question Quality Gate
 
 Before asking any question, internally define:
@@ -373,21 +413,22 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 4. Run `python3 scripts/compact_state.py --check-stale` and `python3 scripts/build_context_pack.py --task start_session`.
 5. Read `.studydd/context_pack.md` and the active study skill.
 6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
-7. Confirm the active focus and next question with the learner.
-8. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item.
-9. Ask one question, guided by the active study skill. Stay on the fast path.
-10. Receive the answer.
-11. Grade against the answer key, guided by the active study skill. Stay on the fast path.
-12. Explain the result.
-13. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
-14. Append evidence to `state/EVIDENCE_LOG.md` and update touched canonical state.
-15. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
-16. Run `python3 scripts/validate_touched_state.py` on the touched IDs.
-17. Propose state updates.
-18. Confirm or apply authorized updates.
-19. At session close, run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
-20. End with the next best action in `NEXT_ACTIONS.md`.
-21. Leave a truthful handoff that lists the mode, files read, and files written.
+7. Plan the next learning activity with `scripts/plan_learning_activity.py` or its logic. A question is the default, but the best move may be a review, paper exercise, lab, interview rehearsal, presentation rehearsal, voice note, external resource, or upload-and-review task. Explain why and end with `You can accept, modify, or override this.`
+8. Confirm the active focus and next activity with the learner.
+9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item.
+10. If the activity is a question, ask it; otherwise assign the activity and state expected evidence.
+11. Receive the answer or submitted evidence.
+12. Grade against the answer key or rubric, guided by the active study skill. Stay on the fast path.
+13. Explain the result.
+14. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
+15. Append evidence to `state/EVIDENCE_LOG.md`, update `activities/ACTIVITY_LOG.md` for activity results, and update touched canonical state.
+16. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
+17. Run `python3 scripts/validate_touched_state.py` on the touched IDs.
+18. Propose state updates.
+19. Confirm or apply authorized updates.
+20. At session close, run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
+21. End with the next best action in `NEXT_ACTIONS.md`.
+22. Leave a truthful handoff that lists the mode, files read, and files written.
 
 ## Handoff Requirements
 

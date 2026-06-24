@@ -1,0 +1,7 @@
+StudyDD validation
+==================
+
+All required files present.
+YAML validation passed.
+No forbidden mentions found.
+StudyDD state looks healthy.

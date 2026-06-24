@@ -71,6 +71,17 @@ files:
     role: canonical
     load_default: true
     protected: true
+  state/ACTIVITY_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  activities/ACTIVITY_LOG.md:
+    role: append_only_audit
+    load_default: false
+  activities/ACTIVITY_TEMPLATES.yaml:
+    role: canonical
+    load_default: true
+    protected: true
   .studydd/context_pack.md:
     role: generated_context
     load_default: false
