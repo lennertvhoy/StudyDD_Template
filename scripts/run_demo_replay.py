@@ -244,6 +244,20 @@ def select_next_action(target: Path, now: str) -> str:
     return result.stdout
 
 
+def print_source_freshness_check() -> None:
+    print("StudyDD checks source freshness before generating product-current questions.")
+    print("The demo uses a demo official source marked fresh.")
+    print("The agent does not search the web because the cached source is fresh enough.")
+    print("If the source were stale, StudyDD would ask to refresh or choose a stable review instead.")
+
+
+def print_learner_adaptation() -> None:
+    print("StudyDD suggestion:")
+    print("You missed a scenario tradeoff. Next time, use a short comparison drill.")
+    print("Learner control:")
+    print("You can accept, modify, or override this.")
+
+
 def build_and_show_context_pack(target: Path) -> None:
     print("Building StudyDD context pack instead of loading every file...")
     result = run(
@@ -422,8 +436,10 @@ def main() -> int:
         initialize_learner_profile(target)
         initialize_sources(target)
         initialize_target(target)
+        print_source_freshness_check()
         build_and_show_context_pack(target)
         record_evidence(target)
+        print_learner_adaptation()
         review_id = schedule_review(target)
 
         before_due = select_next_action(target, "2026-06-24T12:00:00+00:00")

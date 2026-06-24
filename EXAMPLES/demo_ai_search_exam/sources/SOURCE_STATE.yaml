@@ -1,0 +1,14 @@
+---
+sources:
+  - id: mslearn_ai_search_overview
+    title: "Azure AI Search overview"
+    url: "https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search"
+    authority: official
+    target_ids:
+      - demo-ai-search-exam
+    volatility: volatile
+    last_checked_at: "2026-06-24T12:00:00+00:00"
+    expires_at: "2026-07-24T12:00:00+00:00"
+    checked_by: "demo_replay"
+    notes: "Demo fixture. Timestamp is deterministic test metadata, not a live source refresh."
+    usable_for_questions: true
