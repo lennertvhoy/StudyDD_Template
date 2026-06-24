@@ -14,6 +14,8 @@
   - E-20260623-003 — partial semantic ranking answer
 - **Mistake tags:**
   - E-20260623-003: correct-concept-weak-implementation
+- **Option randomization example:**
+  - Q-20260623-002: final order C, A, D, B; correct label C
 - **Reviews added:**
   - R-20260624-AI103-003 — review semantic ranking knobs
 - **State changes:**

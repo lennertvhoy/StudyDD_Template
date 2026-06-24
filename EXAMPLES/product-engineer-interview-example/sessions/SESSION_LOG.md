@@ -12,6 +12,8 @@
   - E-20260623-PE-002 — vague conflict resolution story
 - **Mistake tags:**
   - E-20260623-PE-002: vague-answer
+- **Option randomization example:**
+  - Q-20260623-PE-001: final order B, D, A, C; correct label A
 - **Reviews added:**
   - R-20260624-PE-003 — review conflict resolution with metric
 - **State changes:**
