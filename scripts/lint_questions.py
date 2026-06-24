@@ -2,7 +2,7 @@
 """Question quality linter for StudyDD question banks.
 
 Validates question files under targets/ and EXAMPLES/*/targets/ for schema,
-source freshness, answer-key leakage, option randomization, and quality-gate
+source freshness, answer-key leakage, option position bias, and quality-gate
 consistency. Does not perform web search or any network calls.
 """
 
@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import re
-import shutil
 import sys
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
@@ -19,7 +18,6 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
-MODE_PATH = ROOT / "state" / "STUDYDD_MODE.yaml"
 TARGETS_DIR = ROOT / "targets"
 EXAMPLES_DIR = ROOT / "EXAMPLES"
 
@@ -29,15 +27,6 @@ VOLATILITY_MAX_AGE_DAYS = {
     "moderate": 90,
     "volatile": 30,
     "live": 1,
-}
-
-COGNITIVE_LEVELS = {
-    "recall",
-    "apply",
-    "troubleshoot",
-    "choose-best",
-    "explain",
-    "design",
 }
 
 TRANSFER_COGNITIVE_LEVELS = {"apply", "troubleshoot", "choose-best", "explain", "design"}
@@ -66,11 +55,6 @@ def parse_now(value: str | None) -> datetime:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt
-
-
-def read_mode() -> str:
-    data = load_yaml(MODE_PATH)
-    return str(data.get("mode", "template"))
 
 
 def read_source_state() -> list[dict[str, Any]]:
@@ -378,7 +362,6 @@ def lint_question(
     target_root: Path,
     sources: list[dict[str, Any]],
     now: datetime,
-    mode: str,
 ) -> tuple[list[str], list[str]]:
     """Return (failures, warnings) for a single question."""
     failures: list[str] = []
@@ -417,22 +400,16 @@ def lint_question(
     if volatility in ("volatile", "live") and question_mode == "authoritative_current":
         if not has_source_ids:
             failures.append(
-                "authoritative_current volatile/live question has no source_ids"
+                "authoritative_current volatile/live question has no source_ids; set quality_gate: fail"
             )
         else:
-            statuses = source_statuses(question, sources, target_volatility, now)
-            for sid, status, reason in statuses:
-                if status != "fresh":
-                    failures.append(
-                        f"authoritative_current volatile/live question has {status} source '{sid}'"
-                        + (f" ({reason})" if reason else "")
-                    )
-
-            # Quality gate must be fail for stale/missing sources.
-            gate = _quality_gate_value(question)
-            if gate != "fail" and any(s != "fresh" for _, s, _ in statuses):
+            statuses = source_statuses(question, sources, volatility, now)
+            stale_or_missing = [(sid, status, reason) for sid, status, reason in statuses if status != "fresh"]
+            for sid, status, reason in stale_or_missing:
                 failures.append(
-                    "authoritative_current volatile/live question with stale/missing source must have quality_gate: fail"
+                    f"authoritative_current volatile/live question source '{sid}' is {status}"
+                    + (f" ({reason})" if reason else "")
+                    + "; set quality_gate: fail"
                 )
 
     # 4. Answer-key leakage in public_prompt.
@@ -445,7 +422,7 @@ def lint_question(
         volatility in ("moderate", "volatile", "live")
         and question_mode == "authoritative_current"
         and has_source_ids
-        and has_fresh_source(question, sources, target_volatility, now)
+        and has_fresh_source(question, sources, volatility, now)
     ):
         if gfm is True:
             failures.append(
@@ -520,15 +497,10 @@ def main() -> int:
     parser.add_argument("--now", default=None, help="ISO 8601 timestamp with timezone for deterministic checks")
     args = parser.parse_args()
 
-    mode = read_mode()
     now = parse_now(args.now)
     sources = read_source_state()
 
     question_files = discover_question_files(args.target_id)
-
-    # In template mode, do not fail just because there is no real learner question bank.
-    # The examples are still validated.
-    template_safe = mode == "template"
 
     per_question_results: list[tuple[str, list[str], list[str]]] = []
     loaded_questions: list[tuple[dict[str, Any], str, Path]] = []
@@ -548,7 +520,7 @@ def main() -> int:
 
         target_id = question.get("target_id") or question_file.parent.parent.name
         qid = question.get("id") or question_file.stem
-        failures, warnings = lint_question(question, target_id, target_root, sources, now, mode)
+        failures, warnings = lint_question(question, target_id, target_root, sources, now)
         per_question_results.append((qid, failures, warnings))
         loaded_questions.append((question, target_id, target_root))
 
