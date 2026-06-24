@@ -88,3 +88,7 @@ Vary review modes: scenario, choose-best, troubleshoot, explain.
 ## Example next action
 
 Ask a choose-best scenario that forces a tradeoff between two similar services, then grade and explain the distractors.
+
+## Source freshness for volatile certification topics
+
+For volatile certification topics (new services, retiring features, changed limits, or updated exam objectives), run `scripts/check_source_freshness.py` and consult `sources/SOURCE_STATE.yaml` before generating authoritative questions. Prefer official vendor documentation and high-authority sources; do not invent current product names, pricing, portal labels, or exam details from memory.

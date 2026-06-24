@@ -91,3 +91,7 @@ Use review modes: scenario, explain, choose-best.
 ## Example next action
 
 Run a mock behavioral question, ask one follow-up, then grade and identify whether the story needs more evidence or concision.
+
+## Evidence-based adaptation
+
+Base interview question selection and grading on recorded evidence from practice answers and any recorded learner overrides. Do not let stated learner preferences inflate readiness; adapt style and difficulty from actual performance in `state/EVIDENCE_LOG.md` and `sessions/SESSION_LOG.md`.
