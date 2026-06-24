@@ -62,11 +62,6 @@ Use review modes: recall, apply, explain-the-steps.
 - A slip does not block progress if the process is understood.
 - A conceptual error keeps the skill `weak` or `blocked` until repaired.
 
-## Source freshness and learner adaptation
-
-- Math fundamentals are stable. Source freshness is rarely needed unless tied to a specific curriculum standard.
-- Use paper exercises and mistake tags to adapt the next activity. Never inflate readiness after easy questions.
-
 ## Common learner failure modes
 
 - `vague-answer` — cannot explain how they got the answer.
@@ -88,3 +83,8 @@ Use review modes: recall, apply, explain-the-steps.
 ## Example next action
 
 Ask a slightly varied problem for the current skill, then ask the learner to explain each step in their own words.
+
+## Source freshness and learner adaptation
+
+- Math fundamentals are stable. Source freshness is rarely needed unless tied to a specific curriculum standard.
+- Use paper exercises and mistake tags to adapt the next activity. Never inflate readiness after easy questions.
