@@ -122,6 +122,23 @@ def main() -> int:
             encoding="utf-8",
         )
 
+        # 5b. Preserve template origin/version metadata.
+        print("5b. Recording template origin metadata")
+        version_path = instance / "state" / "STUDYDD_TEMPLATE_VERSION.yaml"
+        version_data = yaml.safe_load(version_path.read_text(encoding="utf-8")) or {}
+        template_version = version_data.get("template_version", "unknown")
+        try:
+            template_commit = (
+                run(["git", "rev-parse", "HEAD"], ROOT).stdout.strip()
+            )
+        except Exception:
+            template_commit = ""
+        version_data["instance_created_from_template_version"] = template_version
+        version_data["instance_created_from_template_commit"] = template_commit
+        version_data["last_template_upgrade_version"] = template_version
+        version_data["last_template_upgrade_commit"] = template_commit
+        version_path.write_text(yaml.safe_dump(version_data, sort_keys=False), encoding="utf-8")
+
         # 6. Switch to learner_instance mode.
         print("6. Switching to learner_instance mode")
         mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
@@ -142,6 +159,14 @@ def main() -> int:
 
         # 8. Verify a first commit can be created.
         print("8. Creating first commit")
+        result = run(["git", "config", "user.name", "StudyDD Smoke Test"], instance)
+        if result.returncode != 0:
+            print(result.stderr)
+            return 1
+        result = run(["git", "config", "user.email", "studydd-smoke-test@example.invalid"], instance)
+        if result.returncode != 0:
+            print(result.stderr)
+            return 1
         result = run(["git", "add", "."], instance)
         if result.returncode != 0:
             print(result.stderr)

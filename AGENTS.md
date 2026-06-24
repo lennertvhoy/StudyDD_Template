@@ -67,31 +67,36 @@ Before every StudyDD session, read:
 
 1. `AGENTS.md` (this file)
 2. `state/STUDYDD_MODE.yaml`
-3. `state/STUDY_STATUS.md`
-4. `state/STUDY_STATE.yaml`
-5. `NEXT_ACTIONS.md`
-6. `state/STUDY_BACKLOG.md`
-7. `state/SKILL_MAP.yaml`
-8. `state/EVIDENCE_LOG.md`
-9. `targets/README.md`
-10. `reviews/REVIEW_QUEUE.md`
-11. `sessions/SESSION_LOG.md`
-12. `sources/SOURCE_INDEX.md`
-13. `protocols/INSTANTIATE_TEMPLATE.md`
-14. `protocols/TUTOR_PROTOCOL.md`
-13. `protocols/SESSION_TEMPLATE.md`
-14. `protocols/START_SESSION.md`
-15. `protocols/SELECT_NEXT_ACTION.md`
-16. `protocols/ASK_QUESTION.md`
-17. `protocols/GRADE_ANSWER.md`
-18. `protocols/UPDATE_STATE.md`
-19. `protocols/SCHEDULE_REVIEW.md`
-20. `protocols/CLOSE_SESSION.md`
-21. `protocols/SOURCE_TRUST.md`
-22. `protocols/READINESS_POLICY.md`
-23. `protocols/QUESTION_QUALITY.md`
-24. `protocols/MISTAKE_TAXONOMY.md`
-25. `protocols/LOW_ENERGY_MODE.md`
+3. `state/STUDYDD_TEMPLATE_VERSION.yaml`
+4. `state/STUDY_STATUS.md`
+5. `state/STUDY_STATE.yaml`
+6. `NEXT_ACTIONS.md`
+7. `state/STUDY_BACKLOG.md`
+8. `state/SKILL_MAP.yaml`
+9. `state/EVIDENCE_LOG.md`
+10. `targets/README.md`
+11. `reviews/REVIEW_QUEUE.md`
+12. `sessions/SESSION_LOG.md`
+13. `sources/SOURCE_INDEX.md`
+14. `protocols/INSTANTIATE_TEMPLATE.md`
+15. `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`
+16. `protocols/GIT_PROVENANCE.md`
+17. `protocols/PRIVACY_REVIEW.md`
+18. `protocols/WRONG_REPO_RECOVERY.md`
+19. `protocols/TUTOR_PROTOCOL.md`
+20. `protocols/SESSION_TEMPLATE.md`
+21. `protocols/START_SESSION.md`
+22. `protocols/SELECT_NEXT_ACTION.md`
+23. `protocols/ASK_QUESTION.md`
+24. `protocols/GRADE_ANSWER.md`
+25. `protocols/UPDATE_STATE.md`
+26. `protocols/SCHEDULE_REVIEW.md`
+27. `protocols/CLOSE_SESSION.md`
+28. `protocols/SOURCE_TRUST.md`
+29. `protocols/READINESS_POLICY.md`
+30. `protocols/QUESTION_QUALITY.md`
+31. `protocols/MISTAKE_TAXONOMY.md`
+32. `protocols/LOW_ENERGY_MODE.md`
 
 Only then propose or execute a study action.
 
@@ -108,9 +113,23 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/agent_preflight.py` = quick agent orientation
 - `scripts/agent_consistency_check.py` = cross-file state consistency
 - `scripts/agent_evidence_check.py` = evidence reference sanity
+- `scripts/create_instance.py` = deterministic learner-instance creation
+- `scripts/agent_privacy_check.py` = practical pre-push privacy scan
+- `state/STUDYDD_TEMPLATE_VERSION.yaml` = template version and upgrade origin
 - `NEXT_ACTIONS.md` = the single next best study action
 - `AGENTS.md` = how coding and tutor agents must behave
 - `protocols/` = actionable operating rules for agents
+
+## Template Lifecycle References
+
+- **Template version tracking** — `state/STUDYDD_TEMPLATE_VERSION.yaml` records the template version, instance origin, and last upgrade.
+- **Create a learner instance** — use `scripts/create_instance.py` or follow `protocols/INSTANTIATE_TEMPLATE.md`.
+- **Upgrade an existing instance** — follow `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md` and paste `PROMPTS/upgrade_instance_from_template.md` into the agent.
+- **Git provenance** — follow `protocols/GIT_PROVENANCE.md` before committing.
+- **Privacy review** — follow `protocols/PRIVACY_REVIEW.md` and run `scripts/agent_privacy_check.py` before pushing a learner instance publicly.
+- **Wrong-repo recovery** — if path, remote, branch, or mode looks wrong, follow `protocols/WRONG_REPO_RECOVERY.md`.
+- **Study-loop smoke test** — `scripts/test_study_loop_smoke.py` proves one full question/grade/update cycle without corrupting state.
+- **CI validation** — `.github/workflows/validate.yml` runs the validator and smoke tests on every push and pull request.
 
 ## Core Rules
 
@@ -141,6 +160,7 @@ If the learner challenges your grading, or if you discover you made a mistake, s
 Use these statuses in `state/SKILL_MAP.yaml`:
 
 - `confirmed` — demonstrated by repeated or strong evidence
+- `demonstrated` — demonstrated across varied targeted questions
 - `practiced` — answered correctly at least once but not yet stable
 - `weak` — answered incorrectly or incompletely
 - `pending` — not yet assessed

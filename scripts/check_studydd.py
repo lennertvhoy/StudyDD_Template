@@ -34,10 +34,12 @@ REQUIRED_DOC_FILES = [
     "docs/how-to-use-with-cursor.md",
     "docs/studydd-principles.md",
     "docs/inspect-and-override-state.md",
+    "docs/question-bank-schema.md",
 ]
 
 REQUIRED_STATE_FILES = [
     "state/STUDYDD_MODE.yaml",
+    "state/STUDYDD_TEMPLATE_VERSION.yaml",
     "state/STUDY_STATUS.md",
     "state/STUDY_STATE.yaml",
     "state/STUDY_BACKLOG.md",
@@ -66,6 +68,10 @@ REQUIRED_SOURCE_FILES = [
 
 REQUIRED_PROTOCOL_FILES = [
     "protocols/INSTANTIATE_TEMPLATE.md",
+    "protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md",
+    "protocols/GIT_PROVENANCE.md",
+    "protocols/PRIVACY_REVIEW.md",
+    "protocols/WRONG_REPO_RECOVERY.md",
     "protocols/TUTOR_PROTOCOL.md",
     "protocols/SESSION_TEMPLATE.md",
     "protocols/START_SESSION.md",
@@ -104,6 +110,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/agent_preflight.py",
     "scripts/agent_consistency_check.py",
     "scripts/agent_evidence_check.py",
+    "scripts/create_instance.py",
+    "scripts/agent_privacy_check.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -152,6 +160,7 @@ REQUIRED_FILES = (
 
 YAML_FILES = [
     "state/STUDYDD_MODE.yaml",
+    "state/STUDYDD_TEMPLATE_VERSION.yaml",
     "state/STUDY_STATE.yaml",
     "state/SKILL_MAP.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
@@ -481,7 +490,7 @@ def check_session_log() -> list[str]:
     return errors
 
 
-def check_readiness_and_evidence(yaml: object) -> list[str]:
+def check_readiness_and_evidence(yaml: object, warnings: list[str]) -> list[str]:
     errors: list[str] = []
     if yaml is None:
         return errors
@@ -513,16 +522,22 @@ def check_readiness_and_evidence(yaml: object) -> list[str]:
                     f"Skill '{sid}' readiness out of range (0-100): {readiness_val}"
                 )
 
-        if status in ("practiced", "confirmed") and not evidence:
+        if status in ("practiced", "confirmed", "demonstrated") and not evidence:
             errors.append(
                 f"Skill '{sid}' status '{status}' has no evidence references"
             )
 
         if readiness is not None:
             try:
-                if int(readiness) >= 70 and not evidence:
+                readiness_val = int(readiness)
+                if readiness_val >= 70 and not evidence:
                     errors.append(
                         f"Skill '{sid}' readiness {readiness} has no evidence references"
+                    )
+                if readiness_val >= 70 and len(evidence) < 2:
+                    warnings.append(
+                        f"Skill '{sid}' readiness {readiness} has fewer than 2 evidence references; "
+                        "varied/repeated evidence cannot be verified from the current schema."
                     )
             except (TypeError, ValueError):
                 pass
@@ -644,6 +659,250 @@ def check_state_target_consistency(yaml: object) -> list[str]:
     return errors
 
 
+def check_template_version(yaml: object, warnings: list[str]) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    version_path = ROOT / "state/STUDYDD_TEMPLATE_VERSION.yaml"
+    try:
+        data = yaml.safe_load(version_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        errors.append(f"Could not read state/STUDYDD_TEMPLATE_VERSION.yaml: {exc}")
+        return errors
+
+    if "template_version" not in data:
+        errors.append("state/STUDYDD_TEMPLATE_VERSION.yaml missing 'template_version'")
+
+    mode_path = ROOT / "state/STUDYDD_MODE.yaml"
+    try:
+        mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        mode_data = {}
+
+    if mode_data.get("mode") == "learner_instance":
+        if not data.get("instance_created_from_template_version"):
+            warnings.append(
+                "Learner instance has empty 'instance_created_from_template_version'. "
+                "Run the upgrade protocol or recreate the instance from a known template version."
+            )
+        if not data.get("instance_created_from_template_commit"):
+            warnings.append(
+                "Learner instance has empty 'instance_created_from_template_commit'."
+            )
+
+    return errors
+
+
+def _load_evidence_log_text() -> str:
+    evidence_path = ROOT / "state/EVIDENCE_LOG.md"
+    if not evidence_path.is_file():
+        return ""
+    try:
+        return evidence_path.read_text(encoding="utf-8")
+    except Exception:
+        return ""
+
+
+def check_evidence_references(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    evidence_text = _load_evidence_log_text()
+
+    skill_map_path = ROOT / "state/SKILL_MAP.yaml"
+    try:
+        skill_data = yaml.safe_load(skill_map_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return errors
+
+    for skill in skill_data.get("skills") or []:
+        sid = skill.get("id", "<unknown>")
+        for ref in skill.get("evidence") or []:
+            if ref and ref not in evidence_text:
+                errors.append(
+                    f"Skill '{sid}' evidence reference '{ref}' not found in state/EVIDENCE_LOG.md"
+                )
+
+    review_queue_path = ROOT / "reviews/REVIEW_QUEUE.md"
+    if review_queue_path.is_file():
+        review_text = review_queue_path.read_text(encoding="utf-8")
+        for match in re.finditer(r"\*\*Evidence ID:\*\*[ \t]+(\S+)", review_text):
+            ref = match.group(1)
+            if ref and ref not in evidence_text:
+                errors.append(
+                    f"Review item evidence reference '{ref}' not found in state/EVIDENCE_LOG.md"
+                )
+
+    session_log_path = ROOT / "sessions/SESSION_LOG.md"
+    if session_log_path.is_file():
+        session_text = session_log_path.read_text(encoding="utf-8")
+        # Require evidence IDs to contain at least one digit or hyphen so the
+        # format-line placeholder "references to ..." is not treated as a ref.
+        id_token = r"[\w\-]*[\d\-][\w\-]*"
+        for match in re.finditer(
+            rf"\*\*Evidence added:\*\*[ \t]+({id_token}(?:,\s*{id_token})*)", session_text
+        ):
+            refs = [r.strip() for r in match.group(1).split(",") if r.strip()]
+            for ref in refs:
+                if ref and ref not in evidence_text:
+                    errors.append(
+                        f"Session log evidence reference '{ref}' not found in state/EVIDENCE_LOG.md"
+                    )
+
+    return errors
+
+
+def check_review_queue_skills(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    skill_map_path = ROOT / "state/SKILL_MAP.yaml"
+    try:
+        skill_data = yaml.safe_load(skill_map_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return errors
+
+    skill_ids = {s.get("id") for s in skill_data.get("skills") or [] if s.get("id")}
+
+    review_queue_path = ROOT / "reviews/REVIEW_QUEUE.md"
+    if not review_queue_path.is_file():
+        return errors
+
+    review_text = review_queue_path.read_text(encoding="utf-8")
+    for match in re.finditer(r"\*\*Skill ID:\*\*[ \t]+(\S+)", review_text):
+        sid = match.group(1)
+        if sid and sid not in skill_ids:
+            errors.append(
+                f"Review item references unknown skill ID '{sid}' in state/SKILL_MAP.yaml"
+            )
+
+    return errors
+
+
+def check_active_question_consistency(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    study_state_path = ROOT / "state/STUDY_STATE.yaml"
+    try:
+        study_state = yaml.safe_load(study_state_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return errors
+
+    active_focus = study_state.get("active_focus") or {}
+    state_question = active_focus.get("next_question")
+    if not state_question:
+        return errors
+
+    next_actions_path = ROOT / "NEXT_ACTIONS.md"
+    if not next_actions_path.is_file():
+        return errors
+
+    next_text = next_actions_path.read_text(encoding="utf-8")
+    if state_question not in next_text:
+        errors.append(
+            f"Active question ID '{state_question}' from state/STUDY_STATE.yaml "
+            "does not appear in NEXT_ACTIONS.md"
+        )
+
+    return errors
+
+
+LEAKAGE_PATTERNS = [
+    "correct answer",
+    "answer_key",
+    "[correct]",
+    "private answer key",
+    "expected answer",
+    "rubric",
+]
+LEAKAGE_RE = re.compile("|".join(re.escape(p) for p in LEAKAGE_PATTERNS), re.IGNORECASE)
+
+
+def check_answer_key_leakage() -> list[str]:
+    """Heuristic scan for pre-answer leakage on learner-facing target surfaces."""
+    errors: list[str] = []
+    targets_dir = ROOT / "targets"
+    if not targets_dir.is_dir():
+        return errors
+
+    skip_dir_names = {
+        "questions",
+        "__pycache__",
+        ".pytest_cache",
+    }
+
+    for path in targets_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        rel_parts = path.relative_to(targets_dir).parts
+        if any(part in skip_dir_names for part in rel_parts):
+            continue
+        if path.name == "README.md":
+            continue
+        if path.suffix.lower() not in {".md", ".yaml", ".yml", ".txt"}:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        if LEAKAGE_RE.search(text):
+            rel = path.relative_to(ROOT)
+            errors.append(
+                f"Possible answer-key leakage in learner-facing file: {rel}"
+            )
+
+    return errors
+
+
+QUESTION_BANK_REQUIRED_FIELDS = [
+    "id",
+    "target_id",
+    "skill_id",
+    "cognitive_level",
+    "difficulty",
+    "source_ref",
+    "public_prompt",
+    "private_answer_key",
+    "rubric",
+    "common_traps",
+    "transfer_probe",
+    "last_used",
+    "cooldown_days",
+]
+
+
+def check_question_bank(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    targets_dir = ROOT / "targets"
+    if not targets_dir.is_dir():
+        return errors
+
+    for path in targets_dir.rglob("questions/*.yaml"):
+        if not path.is_file():
+            continue
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except Exception as exc:
+            errors.append(f"Could not parse question file {path.relative_to(ROOT)}: {exc}")
+            continue
+
+        for field in QUESTION_BANK_REQUIRED_FIELDS:
+            if field not in data or data[field] in (None, ""):
+                errors.append(
+                    f"Question file {path.relative_to(ROOT)} missing or empty field '{field}'"
+                )
+
+    return errors
+
+
 def check_option_position_randomization() -> list[str]:
     """Lightweight warning when example session logs show obvious answer-position patterns.
 
@@ -700,10 +959,16 @@ def main() -> int:
     if yaml is not None:
         errors.extend(check_mode(yaml, warnings))
         errors.extend(check_active_target(yaml))
-        errors.extend(check_readiness_and_evidence(yaml))
+        errors.extend(check_template_version(yaml, warnings))
+        errors.extend(check_readiness_and_evidence(yaml, warnings))
         errors.extend(check_active_target_source(yaml))
         errors.extend(check_source_freshness())
         errors.extend(check_state_target_consistency(yaml))
+        errors.extend(check_evidence_references(yaml))
+        errors.extend(check_review_queue_skills(yaml))
+        errors.extend(check_active_question_consistency(yaml))
+        errors.extend(check_answer_key_leakage())
+        errors.extend(check_question_bank(yaml))
     else:
         print("\nNote: PyYAML not installed. Skipping state-aware checks.")
         print("      Install with: pip install pyyaml")
