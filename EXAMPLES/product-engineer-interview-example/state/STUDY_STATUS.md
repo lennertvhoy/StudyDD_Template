@@ -5,7 +5,7 @@
 ## Learner
 
 - **Name:** Sam
-- **Target:** Senior Product Engineer role at a mid-size SaaS company
+- **Target:** Product engineer role at a mid-size SaaS company
 - **Current context:** Interview loop in three weeks; system design and behavioral are priorities
 - **Preferred language:** English
 - **Preferred tutoring style:** Mock interviews with immediate feedback
@@ -13,7 +13,7 @@
 ## Study target
 
 - **Title:** Product Engineer Interview Loop
-- **Exam or goal:** Senior Product Engineer onsite / virtual loop
+- **Exam or goal:** Product engineer onsite / virtual loop
 - **Deadline:** 2026-07-15
 - **Current readiness estimate:** 45%
 - **Readiness confidence:** Medium

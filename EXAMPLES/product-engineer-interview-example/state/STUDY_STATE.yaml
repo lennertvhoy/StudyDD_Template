@@ -1,14 +1,14 @@
 ---
 learner:
   name: "Sam"
-  target: "Senior Product Engineer interview loop"
+  target: "Product engineer interview loop"
   current_context: "Interview loop in three weeks; system design and behavioral are priorities"
   preferred_language: "English"
   preferred_tutoring_style: "Mock interviews with immediate feedback"
 
 study_target:
   title: "Product Engineer Interview Loop"
-  exam_or_goal: "Senior Product Engineer onsite / virtual loop"
+  exam_or_goal: "Product engineer onsite / virtual loop"
   deadline: "2026-07-15"
   current_readiness_estimate: "45%"
   readiness_confidence: "Medium"
