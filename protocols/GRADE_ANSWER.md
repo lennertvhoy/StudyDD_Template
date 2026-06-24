@@ -1,6 +1,6 @@
 # GRADE_ANSWER — Grade The Actual Answer
 
-> **Agent action.** Grade the learner's answer against the private answer key.
+> **Agent action.** Grade the learner's answer against the private answer key, guided by the active study skill.
 
 ## Verdicts
 
@@ -10,6 +10,10 @@
 - **unclear** — cannot be graded because the answer is ambiguous.
 - **override** — learner or human reviewer overrode the grade.
 
+## Context loading
+
+Build the context pack with `--task grade_answer`. Include the active question, rubric, learner answer, relevant skill evidence from `state/EVIDENCE_INDEX.yaml`, and the active study skill. Open the exact previous answer in `state/EVIDENCE_LOG.md` only when needed.
+
 ## Grading Steps
 
 1. Re-read the actual answer.
@@ -17,8 +21,9 @@
 3. Note what is correct.
 4. Note what is missing, wrong, or vague.
 5. Choose a verdict.
-6. Tag the mistake type using `protocols/MISTAKE_TAXONOMY.md` when the answer is not fully correct.
-7. Decide whether a repair question is needed.
+6. Apply the active study skill's grading emphasis (e.g., strict distractor analysis for IT certification, charity and precision for philosophy, process over final answer for practical lab).
+7. Tag the mistake type using `protocols/MISTAKE_TAXONOMY.md` when the answer is not fully correct.
+8. Decide whether a repair question is needed.
 
 ## Explanation
 

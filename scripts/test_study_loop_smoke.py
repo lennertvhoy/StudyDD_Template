@@ -242,6 +242,13 @@ def main() -> int:
             encoding="utf-8",
         )
 
+        print("Compacting state before validation")
+        compact = run([sys.executable, "scripts/compact_state.py"], target, check=False)
+        print(compact.stdout)
+        if compact.returncode != 0:
+            print(compact.stderr)
+            return 1
+
         print("Running full learner-instance validation")
         val = run([sys.executable, "scripts/check_studydd.py"], target, check=False)
         print(val.stdout)

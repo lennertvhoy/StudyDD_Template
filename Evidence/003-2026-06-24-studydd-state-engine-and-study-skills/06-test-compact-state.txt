@@ -1,3 +1,27 @@
+StudyDD compact state test
+==========================
+StudyDD create-instance
+=======================
+1. Copying template to /tmp/studydd-compact-zbmaez3n/Study_Compact
+2. Initializing Git
+3. Switching to bootstrap mode
+4. Recording template origin metadata
+5. Running bootstrap validation
+StudyDD validation
+==================
+
+Warnings:
+  - Bootstrap mode: learner profile and first target are not initialized yet. Complete personalization and then switch mode to learner_instance.
+
+All required files present.
+YAML validation passed.
+No forbidden mentions found.
+StudyDD state looks healthy.
+
+Bootstrap validation passed.
+
+Next step: open the new instance in your coding agent and paste the following prompt:
+
 # Coding Agent Start Prompt for StudyDD
 
 You are a coding agent operating inside a StudyDD repository. StudyDD is a repo-native study brain, not a human-facing app. Your job is to operate the learning loop in plain files.
@@ -63,3 +87,26 @@ If the learner challenges your grading or you discover a mistake, stop and audit
 ## Start Now
 
 Greet the learner briefly, summarize what you have read from the current state, and ask what they would like to study or initialize today.
+
+
+Instance created at: /tmp/studydd-compact-zbmaez3n/Study_Compact
+
+Running compact_state.py
+Compacting StudyDD state...
+Updated state/CURRENT_CONTEXT.md
+Updated state/EVIDENCE_INDEX.yaml (1 evidence items)
+Updated sessions/SESSION_SUMMARIES.md
+
+Running validator
+StudyDD validation
+==================
+
+Warnings:
+  - Active target 'compact-target' does not declare a study_skill; generic tutoring will be used.
+
+All required files present.
+YAML validation passed.
+No forbidden mentions found.
+StudyDD state looks healthy.
+
+Compact state test passed.

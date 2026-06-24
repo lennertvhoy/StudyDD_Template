@@ -202,11 +202,32 @@ python3 scripts/check_studydd.py
 python3 scripts/test_instantiate_template.py
 python3 scripts/test_study_loop_smoke.py
 python3 scripts/test_create_instance.py
+python3 scripts/test_compact_state.py
+python3 scripts/test_context_pack.py
+python3 scripts/test_study_skills.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
 test, and `git diff --check` on every push and pull request. See
 `.github/workflows/validate.yml`.
+
+### Intelligent state loading
+
+StudyDD keeps long audit logs, but agents do not load everything by default. Before a session, the repo builds a compact context pack from canonical state, indexes, summaries, due reviews, and relevant evidence. Raw logs stay available for audit and repair.
+
+See `protocols/STATE_LOADING_POLICY.md`, `scripts/compact_state.py`, and `scripts/build_context_pack.py`.
+
+### Study skills
+
+StudyDD uses `study_skills/<id>/SKILL.md` files to adapt tutoring to the target. IT certifications, philosophy, primary maths, language learning, interview prep, and practical labs need different question styles, grading rules, evidence standards, and review strategies.
+
+A target declares its study skill in `TARGET.yaml`:
+
+```yaml
+study_skill: it_certification
+```
+
+See `study_skills/README.md`.
 
 ### Spaced repetition by default
 
@@ -248,6 +269,4 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.7 — public demo replay: `run_demo_replay.py`, `test_demo_replay.py`,
-`docs/demo-walkthrough.md`, and the `EXAMPLES/demo_ai_search_exam/` fixture,
-plus the v0.6 spaced-repetition-first tutoring stack.
+v0.8 — intelligent state loading (`scripts/compact_state.py`, `scripts/build_context_pack.py`, `state/STATE_MANIFEST.yaml`) and study-domain skills (`study_skills/<id>/SKILL.md`).

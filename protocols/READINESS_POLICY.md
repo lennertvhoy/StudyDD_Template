@@ -39,3 +39,7 @@ Use these bands in `state/SKILL_MAP.yaml`:
 - High confidence needs fresh official sources.
 - Stale source maps should block confidence above `medium`.
 - Exam readiness (90–100) should be rare and backed by repeated evidence.
+
+## Active Study Skill
+
+If the active target declares a `study_skill`, also follow that skill's readiness upgrade rules. When the skill policy and the general readiness policy conflict, the stricter anti-inflation rule wins.

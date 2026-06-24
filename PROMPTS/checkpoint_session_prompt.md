@@ -11,14 +11,16 @@ Use this prompt for mixed-review or exam-style checkpoint sessions.
 ## Setup
 
 1. Read all files listed in `AGENTS.md` "Required First Actions".
-2. Select a balanced mix covering:
+2. Run `python3 scripts/compact_state.py` and `python3 scripts/build_context_pack.py --task start_session`.
+3. Load the active target's study skill from `study_skills/<study_skill>/SKILL.md`.
+4. Select a balanced mix covering:
    - weak areas
    - practiced areas
    - pending skills
    - confirmed strengths
    - due reviews
-3. Use `protocols/QUESTION_QUALITY.md` to design each question.
-4. Prefer scenario, choose-best, and design questions over simple recall.
+5. Use `protocols/QUESTION_QUALITY.md` to design each question.
+6. Prefer scenario, choose-best, and design questions over simple recall.
 
 ## During The Checkpoint
 
