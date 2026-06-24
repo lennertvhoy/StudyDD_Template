@@ -95,3 +95,8 @@ Run a mock behavioral question, ask one follow-up, then grade and identify wheth
 ## Evidence-based adaptation
 
 Base interview question selection and grading on recorded evidence from practice answers and any recorded learner overrides. Do not let stated learner preferences inflate readiness; adapt style and difficulty from actual performance in `state/EVIDENCE_LOG.md` and `sessions/SESSION_LOG.md`.
+
+## Source freshness and learner adaptation
+
+- Interview prep is usually stable, but company-specific or role-specific details may be volatile. Use fresh official/high-authority sources for current product or company claims.
+- Adapt practice mode (behavioral, technical, role-fit) from evidence and target role requirements.

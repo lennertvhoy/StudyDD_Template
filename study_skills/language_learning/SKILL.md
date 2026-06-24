@@ -73,6 +73,11 @@ Use review modes: recall, sentence production, comprehension.
 - To move above 80, hold up in mixed-skill conversation or writing.
 - Recognition-only evidence does not justify high readiness.
 
+## Source freshness and learner adaptation
+
+- Language content is generally stable, but exam objectives or proficiency standards can change. Use `source_ids` for official curriculum objectives.
+- Adapt exercise types (listening, speaking, writing, grammar) from evidence of weak areas.
+
 ## Common learner failure modes
 
 - `memorized-wording-without-transfer` — can repeat a phrase but cannot adapt it.
