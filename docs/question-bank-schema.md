@@ -36,6 +36,52 @@ last_used: "YYYY-MM-DD"
 cooldown_days: 7
 ```
 
+## Optional quality and freshness fields
+
+```yaml
+# Legacy single-source reference is still accepted.
+source_ref: "<source_id or URL>"
+
+# Preferred for moderate, volatile, and live topics: list source IDs from
+# sources/SOURCE_STATE.yaml.
+source_ids:
+  - mslearn_ai_search_overview
+
+# Volatility class for this specific question. Defaults to the target's declared
+# volatility if omitted.
+volatility: stable | slow_changing | moderate | volatile | live
+
+# Cached freshness status. The linter/validator recomputes this from
+# sources/SOURCE_STATE.yaml; do not trust it blindly.
+source_freshness_status: "fresh | stale | not_required | unverified"
+
+# What kind of factual claim this question makes.
+question_mode: authoritative_current | conceptual_practice | stale_practice | exam_sim | remediation
+
+# For volatile/current questions, the private answer key should include source
+# grounding so it is not just model memory.
+private_answer_key:
+  correct_answer: "..."
+  rationale: "..."
+  source_support:
+    - source_id: mslearn_ai_search_overview
+      checked_at: "2026-06-24T12:00:00+00:00"
+      section: "Overview"
+
+# Internal quality gate record. The linter validates these values.
+question_quality:
+  cognitive_level: "recall | understand | apply | analyze | evaluate | create"
+  question_type: "scenario | calculation | interpretation | troubleshooting | explanation | procedural"
+  answer_key_visibility: "private_until_grading"
+  distractor_quality: "plausible"
+  learner_fit: "appropriate"
+  estimated_difficulty: "easy | medium | hard"
+  generated_from_memory_allowed: true | false   # derived/validated, not trusted
+  quality_gate: "pass | warn | fail"
+  quality_gate_reason: ""
+  notes: ""
+```
+
 ## Notes
 
 - `public_prompt` must be safe to show the learner.
@@ -43,3 +89,9 @@ cooldown_days: 7
 - The validator does not require a question bank, but if one exists it checks
   that every required field is present.
 - See `protocols/QUESTION_QUALITY.md` for the question-quality gate.
+
+## Backward compatibility
+
+- Existing question banks with only `source_ref` continue to validate.
+- For moderate, volatile, or live topics, `lint_questions.py` warns when only `source_ref` is used.
+- `source_freshness_status` and `generated_from_memory_allowed` are cached hints; the linter recomputes the canonical values from `sources/SOURCE_STATE.yaml`.
