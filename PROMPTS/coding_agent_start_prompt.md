@@ -47,6 +47,9 @@ Then initialize the happy path:
 - Update `state/SKILL_MAP.yaml` and `state/STUDY_STATE.yaml` only from evidence.
 - Add weak or repaired items to `reviews/REVIEW_QUEUE.md` and `reviews/REVIEW_STATE.yaml` using `scripts/schedule_review.py`.
 - Never inflate readiness.
+- Before generating or grading authoritative questions on moderate, volatile, or live topics, run `scripts/check_source_freshness.py` for the active target. Do not invent current product, pricing, portal, or exam details from memory.
+- Use `protocols/QUESTION_QUALITY_GOVERNOR.md` to validate each generated question.
+- Respect learner adaptation preferences from `state/LEARNER_PROFILE.yaml`; never flatter readiness to match preference.
 - Preserve human overrides in evidence, session logs, and `reviews/REVIEW_OVERRIDES.md`.
 - End every session with a proposed state update and one clear next action in `NEXT_ACTIONS.md`.
 

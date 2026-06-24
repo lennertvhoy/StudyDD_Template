@@ -120,6 +120,11 @@ Before every StudyDD session, read:
 38. `protocols/QUESTION_QUALITY.md`
 39. `protocols/MISTAKE_TAXONOMY.md`
 40. `protocols/LOW_ENERGY_MODE.md`
+41. `protocols/SOURCE_FRESHNESS_POLICY.md`
+42. `protocols/SOURCE_REFRESH_POLICY.md`
+43. `protocols/QUESTION_QUALITY_GOVERNOR.md`
+44. `protocols/LEARNER_ADAPTATION_POLICY.md`
+45. `protocols/LEARNER_FEEDBACK_POLICY.md`
 
 Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
@@ -239,6 +244,10 @@ Prefer plain language and short paragraphs. Avoid dense tables unless they clear
 ### 11. Never Leak Internal Agent Messages
 
 Do not expose raw tool outputs, internal reasoning, or meta-commentary to the learner. Present clean, learner-facing content.
+
+### 12. Do not generate authoritative volatile questions from memory
+
+Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`.
 
 ## Learning Science as Agent Rules
 
@@ -363,19 +372,20 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 5. Read `.studydd/context_pack.md` and the active study skill.
 6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
 7. Confirm the active focus and next question with the learner.
-8. Ask one question, guided by the active study skill. Stay on the fast path.
-9. Receive the answer.
-10. Grade against the answer key, guided by the active study skill. Stay on the fast path.
-11. Explain the result.
-12. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
-13. Append evidence to `state/EVIDENCE_LOG.md` and update touched canonical state.
-14. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
-15. Run `python3 scripts/validate_touched_state.py` on the touched IDs.
-16. Propose state updates.
-17. Confirm or apply authorized updates.
-18. At session close, run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
-19. End with the next best action in `NEXT_ACTIONS.md`.
-20. Leave a truthful handoff that lists the mode, files read, and files written.
+8. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item.
+9. Ask one question, guided by the active study skill. Stay on the fast path.
+10. Receive the answer.
+11. Grade against the answer key, guided by the active study skill. Stay on the fast path.
+12. Explain the result.
+13. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
+14. Append evidence to `state/EVIDENCE_LOG.md` and update touched canonical state.
+15. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
+16. Run `python3 scripts/validate_touched_state.py` on the touched IDs.
+17. Propose state updates.
+18. Confirm or apply authorized updates.
+19. At session close, run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
+20. End with the next best action in `NEXT_ACTIONS.md`.
+21. Leave a truthful handoff that lists the mode, files read, and files written.
 
 ## Handoff Requirements
 
