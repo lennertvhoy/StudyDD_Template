@@ -1,4 +1,4 @@
-# SOURCE_FRESHNESS_POLICY.md — Source Freshness Rules
+# SOURCE_FRESHNESS_POLICY — Source Freshness Rules
 
 This policy defines how fresh a source must be for a given study topic, and how agents must handle stale or uncertain information.
 
@@ -27,6 +27,17 @@ volatility_classes:
     default_max_age_days: 1
     source_required_for_new_questions: true
 ```
+
+## Authority Levels
+
+Freshness rules depend on source authority. Use the following levels, consistent with `protocols/SOURCE_TRUST.md` and recorded in `sources/SOURCE_STATE.yaml` once it exists:
+
+- `official` — vendor exam guide, product documentation, certification page, official course syllabus.
+- `high_authority` — current official sources or strongly trusted references such as employer materials, recruiter guidance, or interview rubrics.
+- `instructor` — guidance from a known instructor, mentor, or training provider.
+- `textbook` — published textbook or peer-reviewed reference.
+- `learner_notes` — the learner's own notes, flashcards, or summaries.
+- `unverified` — blog posts, forum threads, generated summaries, or any source whose authority has not been confirmed.
 
 ## Rules
 
