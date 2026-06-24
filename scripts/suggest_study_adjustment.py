@@ -21,9 +21,6 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 EVIDENCE_LOG_PATH = ROOT / "state" / "EVIDENCE_LOG.md"
 REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
-LEARNER_PROFILE_PATH = ROOT / "state" / "LEARNER_PROFILE.yaml"
-STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
-SKILL_MAP_PATH = ROOT / "state" / "SKILL_MAP.yaml"
 
 WEAK_VERDICTS = {"partial", "incorrect", "unclear", "wrong"}
 RECENT_DAYS = 30
@@ -119,7 +116,7 @@ def item_mistake_tags(fields: dict[str, str]) -> list[str]:
 
 def is_weak_evidence(fields: dict[str, str]) -> bool:
     verdict = fields.get("Verdict", "").strip().lower()
-    return verdict in WEAK_VERDICTS
+    return any(weak in verdict for weak in WEAK_VERDICTS)
 
 
 def count_recent_mistakes(
@@ -147,19 +144,20 @@ def topic_for_tag(tag: str) -> str:
 
 def why_for_tag(tag: str, count: int) -> str:
     topic = topic_for_tag(tag)
+    item_label = "item" if count == 1 else "items"
     if tag == "service-boundary-confusion":
         return (
-            f"The last {count} weak evidence items involve choosing between similar services."
+            f"The last {count} weak evidence {item_label} involve choosing between similar services."
         )
     if tag == "missed-constraint":
-        return f"The last {count} weak evidence items miss stated constraints."
+        return f"The last {count} weak evidence {item_label} miss stated constraints."
     if tag == "stale-source-assumption":
-        return f"The last {count} weak evidence items rely on stale source assumptions."
+        return f"The last {count} weak evidence {item_label} rely on stale source assumptions."
     if tag == "overconfident-guess":
-        return f"The last {count} weak evidence items look like confident guesses."
+        return f"The last {count} weak evidence {item_label} look like confident guesses."
     if tag == "vague-answer":
-        return f"The last {count} weak evidence items are too vague to count as mastery."
-    return f"The last {count} weak evidence items relate to {topic}."
+        return f"The last {count} weak evidence {item_label} are too vague to count as mastery."
+    return f"The last {count} weak evidence {item_label} relate to {topic}."
 
 
 def build_evidence_recommendation(tag: str, count: int) -> str:
@@ -248,12 +246,6 @@ def main() -> int:
         return 0
 
     now = parse_now(args.now)
-
-    # Load learner context. Preferences are read but never allowed to override
-    # evidence thresholds.
-    _ = load_yaml(LEARNER_PROFILE_PATH)
-    _ = load_yaml(STUDY_STATE_PATH)
-    _ = load_yaml(SKILL_MAP_PATH)
 
     evidence_text = load_evidence_text()
     items = parse_evidence_items(evidence_text)
