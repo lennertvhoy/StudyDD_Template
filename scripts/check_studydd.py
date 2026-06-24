@@ -16,10 +16,24 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-REQUIRED_FILES = [
+REQUIRED_ROOT_FILES = [
     "README.md",
     "AGENTS.md",
     "LICENSE.md",
+    "CONTRIBUTING.md",
+]
+
+REQUIRED_DOC_FILES = [
+    "docs/agent-native-quickstart.md",
+    "docs/how-to-use-with-codex.md",
+    "docs/how-to-use-with-kimi-code.md",
+    "docs/how-to-use-with-claude-code.md",
+    "docs/how-to-use-with-cursor.md",
+    "docs/studydd-principles.md",
+    "docs/inspect-and-override-state.md",
+]
+
+REQUIRED_STATE_FILES = [
     "state/STUDY_STATUS.md",
     "state/STUDY_STATE.yaml",
     "state/NEXT_STUDY_ACTIONS.md",
@@ -27,21 +41,63 @@ REQUIRED_FILES = [
     "state/SESSION_LOG.md",
     "state/EVIDENCE_LOG.md",
     "state/SKILL_MAP.yaml",
+]
+
+REQUIRED_PROTOCOL_FILES = [
     "protocols/TUTOR_PROTOCOL.md",
     "protocols/SESSION_TEMPLATE.md",
+]
+
+REQUIRED_PROMPT_FILES = [
     "PROMPTS/coding_agent_start_prompt.md",
     "PROMPTS/ai_tutor_prompt.md",
     "PROMPTS/study_session_prompt.md",
     "PROMPTS/exam_drill_prompt.md",
     "PROMPTS/reflection_prompt.md",
     "PROMPTS/update_state_prompt.md",
-    "docs/agent-native-quickstart.md",
-    "docs/studydd-principles.md",
+    "PROMPTS/interview_prep_prompt.md",
 ]
+
+REQUIRED_AI103_EXAMPLE_FILES = [
+    "EXAMPLES/ai-103-example/state/STUDY_STATUS.md",
+    "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
+    "EXAMPLES/ai-103-example/state/NEXT_STUDY_ACTIONS.md",
+    "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
+    "EXAMPLES/ai-103-example/state/SESSION_LOG_EXAMPLE.md",
+]
+
+REQUIRED_INTERVIEW_EXAMPLE_FILES = [
+    "EXAMPLES/product-engineer-interview-example/state/STUDY_STATUS.md",
+    "EXAMPLES/product-engineer-interview-example/state/STUDY_STATE.yaml",
+    "EXAMPLES/product-engineer-interview-example/state/NEXT_STUDY_ACTIONS.md",
+    "EXAMPLES/product-engineer-interview-example/state/SKILL_MAP.yaml",
+    "EXAMPLES/product-engineer-interview-example/state/SESSION_LOG_EXAMPLE.md",
+]
+
+REQUIRED_GITHUB_TEMPLATES = [
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/pull_request_template.md",
+]
+
+REQUIRED_FILES = (
+    REQUIRED_ROOT_FILES
+    + REQUIRED_DOC_FILES
+    + REQUIRED_STATE_FILES
+    + REQUIRED_PROTOCOL_FILES
+    + REQUIRED_PROMPT_FILES
+    + REQUIRED_AI103_EXAMPLE_FILES
+    + REQUIRED_INTERVIEW_EXAMPLE_FILES
+    + REQUIRED_GITHUB_TEMPLATES
+)
 
 YAML_FILES = [
     "state/STUDY_STATE.yaml",
     "state/SKILL_MAP.yaml",
+    "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
+    "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
+    "EXAMPLES/product-engineer-interview-example/state/STUDY_STATE.yaml",
+    "EXAMPLES/product-engineer-interview-example/state/SKILL_MAP.yaml",
 ]
 
 REQUIRED_STUDY_STATE_KEYS = [
@@ -94,11 +150,11 @@ def check_yaml() -> list[str]:
             errors.append(f"YAML file is empty or invalid: {rel}")
             continue
 
-        if rel == "state/STUDY_STATE.yaml":
+        if rel.endswith("STUDY_STATE.yaml"):
             for key in REQUIRED_STUDY_STATE_KEYS:
                 if key not in data:
                     errors.append(f"Missing key '{key}' in {rel}")
-        elif rel == "state/SKILL_MAP.yaml":
+        elif rel.endswith("SKILL_MAP.yaml"):
             for key in REQUIRED_SKILL_MAP_KEYS:
                 if key not in data:
                     errors.append(f"Missing key '{key}' in {rel}")
