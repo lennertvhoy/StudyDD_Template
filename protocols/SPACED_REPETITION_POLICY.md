@@ -14,11 +14,14 @@ The rule:
 
 ## What the agent must do at session start
 
-1. Read the current date and time.
-2. Read `reviews/REVIEW_STATE.yaml`.
-3. Count reviews whose `due_at` is now or in the past.
-4. Run or perform the equivalent of `scripts/select_next_study_action.py`.
-5. If any review is due or overdue, recommend review first.
+1. Build the context pack with `--task start_session` so the active study skill is loaded.
+2. Read the current date and time.
+3. Read `reviews/REVIEW_STATE.yaml` and `state/CURRENT_CONTEXT.md`.
+4. Count reviews whose `due_at` is now or in the past.
+5. Run or perform the equivalent of `scripts/select_next_study_action.py`.
+6. If any review is due or overdue, recommend review first.
+
+The active study skill may prefer certain review modes (e.g., scenario for IT certification, apply-to-new-passage for philosophy, recall for language learning).
 
 ## Recommended phrase
 

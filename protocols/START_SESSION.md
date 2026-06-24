@@ -24,8 +24,13 @@
    - Report pass/fail.
    - Fix validator failures before asking the first question.
 
-5. **Read required files.**
-   - All files listed in `AGENTS.md` "Required First Actions".
+5. **Build and read the context pack.**
+   - Run `python3 scripts/compact_state.py`.
+   - Run `python3 scripts/build_context_pack.py --task start_session`.
+   - Read `.studydd/context_pack.md`.
+   - Load the active target's `study_skills/<id>/SKILL.md` or fall back to `study_skills/generic/SKILL.md`.
+   - Open raw audit logs only if the context pack or validator says it is necessary.
+   - See `protocols/STATE_LOADING_POLICY.md`.
 
 6. **Check time-aware review state.**
    - Read the current date/time.

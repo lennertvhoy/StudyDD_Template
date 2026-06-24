@@ -21,13 +21,17 @@
    - `state/STUDY_STATE.yaml`
    - `state/STUDY_STATUS.md`
    - `sessions/SESSION_LOG.md`
+   - `state/EVIDENCE_LOG.md`
    - `reviews/REVIEW_QUEUE.md`
    - `NEXT_ACTIONS.md`
 
-5. **Confirm or apply authorized updates.**
+5. **Compact state.**
+   - Run `python3 scripts/compact_state.py` after appending evidence and sessions.
+
+6. **Confirm or apply authorized updates.**
    - Wait for learner confirmation unless auto-updates are authorized.
 
-6. **Run validator.**
+7. **Run validator.**
    - `python3 scripts/check_studydd.py`
 
 7. **Write the next action.**

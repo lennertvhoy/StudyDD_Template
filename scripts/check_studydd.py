@@ -48,6 +48,9 @@ REQUIRED_STATE_FILES = [
     "state/STUDY_BACKLOG.md",
     "state/EVIDENCE_LOG.md",
     "state/SKILL_MAP.yaml",
+    "state/CURRENT_CONTEXT.md",
+    "state/EVIDENCE_INDEX.yaml",
+    "state/STATE_MANIFEST.yaml",
 ]
 
 REQUIRED_TARGET_FILES = [
@@ -64,6 +67,7 @@ REQUIRED_REVIEW_FILES = [
 REQUIRED_SESSION_FILES = [
     "sessions/README.md",
     "sessions/SESSION_LOG.md",
+    "sessions/SESSION_SUMMARIES.md",
 ]
 
 REQUIRED_SOURCE_FILES = [
@@ -92,6 +96,7 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/QUESTION_QUALITY.md",
     "protocols/MISTAKE_TAXONOMY.md",
     "protocols/LOW_ENERGY_MODE.md",
+    "protocols/STATE_LOADING_POLICY.md",
 ]
 
 REQUIRED_PROMPT_FILES = [
@@ -122,6 +127,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/select_next_study_action.py",
     "scripts/run_demo_replay.py",
     "scripts/test_demo_replay.py",
+    "scripts/compact_state.py",
+    "scripts/build_context_pack.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -190,6 +197,8 @@ YAML_FILES = [
     "state/STUDYDD_TEMPLATE_VERSION.yaml",
     "state/STUDY_STATE.yaml",
     "state/SKILL_MAP.yaml",
+    "state/STATE_MANIFEST.yaml",
+    "state/EVIDENCE_INDEX.yaml",
     "reviews/REVIEW_STATE.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
@@ -1045,6 +1054,206 @@ def check_review_state(yaml: object, warnings: list[str]) -> list[str]:
     return errors
 
 
+def check_state_manifest(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    manifest_path = ROOT / "state" / "STATE_MANIFEST.yaml"
+    if not manifest_path.is_file():
+        errors.append("Missing state/STATE_MANIFEST.yaml")
+        return errors
+
+    try:
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        errors.append(f"Could not parse state/STATE_MANIFEST.yaml: {exc}")
+        return errors
+
+    files = manifest.get("files") or {}
+    if not isinstance(files, dict):
+        errors.append("state/STATE_MANIFEST.yaml 'files' must be a mapping")
+        return errors
+
+    required_roles = {"canonical", "append_only_audit", "derived_summary", "derived_index"}
+    seen_roles = set()
+    for rel, meta in files.items():
+        if not isinstance(meta, dict):
+            errors.append(f"state/STATE_MANIFEST.yaml entry '{rel}' must be a mapping")
+            continue
+        role = meta.get("role")
+        if role:
+            seen_roles.add(role)
+        if meta.get("protected") and role != "canonical":
+            errors.append(f"state/STATE_MANIFEST.yaml '{rel}' is protected but role is not canonical")
+        rel_path = ROOT / rel
+        if meta.get("load_default") and not rel_path.is_file():
+            errors.append(f"state/STATE_MANIFEST.yaml '{rel}' is load_default but missing")
+
+    missing_roles = required_roles - seen_roles
+    for role in sorted(missing_roles):
+        errors.append(f"state/STATE_MANIFEST.yaml missing at least one file with role '{role}'")
+
+    return errors
+
+
+def check_context_pack_gitignored() -> list[str]:
+    errors: list[str] = []
+    gitignore = ROOT / ".gitignore"
+    if not gitignore.is_file():
+        errors.append("Missing .gitignore; .studydd/ must be ignored")
+        return errors
+
+    text = gitignore.read_text(encoding="utf-8")
+    if ".studydd/" not in text and ".studydd" not in text:
+        errors.append(".studydd/ is not ignored in .gitignore")
+    return errors
+
+
+def check_evidence_index(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    index_path = ROOT / "state" / "EVIDENCE_INDEX.yaml"
+    log_path = ROOT / "state" / "EVIDENCE_LOG.md"
+    if not index_path.is_file():
+        errors.append("Missing state/EVIDENCE_INDEX.yaml")
+        return errors
+
+    try:
+        index_data = yaml.safe_load(index_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        errors.append(f"Could not parse state/EVIDENCE_INDEX.yaml: {exc}")
+        return errors
+
+    log_text = log_path.read_text(encoding="utf-8") if log_path.is_file() else ""
+    items = index_data.get("items") or []
+    for item in items:
+        eid = item.get("evidence_id")
+        if eid and eid not in log_text:
+            errors.append(
+                f"state/EVIDENCE_INDEX.yaml evidence_id '{eid}' not found in state/EVIDENCE_LOG.md"
+            )
+    return errors
+
+
+def check_session_summaries() -> list[str]:
+    errors: list[str] = []
+    log_path = ROOT / "sessions" / "SESSION_LOG.md"
+    summaries_path = ROOT / "sessions" / "SESSION_SUMMARIES.md"
+
+    if not summaries_path.is_file():
+        errors.append("Missing sessions/SESSION_SUMMARIES.md")
+        return errors
+
+    log_text = log_path.read_text(encoding="utf-8") if log_path.is_file() else ""
+    summaries_text = summaries_path.read_text(encoding="utf-8")
+
+    # Heuristic: if log contains a real date-like entry, summaries should list >0 sessions.
+    has_real_sessions = bool(
+        re.search(r"\*\*Date:\*\*\s*\d{4}-\d{2}-\d{2}", log_text)
+    )
+    count_match = re.search(r"\*\*Total sessions:\*\*\s*(\d+)", summaries_text)
+    count = int(count_match.group(1)) if count_match else 0
+
+    if has_real_sessions and count == 0:
+        errors.append("sessions/SESSION_SUMMARIES.md reports 0 sessions but SESSION_LOG.md has real sessions")
+
+    if "No sessions recorded yet." in summaries_text and has_real_sessions:
+        errors.append("sessions/SESSION_SUMMARIES.md is empty but SESSION_LOG.md has real sessions")
+
+    return errors
+
+
+def check_current_context() -> list[str]:
+    errors: list[str] = []
+    path = ROOT / "state" / "CURRENT_CONTEXT.md"
+    if not path.is_file():
+        errors.append("Missing state/CURRENT_CONTEXT.md")
+        return errors
+
+    text = path.read_text(encoding="utf-8")
+    for section in ("## Active target", "## Reviews", "## Weak skills", "## Next action"):
+        if section not in text:
+            errors.append(f"state/CURRENT_CONTEXT.md missing section '{section}'")
+    return errors
+
+
+def check_generated_freshness(warnings: list[str]) -> list[str]:
+    errors: list[str] = []
+    pairs = [
+        ("state/EVIDENCE_INDEX.yaml", "state/EVIDENCE_LOG.md"),
+        ("sessions/SESSION_SUMMARIES.md", "sessions/SESSION_LOG.md"),
+        ("state/CURRENT_CONTEXT.md", "state/STUDY_STATE.yaml"),
+    ]
+    for generated, source in pairs:
+        gen_path = ROOT / generated
+        src_path = ROOT / source
+        if not gen_path.is_file() or not src_path.is_file():
+            continue
+        try:
+            gen_mtime = gen_path.stat().st_mtime
+            src_mtime = src_path.stat().st_mtime
+            if src_mtime > gen_mtime:
+                warnings.append(
+                    f"{generated} appears older than {source}. Run scripts/compact_state.py."
+                )
+        except Exception:
+            pass
+    return errors
+
+
+def check_study_skills(yaml: object, warnings: list[str]) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    skills_dir = ROOT / "study_skills"
+    if not skills_dir.is_dir():
+        errors.append("Missing study_skills/ directory")
+        return errors
+
+    required_skills = [
+        "generic",
+        "it_certification",
+        "philosophy",
+        "primary_math",
+        "language_learning",
+        "interview_prep",
+        "practical_lab",
+    ]
+    for skill_id in required_skills:
+        skill_file = skills_dir / skill_id / "SKILL.md"
+        if not skill_file.is_file():
+            errors.append(f"Missing study skill file: study_skills/{skill_id}/SKILL.md")
+
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
+    mode = mode_data.get("mode")
+
+    if mode in ("bootstrap", "learner_instance"):
+        study_state = yaml.safe_load((ROOT / "state" / "STUDY_STATE.yaml").read_text(encoding="utf-8")) or {}
+        active_target = study_state.get("active_target_id")
+        if active_target:
+            target_yaml = ROOT / "targets" / active_target / "TARGET.yaml"
+            if target_yaml.is_file():
+                target_data = yaml.safe_load(target_yaml.read_text(encoding="utf-8")) or {}
+                declared_skill = target_data.get("study_skill")
+                if declared_skill:
+                    skill_file = skills_dir / declared_skill / "SKILL.md"
+                    if not skill_file.is_file():
+                        errors.append(
+                            f"Active target '{active_target}' declares unknown study_skill '{declared_skill}'"
+                        )
+                else:
+                    warnings.append(
+                        f"Active target '{active_target}' does not declare a study_skill; generic tutoring will be used."
+                    )
+
+    return errors
+
+
 def check_option_position_randomization() -> list[str]:
     """Lightweight warning when example session logs show obvious answer-position patterns.
 
@@ -1112,6 +1321,13 @@ def main() -> int:
         errors.extend(check_answer_key_leakage())
         errors.extend(check_question_bank(yaml))
         errors.extend(check_review_state(yaml, warnings))
+        errors.extend(check_state_manifest(yaml))
+        errors.extend(check_context_pack_gitignored())
+        errors.extend(check_evidence_index(yaml))
+        errors.extend(check_session_summaries())
+        errors.extend(check_current_context())
+        errors.extend(check_study_skills(yaml, warnings))
+        errors.extend(check_generated_freshness(warnings))
     else:
         print("\nNote: PyYAML not installed. Skipping state-aware checks.")
         print("      Install with: pip install pyyaml")
