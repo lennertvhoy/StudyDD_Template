@@ -14,7 +14,7 @@ learner_preferences:
   feedback_style: ""
   session_length_preference_minutes: null
   low_energy_mode_preference: ""
-  source_refresh_preference: "ask_when_needed"
+  source_refresh_preference: ""
 
 adaptation_state:
   methods_tried: []
