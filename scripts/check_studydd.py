@@ -932,6 +932,16 @@ def check_question_bank(yaml: object) -> list[str]:
             continue
 
         for field in QUESTION_BANK_REQUIRED_FIELDS:
+            if field == "source_ref":
+                # Accept either a legacy source_ref or a non-empty source_ids list.
+                has_source_ref = "source_ref" in data and data["source_ref"] not in (None, "")
+                source_ids = data.get("source_ids")
+                has_source_ids = isinstance(source_ids, list) and bool(source_ids)
+                if not (has_source_ref or has_source_ids):
+                    errors.append(
+                        f"Question file {path.relative_to(ROOT)} missing or empty source reference ('source_ref' or 'source_ids')"
+                    )
+                continue
             if field not in data or data[field] in (None, ""):
                 errors.append(
                     f"Question file {path.relative_to(ROOT)} missing or empty field '{field}'"
