@@ -23,6 +23,9 @@ EVIDENCE_LOG_PATH = ROOT / "state" / "EVIDENCE_LOG.md"
 REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 
 WEAK_VERDICTS = {"partial", "incorrect", "unclear", "wrong"}
+_WEAK_VERDICT_RE = re.compile(
+    r"\b(" + "|".join(sorted(WEAK_VERDICTS)) + r")\b", re.IGNORECASE
+)
 RECENT_DAYS = 30
 
 DEMO_OUTPUT = """StudyDD suggestion:
@@ -115,10 +118,7 @@ def item_mistake_tags(fields: dict[str, str]) -> list[str]:
 
 
 def is_weak_evidence(fields: dict[str, str]) -> bool:
-    verdict = fields.get("Verdict", "").strip().lower()
-    return bool(
-        re.search(r"\b(partial|incorrect|unclear|wrong)\b", verdict, re.IGNORECASE)
-    )
+    return bool(_WEAK_VERDICT_RE.search(fields.get("Verdict", "")))
 
 
 def count_recent_mistakes(
@@ -158,7 +158,9 @@ def why_for_tag(tag: str, count: int) -> str:
     if tag == "overconfident-guess":
         return f"The last {count} weak evidence items look like confident guesses."
     if tag == "vague-answer":
-        return f"The last {count} weak evidence items are too vague to count as mastery."
+        return (
+            f"The last {count} weak evidence items are too vague to count as mastery."
+        )
     return f"The last {count} weak evidence items relate to {topic}."
 
 
@@ -243,7 +245,9 @@ def main() -> int:
         "--demo", action="store_true", help="Print deterministic demo output"
     )
     parser.add_argument(
-        "--now", default=None, help="ISO 8601 timestamp with timezone for deterministic checks"
+        "--now",
+        default=None,
+        help="ISO 8601 timestamp with timezone for deterministic checks",
     )
     args = parser.parse_args()
 
