@@ -54,7 +54,6 @@ REQUIRED_REVIEW_FILES = [
 REQUIRED_SESSION_FILES = [
     "sessions/README.md",
     "sessions/SESSION_LOG.md",
-    "sessions/SKILLSIGNAL_PACKETS.md",
 ]
 
 REQUIRED_SOURCE_FILES = [
