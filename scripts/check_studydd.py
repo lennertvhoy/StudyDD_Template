@@ -907,7 +907,6 @@ QUESTION_BANK_REQUIRED_FIELDS = [
     "private_answer_key",
     "rubric",
     "common_traps",
-    "transfer_probe",
     "last_used",
     "cooldown_days",
 ]
@@ -940,6 +939,13 @@ def check_question_bank(yaml: object) -> list[str]:
                 if not (has_source_ref or has_source_ids):
                     errors.append(
                         f"Question file {path.relative_to(ROOT)} missing or empty source reference ('source_ref' or 'source_ids')"
+                    )
+                continue
+            if field == "transfer_probe":
+                # Optional, but if present it must not be empty.
+                if "transfer_probe" in data and data["transfer_probe"] in (None, ""):
+                    errors.append(
+                        f"Question file {path.relative_to(ROOT)} has empty optional field 'transfer_probe'"
                     )
                 continue
             if field not in data or data[field] in (None, ""):
