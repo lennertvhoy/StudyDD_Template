@@ -1,4 +1,4 @@
-# SESSION_LOG_EXAMPLE — AI-103 Example
+# SESSION_LOG — AI-103 Example
 
 ## Session 2026-06-23 — Azure AI Search and RAG exam drill
 

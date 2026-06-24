@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REQUIRED_ROOT_FILES = [
     "README.md",
     "AGENTS.md",
+    "NEXT_ACTIONS.md",
     "LICENSE.md",
     "CONTRIBUTING.md",
 ]
@@ -36,11 +37,29 @@ REQUIRED_DOC_FILES = [
 REQUIRED_STATE_FILES = [
     "state/STUDY_STATUS.md",
     "state/STUDY_STATE.yaml",
-    "state/NEXT_STUDY_ACTIONS.md",
     "state/STUDY_BACKLOG.md",
-    "state/SESSION_LOG.md",
     "state/EVIDENCE_LOG.md",
     "state/SKILL_MAP.yaml",
+]
+
+REQUIRED_TARGET_FILES = [
+    "targets/README.md",
+]
+
+REQUIRED_REVIEW_FILES = [
+    "reviews/README.md",
+    "reviews/REVIEW_QUEUE.md",
+]
+
+REQUIRED_SESSION_FILES = [
+    "sessions/README.md",
+    "sessions/SESSION_LOG.md",
+    "sessions/SKILLSIGNAL_PACKETS.md",
+]
+
+REQUIRED_SOURCE_FILES = [
+    "sources/README.md",
+    "sources/SOURCE_INDEX.md",
 ]
 
 REQUIRED_PROTOCOL_FILES = [
@@ -59,19 +78,25 @@ REQUIRED_PROMPT_FILES = [
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
+    "EXAMPLES/ai-103-example/NEXT_ACTIONS.md",
     "EXAMPLES/ai-103-example/state/STUDY_STATUS.md",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
-    "EXAMPLES/ai-103-example/state/NEXT_STUDY_ACTIONS.md",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
-    "EXAMPLES/ai-103-example/state/SESSION_LOG_EXAMPLE.md",
+    "EXAMPLES/ai-103-example/reviews/REVIEW_QUEUE.md",
+    "EXAMPLES/ai-103-example/sessions/SESSION_LOG.md",
+    "EXAMPLES/ai-103-example/sources/SOURCE_INDEX.md",
+    "EXAMPLES/ai-103-example/targets/ai-103/TARGET.yaml",
 ]
 
 REQUIRED_INTERVIEW_EXAMPLE_FILES = [
+    "EXAMPLES/product-engineer-interview-example/NEXT_ACTIONS.md",
     "EXAMPLES/product-engineer-interview-example/state/STUDY_STATUS.md",
     "EXAMPLES/product-engineer-interview-example/state/STUDY_STATE.yaml",
-    "EXAMPLES/product-engineer-interview-example/state/NEXT_STUDY_ACTIONS.md",
     "EXAMPLES/product-engineer-interview-example/state/SKILL_MAP.yaml",
-    "EXAMPLES/product-engineer-interview-example/state/SESSION_LOG_EXAMPLE.md",
+    "EXAMPLES/product-engineer-interview-example/reviews/REVIEW_QUEUE.md",
+    "EXAMPLES/product-engineer-interview-example/sessions/SESSION_LOG.md",
+    "EXAMPLES/product-engineer-interview-example/sources/SOURCE_INDEX.md",
+    "EXAMPLES/product-engineer-interview-example/targets/product-engineer-interview/TARGET.yaml",
 ]
 
 REQUIRED_GITHUB_TEMPLATES = [
@@ -84,6 +109,10 @@ REQUIRED_FILES = (
     REQUIRED_ROOT_FILES
     + REQUIRED_DOC_FILES
     + REQUIRED_STATE_FILES
+    + REQUIRED_TARGET_FILES
+    + REQUIRED_REVIEW_FILES
+    + REQUIRED_SESSION_FILES
+    + REQUIRED_SOURCE_FILES
     + REQUIRED_PROTOCOL_FILES
     + REQUIRED_PROMPT_FILES
     + REQUIRED_AI103_EXAMPLE_FILES
@@ -96,16 +125,23 @@ YAML_FILES = [
     "state/SKILL_MAP.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
+    "EXAMPLES/ai-103-example/targets/ai-103/TARGET.yaml",
     "EXAMPLES/product-engineer-interview-example/state/STUDY_STATE.yaml",
     "EXAMPLES/product-engineer-interview-example/state/SKILL_MAP.yaml",
+    "EXAMPLES/product-engineer-interview-example/targets/product-engineer-interview/TARGET.yaml",
 ]
 
 REQUIRED_STUDY_STATE_KEYS = [
     "learner",
+    "active_target_id",
+    "targets",
     "study_target",
     "skills",
     "active_focus",
+    "review",
+    "sources",
     "session_history",
+    "workflow",
     "rules",
     "metadata",
 ]
@@ -122,6 +158,21 @@ def check_files() -> list[str]:
         path = ROOT / rel
         if not path.is_file():
             errors.append(f"Missing required file: {rel}")
+    return errors
+
+
+def check_target_folders() -> list[str]:
+    errors: list[str] = []
+    targets_dir = ROOT / "targets"
+    if not targets_dir.is_dir():
+        errors.append("Missing required directory: targets")
+        return errors
+
+    for child in sorted(targets_dir.iterdir()):
+        if not child.is_dir() or child.name.startswith("."):
+            continue
+        if not (child / "TARGET.yaml").is_file():
+            errors.append(f"Target folder missing TARGET.yaml: targets/{child.name}")
     return errors
 
 
@@ -167,6 +218,7 @@ def main() -> int:
     print("==================")
 
     errors = check_files()
+    errors.extend(check_target_folders())
     errors.extend(check_yaml())
 
     if errors:

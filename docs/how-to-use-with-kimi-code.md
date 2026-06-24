@@ -1,36 +1,37 @@
-# How to Use StudyDD with Kimi Code
+# How To Use StudyDD With Kimi Code
 
 ## Setup
 
 1. Clone or copy `StudyDD_Template` into a folder.
 2. Open the folder in Kimi Code.
 
-## Start a study session
+## Start A Study Session
 
 1. Open `PROMPTS/coding_agent_start_prompt.md`.
 2. Copy the entire prompt.
 3. Paste it into the Kimi Code chat.
-4. Add your study goal on a new line.
+4. Ask Kimi Code to initialize your copy.
 
 Example:
 
 ```text
 [paste the start prompt here]
 
-I am studying for Microsoft AI-103. Set up StudyDD for me and start a hard exam-style study session.
+Initialize this StudyDD copy for me. I want to learn a professional skill. Ask only the essential setup questions first.
 ```
 
-## During the session
+## During The Session
 
 - Answer one question at a time.
 - If the agent's grading feels wrong, challenge it.
-- Ask the agent to show you the active question ID and answer key if needed.
+- Ask the agent to show you the active question ID and answer key after you answer if needed.
 
-## End of session
+## End Of Session
 
 - Let the agent propose state updates.
 - Confirm or correct them.
-- Ask the agent to run `docs/inspect-and-override-state.md` checks if you want to audit the state.
+- Ask the agent to run `python3 scripts/check_studydd.py`.
+- Inspect `NEXT_ACTIONS.md` for the next study move.
 
 ## Tips
 

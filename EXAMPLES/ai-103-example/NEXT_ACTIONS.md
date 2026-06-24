@@ -1,6 +1,6 @@
-# NEXT_STUDY_ACTIONS — AI-103 Example
+# NEXT_ACTIONS — AI-103 Example
 
-> Agent-maintained active queue for Alex's AI-103 study plan.
+> Example active queue for Alex's AI-103 study plan.
 
 ## Current next action
 

@@ -1,44 +1,48 @@
 # TUTOR_PROTOCOL — Ask, Grade, Repair, Update
 
-> **Agent-maintained.** This protocol governs how the coding agent asks questions, grades answers, and updates state.
+> **Agent-maintained.** This protocol governs how coding agents and tutor agents ask questions, grade answers, and update StudyDD state.
 
-## Active question tracking
+## Active Question Tracking
 
 Every question must have a unique active question ID.
 
 - Format: `Q-YYYYMMDD-NNN` or a sequential ID within the session.
 - The ID must be visible to the learner.
 - Only one question may be active at a time.
-- The active question ID, expected answer format, and answer key must be recorded in the agent's working memory before grading.
+- Before asking, define the active question ID, expected answer format, answer key, target ID, and skill ID.
+- Do not reveal the answer key until after the learner answers.
 
-## Question lifecycle
+## Question Lifecycle
 
-1. **Introduce** the question with its ID and expected answer format.
-2. **Wait** for the learner's answer.
-3. **Grade** the actual answer against the answer key.
-4. **Explain** the verdict.
-5. **Repair** if the answer is wrong or incomplete.
-6. **Close** the question before opening a new one.
-7. **Record** evidence and update state.
+1. **Select** the next question from `NEXT_ACTIONS.md`, weak areas, pending validation, or due reviews.
+2. **Introduce** the question with its ID and expected answer format.
+3. **Wait** for the learner's answer.
+4. **Grade** the actual answer against the answer key.
+5. **Explain** the verdict in plain language.
+6. **Repair** if the answer is wrong, incomplete, or unclear.
+7. **Close** the question before opening a new one.
+8. **Record** evidence and propose state updates.
 
-## Expected answer format
+## Expected Answer Format
 
 Tell the learner what kind of answer you expect:
 
 - one sentence
+- short paragraph
 - bullet list
 - code snippet
 - architecture explanation
 - comparison
 - step-by-step procedure
 
-## Answer key
+## Answer Key
 
-Before asking a question, define the answer key:
+Before asking a question, define:
 
 - required concepts that must appear
 - acceptable synonyms or alternative phrasing
 - common misconceptions that should be flagged
+- source-trust assumptions, if relevant
 - minimum completeness threshold
 
 ## Grading
@@ -51,7 +55,7 @@ Use one of these verdicts:
 - **unclear** — cannot be graded because the answer is ambiguous
 - **override** — learner or human reviewer overrode the grade
 
-Grading must be based on the learner's actual answer, not the answer you hoped for.
+Grade what the learner actually wrote or said, not what you expected them to say.
 
 ## Explanation
 
@@ -59,12 +63,14 @@ After grading, explain:
 
 - what was correct
 - what was missing or wrong
-- why it matters for the exam or goal
+- why it matters for the target
 - one concrete takeaway
 
-## Repair question
+Keep this read-aloud friendly.
 
-If the answer is partial or incorrect, ask a repair question before moving on.
+## Repair Question
+
+If the answer is partial, incorrect, or unclear, ask a repair question before moving on.
 
 Rules for repair questions:
 
@@ -73,20 +79,30 @@ Rules for repair questions:
 - Do not mix repair questions with new numbered questions.
 - Once the repair is resolved, close the original question.
 
-## State update proposal
+## State Update Proposal
 
-After every question and at the end of every session, propose state updates:
+After every question and at the end of every session, propose updates:
 
 - add or update skill entries in `state/SKILL_MAP.yaml`
 - append evidence to `state/EVIDENCE_LOG.md`
-- append session entry to `state/SESSION_LOG.md`
+- append session history to `sessions/SESSION_LOG.md`
+- add SkillSignal packets to `sessions/SKILLSIGNAL_PACKETS.md` when useful
 - update `state/STUDY_STATE.yaml`
-- update `state/NEXT_STUDY_ACTIONS.md`
 - update `state/STUDY_STATUS.md`
+- add due review items to `reviews/REVIEW_QUEUE.md`
+- update `NEXT_ACTIONS.md`
 
 Wait for learner confirmation before writing changes, unless the learner has explicitly authorized automatic updates.
 
-## Tutor-state failure prevention
+## Readiness Rules
+
+- New skills default to `pending` with readiness `0`.
+- One correct answer can move a skill to `practiced`, not `confirmed`.
+- A repair-assisted answer should stay conservative.
+- Confirmed status requires strong or varied evidence.
+- Source coverage alone does not prove readiness.
+
+## Tutor-State Failure Prevention
 
 Watch for these failures and correct them immediately:
 
@@ -97,4 +113,5 @@ Watch for these failures and correct them immediately:
 - **Ignoring the learner's correction** — stop, audit, and update state.
 - **Forgetting weak areas** — weak skills must stay visible until evidence proves they are resolved.
 - **Saying "correct" without checking the answer key** — always compare against the key.
-- **Upgrading readiness after one answer** — readiness upgrades require repeated, varied evidence.
+- **Using untrusted sources as authoritative** — record source trust and resolve conflicts.
+- **Updating the public template with personal state** — only initialize a learner copy when explicitly asked.

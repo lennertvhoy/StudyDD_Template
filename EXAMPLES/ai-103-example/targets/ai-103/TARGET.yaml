@@ -1,0 +1,15 @@
+---
+id: "ai-103"
+title: "Microsoft AI-103"
+type: "certification"
+exam_or_goal: "Azure AI Engineer Associate certification"
+deadline: "2026-07-22"
+success_criteria:
+  - "Answer mixed Microsoft-style objective questions with evidence-backed confidence."
+  - "Resolve weak areas in Foundry evaluations, agents, Document Intelligence, monitoring, and cost control."
+trusted_sources:
+  - "S-AI103-001"
+  - "S-AI103-002"
+readiness_policy:
+  conservative: true
+  confirmed_requires_varied_evidence: true

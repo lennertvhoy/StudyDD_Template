@@ -1,10 +1,13 @@
 ---
 learner:
   name: ""
-  target: ""
-  current_context: "Initial setup"
+  current_context: "Public template, not initialized for a learner"
   preferred_language: ""
   preferred_tutoring_style: ""
+
+active_target_id: ""
+
+targets: []
 
 study_target:
   title: ""
@@ -18,19 +21,33 @@ skills: []
 
 active_focus:
   current_topic: ""
-  reason: "Initial state"
+  reason: "Initial public template state"
   next_question: ""
   blocking_confusions: []
 
+review:
+  queue: "reviews/REVIEW_QUEUE.md"
+  due_count: 0
+
+sources:
+  index: "sources/SOURCE_INDEX.md"
+  trusted_source_policy: "Prefer official or authoritative sources. Treat old notes, exports, spreadsheets, and generated summaries as secondary until verified."
+
 session_history: []
+
+workflow:
+  happy_path_step: 1
+  stage: "initialize_learner_profile"
+  next_action_ref: "NEXT_ACTIONS.md"
 
 rules:
   no_readiness_inflation: true
   one_question_at_a_time: true
   evidence_required_for_mastery: true
   corrections_must_update_state: true
+  public_template_must_stay_generic: true
 
 metadata:
-  template_version: "0.1.0"
-  last_updated: ""
-  updated_by: ""
+  template_version: "0.3.0"
+  last_updated: "2026-06-24"
+  updated_by: "coding-agent"

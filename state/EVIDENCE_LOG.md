@@ -1,16 +1,16 @@
 # EVIDENCE_LOG — Demonstrated Learning Evidence
 
-> **Agent-maintained.** The coding agent appends evidence items. The learner may inspect or override it.
+> **Agent-maintained.** Append evidence items after learner answers, repairs, reflections, overrides, or validated demonstrations.
 
 ## What counts as evidence
 
-Evidence links a specific learner answer to a skill or topic. It must be concrete enough that a third party could audit it.
+Evidence links a specific learner response to a target, skill, and question. It must be concrete enough that a third party could audit it.
 
 Good evidence:
 
-- "Learner correctly explained vector indexing in Azure AI Search and contrasted it with keyword search."
-- "Learner wrote a working JSON configuration for an Azure OpenAI model deployment."
-- "Learner identified the correct Content Safety threshold for a moderate-risk scenario."
+- "Learner correctly explained the difference between keyword and vector retrieval and gave a target-specific hybrid retrieval configuration."
+- "Learner identified the authoritative source system and described how to use a spreadsheet as secondary evidence."
+- "Learner repaired an incomplete answer by naming the missing safety evaluation step."
 
 Weak evidence:
 
@@ -21,11 +21,12 @@ Weak evidence:
 ## Format
 
 - **Date:**
+- **Target ID:**
 - **Skill ID:**
 - **Question ID:**
 - **Question summary:**
 - **Learner answer summary:**
-- **Verdict:** correct / partial / incorrect / override
+- **Verdict:** correct / partial / incorrect / unclear / override
 - **Explanation:**
 - **Confidence:** high / medium / low
 
