@@ -94,6 +94,12 @@ question_quality:
 
 ## Notes
 
+- The top-level `cognitive_level` uses StudyDD's routing taxonomy
+  (`recall`, `apply`, `troubleshoot`, `choose-best`, `explain`, `design`) to
+  decide how the question should be delivered during a session.
+- `question_quality.cognitive_level` uses Bloom-style categories
+  (`recall`, `understand`, `apply`, `analyze`, `evaluate`, `create`) for
+  quality auditing and mapping to learning-objective depth.
 - `public_prompt` must be safe to show the learner.
 - `private_answer_key` and `rubric` must never appear in learner-facing surfaces.
 - The validator does not require a question bank, but if one exists it checks
