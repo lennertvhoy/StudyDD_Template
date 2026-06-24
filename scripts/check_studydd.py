@@ -136,6 +136,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/plan_state_update.py",
     "scripts/check_source_freshness.py",
     "scripts/test_source_freshness.py",
+    "scripts/lint_questions.py",
+    "scripts/test_question_quality.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
