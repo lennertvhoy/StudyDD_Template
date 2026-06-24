@@ -72,12 +72,6 @@ Use review modes: troubleshoot, explain, scenario.
 - To move above 80, perform or explain the process under realistic constraints or time pressure.
 - High readiness requires doing or explaining the process in a new context, not just recalling the steps.
 
-## Source freshness and learner adaptation
-
-- Labs often involve volatile/current tools, cloud consoles, or product versions. Before authoritative product-current questions, run `scripts/check_source_freshness.py`.
-- Use screenshots, command output, and lab logs as evidence.
-- Adapt lab difficulty from recent mistakes, not preference alone.
-
 ## Common learner failure modes
 
 - `missed-constraint` — ignores permissions, environment, or prerequisites.
@@ -98,3 +92,9 @@ Use review modes: troubleshoot, explain, scenario.
 ## Example next action
 
 Present a symptom and ask what the learner would check first, second, and third; then explain what each check would reveal.
+
+## Source freshness and learner adaptation
+
+- Labs often involve volatile/current tools, cloud consoles, or product versions. Before authoritative product-current questions, run `scripts/check_source_freshness.py`.
+- Use screenshots, command output, and lab logs as evidence.
+- Adapt lab difficulty from recent mistakes, not preference alone.

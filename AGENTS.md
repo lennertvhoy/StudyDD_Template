@@ -116,15 +116,15 @@ Before every StudyDD session, read:
 36. `protocols/PERFORMANCE_POLICY.md`
 37. `protocols/STATE_WRITE_POLICY.md`
 38. `protocols/SOURCE_TRUST.md`
-37. `protocols/READINESS_POLICY.md`
-38. `protocols/QUESTION_QUALITY.md`
-39. `protocols/MISTAKE_TAXONOMY.md`
-40. `protocols/LOW_ENERGY_MODE.md`
-41. `protocols/SOURCE_FRESHNESS_POLICY.md`
-42. `protocols/SOURCE_REFRESH_POLICY.md`
-43. `protocols/QUESTION_QUALITY_GOVERNOR.md`
-44. `protocols/LEARNER_ADAPTATION_POLICY.md`
-45. `protocols/LEARNER_FEEDBACK_POLICY.md`
+39. `protocols/READINESS_POLICY.md`
+40. `protocols/QUESTION_QUALITY.md`
+41. `protocols/MISTAKE_TAXONOMY.md`
+42. `protocols/LOW_ENERGY_MODE.md`
+43. `protocols/SOURCE_FRESHNESS_POLICY.md`
+44. `protocols/SOURCE_REFRESH_POLICY.md`
+45. `protocols/QUESTION_QUALITY_GOVERNOR.md`
+46. `protocols/LEARNER_ADAPTATION_POLICY.md`
+47. `protocols/LEARNER_FEEDBACK_POLICY.md`
 
 Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
