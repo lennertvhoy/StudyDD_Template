@@ -12,6 +12,10 @@ Your progress is never hidden inside an app database or chat history.
 
 StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source refresh is cached and deliberate, not performed on every question.
 
+### Learning activities and evidence intake
+
+StudyDD is not only a question generator. It can recommend the best next learning activity: a question, review, paper exercise, external resource, lab, interview rehearsal, presentation rehearsal, voice note, diagram, or upload-and-review task. The learner stays in control, and readiness only changes when submitted evidence demonstrates competence.
+
 ### Learner adaptation with learner control
 
 StudyDD adapts question style, review strategy, and study recommendations from evidence and learner feedback. It may suggest better approaches, but the learner can accept, modify, or override them. Overrides are recorded so the study state remains honest.
@@ -55,6 +59,7 @@ There is no architecture menu in the core template. The default path is intentio
 - `reviews/` — spaced repetition queues
 - `sessions/` — tutor session logs and update history
 - `sources/` — trusted source tracking
+- `activities/` — learning activity templates and append-only activity log
 - `scripts/check_studydd.py` — repo sanity and educational-drift gate
 - `scripts/agent_preflight.py` — quick agent orientation
 - `scripts/agent_consistency_check.py` — cross-file state consistency
@@ -138,6 +143,8 @@ If you are editing `StudyDD_Template` itself, you are maintaining the mold. Keep
 - `reviews/REVIEW_QUEUE.md` — spaced repetition queue
 - `sessions/SESSION_LOG.md` — session history
 - `sources/SOURCE_INDEX.md` — trusted source registry
+- `state/ACTIVITY_STATE.yaml` — active and recent learning activities
+- `activities/ACTIVITY_LOG.md` — append-only activity audit trail
 - `NEXT_ACTIONS.md` — immediate next step
 
 You can inspect or override any of these files. They are plain Markdown and YAML.
@@ -215,6 +222,7 @@ python3 scripts/test_context_pack.py
 python3 scripts/test_study_skills.py
 python3 scripts/test_performance_policy.py
 python3 scripts/test_validate_touched_state.py
+python3 scripts/test_learning_activities.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
@@ -285,4 +293,4 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.8.1 — fast-path state policy (`protocols/PERFORMANCE_POLICY.md`, `state/PERFORMANCE_BUDGET.yaml`, `scripts/validate_touched_state.py`, `scripts/plan_state_update.py`) layered on top of intelligent state loading and study-domain skills.
+v0.9.0 — learning activity and evidence intake orchestrator (`protocols/LEARNING_ACTIVITY_POLICY.md`, `protocols/EVIDENCE_INTAKE_POLICY.md`, `state/ACTIVITY_STATE.yaml`, `activities/ACTIVITY_TEMPLATES.yaml`, `scripts/plan_learning_activity.py`, `scripts/record_activity_result.py`) layered on top of source-grounded question quality and learner adaptation.

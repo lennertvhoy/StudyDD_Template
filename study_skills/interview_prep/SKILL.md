@@ -96,7 +96,18 @@ Run a mock behavioral question, ask one follow-up, then grade and identify wheth
 
 Base interview question selection and grading on recorded evidence from practice answers and any recorded learner overrides. Do not let stated learner preferences inflate readiness; adapt style and difficulty from actual performance in `state/EVIDENCE_LOG.md` and `sessions/SESSION_LOG.md`.
 
+## Interview activities
+
+Use the activity orchestrator to assign realistic interview tasks beyond chat questions:
+
+- `interview_prep` — behavioral, technical, or role-fit mock questions.
+- `voice_note_review` — record an answer transcript for structure, filler-word, and clarity review (see `protocols/VOICE_NOTE_REVIEW_POLICY.md`).
+- `explain_back` — explain a concept in the learner's own words.
+- `upload_and_review` — submit a written answer, STAR outline, or notes.
+
+Track the interview prep state in `state/ACTIVITY_STATE.yaml`. Push for concrete examples, ask follow-up pressure questions, and record improved answer versions. Do not infer charisma, confidence, or mental state from voice notes.
+
 ## Source freshness and learner adaptation
 
 - Interview prep is usually stable, but company-specific or role-specific details may be volatile. Use fresh official/high-authority sources for current product or company claims.
-- Adapt practice mode (behavioral, technical, role-fit) from evidence and target role requirements.
+- Adapt practice mode (behavioral, technical, role-fit) and activity type from evidence and target role requirements.

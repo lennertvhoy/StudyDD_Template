@@ -86,7 +86,18 @@ Use review modes: explain, compare, apply-to-new-passage.
 
 Ask the learner to reconstruct a named argument in numbered premises, then give one charitable objection.
 
+## Argument and writing activities
+
+Philosophy benefits from activities that require reconstruction and production:
+
+- `explain_back` — explain an argument or concept in the learner's own words.
+- `writing_or_essay_review` — submit a short essay, objection, or reply for feedback.
+- `diagram_or_whiteboard` — draw an argument map or conceptual distinction.
+- `upload_and_review` — submit a reading note, outline, or primary-text commentary.
+
+Use `scripts/record_activity_result.py` when the learner submits written or drawn evidence. Grade for clarity, charity, and precision; schedule review for partial or vague reconstructions.
+
 ## Source freshness and learner adaptation
 
 - Philosophical arguments and texts are stable. Source freshness applies mainly to syllabus/curriculum changes or contemporary applications.
-- Adapt question style between argument analysis, explain-back, and essay tasks based on evidence.
+- Adapt question style and activity type between argument analysis, explain-back, essay, and diagram tasks based on evidence.

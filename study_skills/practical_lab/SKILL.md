@@ -93,8 +93,19 @@ Use review modes: troubleshoot, explain, scenario.
 
 Present a symptom and ask what the learner would check first, second, and third; then explain what each check would reveal.
 
+## Lab activities and evidence
+
+Practical labs benefit from activity types that collect real evidence:
+
+- `practical_lab` — perform a command, configuration, build, or troubleshooting step.
+- `upload_and_review` — submit screenshots, command output, or lab logs.
+- `explain_back` — explain cause and effect before running the next command.
+- `diagram_or_whiteboard` — draw the architecture, flow, or topology under test.
+
+Evidence should include commands run or proposed, observations, and log excerpts. Use `scripts/record_activity_result.py` to update state when the learner submits lab evidence. Completion is acknowledged; readiness changes only when the evidence demonstrates correct process and reasoning.
+
 ## Source freshness and learner adaptation
 
 - Labs often involve volatile/current tools, cloud consoles, or product versions. Before authoritative product-current questions, run `scripts/check_source_freshness.py`.
 - Use screenshots, command output, and lab logs as evidence.
-- Adapt lab difficulty from recent mistakes, not preference alone.
+- Adapt lab difficulty and activity type from recent mistakes, not preference alone.

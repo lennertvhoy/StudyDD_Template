@@ -32,6 +32,7 @@ CANONICAL_STATE_FILES = [
     "state/STUDYDD_TEMPLATE_VERSION.yaml",
     "state/STATE_MANIFEST.yaml",
     "state/PERFORMANCE_BUDGET.yaml",
+    "state/ACTIVITY_STATE.yaml",
 ]
 
 SUMMARY_FILES = [
@@ -532,6 +533,48 @@ def build_context_pack(
         body_lines.append("- **Target ID:** none")
         skipped.append(("targets/<active>/TARGET.yaml", "no active target"))
 
+    body_lines.append("")
+
+    # Active activity and recent effectiveness.
+    activity_state = load_yaml(ROOT / "state" / "ACTIVITY_STATE.yaml")
+    body_lines.extend([
+        "## Active activity",
+        "",
+    ])
+    active_activity = activity_state.get("active_activity") or {}
+    if active_activity.get("id"):
+        body_lines.append(f"- **Activity ID:** {active_activity.get('id')}")
+        body_lines.append(f"- **Type:** {active_activity.get('type')}")
+        body_lines.append(f"- **Status:** {active_activity.get('status')}")
+        body_lines.append(f"- **Reason:** {active_activity.get('reason')}")
+        body_lines.append(f"- **Expected evidence:** {', '.join(active_activity.get('expected_evidence') or [])}")
+    else:
+        body_lines.append("- No active activity assigned.")
+
+    body_lines.extend([
+        "",
+        "## Recent activity effectiveness",
+        "",
+    ])
+    recent = activity_state.get("recent_activities") or []
+    if recent:
+        for activity in recent[:5]:
+            body_lines.append(
+                f"- {activity.get('type')} ({activity.get('skill_id')}): {activity.get('result')}"
+            )
+    else:
+        body_lines.append("- No recent activities recorded.")
+
+    body_lines.extend([
+        "",
+        "## Learner activity preferences",
+        "",
+    ])
+    prefs = activity_state.get("activity_preferences") or {}
+    body_lines.append(f"- **Likes:** {', '.join(prefs.get('learner_likes') or ['(none)'])}")
+    body_lines.append(f"- **Dislikes:** {', '.join(prefs.get('learner_dislikes') or ['(none)'])}")
+    body_lines.append(f"- **Effective methods:** {', '.join(prefs.get('effective_methods') or ['(none)'])}")
+    body_lines.append(f"- **Ineffective methods:** {', '.join(prefs.get('ineffective_methods') or ['(none)'])}")
     body_lines.append("")
 
     # Summary files.
