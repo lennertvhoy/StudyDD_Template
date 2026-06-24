@@ -37,6 +37,7 @@ REQUIRED_DOC_FILES = [
 ]
 
 REQUIRED_STATE_FILES = [
+    "state/STUDYDD_MODE.yaml",
     "state/STUDY_STATUS.md",
     "state/STUDY_STATE.yaml",
     "state/STUDY_BACKLOG.md",
@@ -64,6 +65,7 @@ REQUIRED_SOURCE_FILES = [
 ]
 
 REQUIRED_PROTOCOL_FILES = [
+    "protocols/INSTANTIATE_TEMPLATE.md",
     "protocols/TUTOR_PROTOCOL.md",
     "protocols/SESSION_TEMPLATE.md",
     "protocols/START_SESSION.md",
@@ -81,6 +83,7 @@ REQUIRED_PROTOCOL_FILES = [
 ]
 
 REQUIRED_PROMPT_FILES = [
+    "PROMPTS/create_new_instance_from_template.md",
     "PROMPTS/coding_agent_start_prompt.md",
     "PROMPTS/ai_tutor_prompt.md",
     "PROMPTS/study_session_prompt.md",
@@ -140,6 +143,7 @@ REQUIRED_FILES = (
 )
 
 YAML_FILES = [
+    "state/STUDYDD_MODE.yaml",
     "state/STUDY_STATE.yaml",
     "state/SKILL_MAP.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
@@ -254,6 +258,99 @@ def check_no_forbidden_brand() -> list[str]:
         if FORBIDDEN_BRAND_RE.search(text):
             rel = path.relative_to(ROOT)
             errors.append(f"Forbidden external brand mention in {rel}")
+    return errors
+
+
+def get_git_remotes() -> str:
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "remote", "-v"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.stdout
+    except Exception:
+        return ""
+
+
+def check_mode(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    mode_path = ROOT / "state/STUDYDD_MODE.yaml"
+    try:
+        mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        errors.append(f"Could not read state/STUDYDD_MODE.yaml: {exc}")
+        return errors
+
+    mode = mode_data.get("mode")
+    if mode not in ("template", "learner_instance"):
+        errors.append(f"state/STUDYDD_MODE.yaml mode must be 'template' or 'learner_instance', got {mode!r}")
+
+    remotes = get_git_remotes()
+    is_template_remote = "StudyDD_Template" in remotes
+
+    if mode == "template":
+        if is_template_remote and not mode_data.get("public_safe", True):
+            errors.append("Template mode requires public_safe: true")
+        if mode_data.get("personalized", False):
+            errors.append("Template mode must have personalized: false")
+
+        # Template should not contain active learner state.
+        study_state_path = ROOT / "state/STUDY_STATE.yaml"
+        try:
+            study_state = yaml.safe_load(study_state_path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            study_state = {}
+
+        active_target_id = study_state.get("active_target_id")
+        if active_target_id:
+            errors.append(
+                f"Template mode should not have an active_target_id ({active_target_id}). "
+                "Learner state belongs in a learner instance."
+            )
+
+        learner = study_state.get("learner") or {}
+        if learner.get("name"):
+            errors.append(
+                f"Template mode should not have a learner name ({learner.get('name')}). "
+                "Learner state belongs in a learner instance."
+            )
+
+        skill_map_path = ROOT / "state/SKILL_MAP.yaml"
+        try:
+            skill_map = yaml.safe_load(skill_map_path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            skill_map = {}
+        if (skill_map.get("skills") or []):
+            errors.append("Template mode should not have populated skills in state/SKILL_MAP.yaml")
+
+    elif mode == "learner_instance":
+        if is_template_remote:
+            errors.append(
+                "Learner instance mode cannot use the StudyDD_Template remote. "
+                "Set a new remote for the learner instance."
+            )
+        if not mode_data.get("personalized", False):
+            errors.append("Learner instance mode should have personalized: true")
+
+        study_state_path = ROOT / "state/STUDY_STATE.yaml"
+        try:
+            study_state = yaml.safe_load(study_state_path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            study_state = {}
+
+        learner = study_state.get("learner") or {}
+        if not learner.get("name"):
+            errors.append("Learner instance mode requires a learner name in state/STUDY_STATE.yaml")
+        if not study_state.get("active_target_id"):
+            errors.append("Learner instance mode requires an active_target_id in state/STUDY_STATE.yaml")
+
     return errors
 
 
@@ -505,6 +602,7 @@ def main() -> int:
         yaml = None
 
     if yaml is not None:
+        errors.extend(check_mode(yaml))
         errors.extend(check_active_target(yaml))
         errors.extend(check_readiness_and_evidence(yaml))
         errors.extend(check_active_target_source(yaml))
