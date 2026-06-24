@@ -621,7 +621,398 @@ Create `Evidence/005-2026-06-24-studydd-source-grounded-question-quality/` with 
 - Model efficiency routing (`docs/future-model-efficiency.md`) is documented but not implemented.
 - Study skills may declare more granular source/freshness requirements over time.
 - The source refresh protocol may later integrate a deliberate web-search tool call, but only when the freshness gate explicitly requests it.
+- Learning Activity + Evidence Intake Orchestrator (see Section 11) is the next major product direction.
 
 ## 10. Open questions / none
 
 All design questions resolved during brainstorming. No open questions remain.
+
+## 11. Next product direction: Learning Activity + Evidence Intake Orchestrator v1
+
+> Questions are one teaching move, not the whole system.
+>
+> StudyDD should recommend the best next learning activity, explain why, let the learner override, and record evidence from the result.
+
+### 11.1 Core doctrine
+
+StudyDD should not become only an AI question generator. Good teaching is flexible. Depending on the learner, target, energy level, evidence, and deadline, the best next move might be a question, a worked example, a paper exercise, a video, a reading task, a lab, an external platform exercise, a whiteboard drawing, or an upload-and-review task.
+
+The tutor should not ask, "What question do I generate?" It should ask, "What learning activity gives this student the best chance of improving now, and what evidence will prove it worked?"
+
+### 11.2 Activity types
+
+```yaml
+activity_types:
+  retrieval_question:
+    description: "One direct question or exam-style scenario."
+
+  spaced_review:
+    description: "Due or overdue review based on time-aware spaced repetition."
+
+  worked_example:
+    description: "The learner is missing a process or mental model."
+
+  paper_exercise:
+    description: "Learner solves work on paper, then uploads a photo or types the result."
+
+  external_platform_exercise:
+    description: "Learner completes exercises on another platform and uploads score/screenshot/notes."
+
+  video_or_reading_task:
+    description: "Learner watches, reads, or studies a selected resource, then submits a short summary or answers a check question."
+
+  practical_lab:
+    description: "Learner performs a technical task, command, configuration, troubleshooting step, or build."
+
+  explain_back:
+    description: "Learner explains the idea back in their own words."
+
+  diagram_or_whiteboard:
+    description: "Learner draws a model, flow, topology, argument map, architecture, or solution."
+
+  interview_prep:
+    description: "Learner answers realistic interview questions, STAR stories, technical explanations, follow-ups, or role-fit prompts."
+
+  presentation_prep:
+    description: "Learner rehearses a presentation, pitch, class explanation, demo talk, or oral exam answer."
+
+  voice_note_review:
+    description: "Learner uploads or records a voice note; StudyDD reviews structure, clarity, correctness, confidence, pacing, filler words, and target fit."
+
+  writing_or_essay_review:
+    description: "Learner submits a written answer, essay, cover letter, reflection, or explanation for feedback."
+
+  upload_and_review:
+    description: "Generic evidence intake for screenshots, PDFs, photos, notes, logs, transcripts, or external work."
+```
+
+### 11.3 New files to create later
+
+```text
+protocols/LEARNING_ACTIVITY_POLICY.md
+protocols/EVIDENCE_INTAKE_POLICY.md
+protocols/VOICE_NOTE_REVIEW_POLICY.md
+protocols/INTERVIEW_PREP_POLICY.md
+protocols/PRESENTATION_PREP_POLICY.md
+protocols/EXTERNAL_RESOURCE_POLICY.md
+state/ACTIVITY_STATE.yaml
+activities/ACTIVITY_LOG.md
+activities/ACTIVITY_TEMPLATES.yaml
+scripts/plan_learning_activity.py
+scripts/record_activity_result.py
+scripts/analyze_voice_note.py
+scripts/analyze_presentation_rehearsal.py
+scripts/test_learning_activities.py
+```
+
+### 11.4 Key policies
+
+**`protocols/LEARNING_ACTIVITY_POLICY.md`**
+
+- Choose the next activity based on due reviews, weak skills, learner energy, preference, target requirements, study skill, source freshness, recent mistakes, and deadline pressure.
+- A question is not always the best next action.
+- Explain why the activity is recommended.
+- Learner can accept, modify, or override.
+- Every activity must produce evidence.
+- No readiness upgrade without evidence.
+- External resources must respect source freshness and quality rules.
+
+**`protocols/EVIDENCE_INTAKE_POLICY.md`**
+
+- Accept typed answers, voice notes, transcripts, screenshots, photos, PDFs, external scores, command output, lab logs, presentation outlines.
+- Grade evidence according to the active study skill.
+- Distinguish completed activity, correct understanding, effort, and mastery evidence.
+- Effort can be acknowledged; readiness only changes from demonstrated competence.
+- If evidence is unclear, ask one focused clarification or mark as insufficient evidence.
+
+**`protocols/EXTERNAL_RESOURCE_POLICY.md`**
+
+- Recommend external resources only when they are better than an AI-generated explanation or exercise.
+- Prefer official/high-authority sources for volatile domains.
+- State why a resource is recommended (better visualization, worked examples, official explanation, practice density, different teaching style).
+- Recommend one good resource, not a dump of links.
+- Run freshness policy first if the source is volatile/current.
+
+### 11.5 State and templates
+
+**`state/ACTIVITY_STATE.yaml`** shape:
+
+```yaml
+active_activity:
+  id:
+  type:
+  target_id:
+  skill_id:
+  assigned_at:
+  due_at:
+  status:
+  reason:
+  expected_evidence:
+  learner_override_allowed: true
+
+recent_activities: []
+
+activity_preferences:
+  learner_likes: []
+  learner_dislikes: []
+  effective_methods: []
+  ineffective_methods: []
+```
+
+**`activities/ACTIVITY_TEMPLATES.yaml`** examples:
+
+```yaml
+templates:
+  - id: paper_drill_basic
+    activity_type: paper_exercise
+    best_for:
+      - primary_math
+      - calculation
+    expected_evidence:
+      - photo
+      - answer_sheet
+
+  - id: official_doc_reading
+    activity_type: video_or_reading_task
+    best_for:
+      - it_certification
+      - volatile_topic
+    expected_evidence:
+      - short_summary
+      - answer_to_check_question
+
+  - id: lab_screenshot_review
+    activity_type: practical_lab
+    best_for:
+      - sysadmin
+      - cloud
+      - networking
+    expected_evidence:
+      - screenshot
+      - command_output
+      - explanation
+
+  - id: explain_back
+    activity_type: explain_back
+    best_for:
+      - philosophy
+      - conceptual_understanding
+      - interview_prep
+    expected_evidence:
+      - written_explanation
+      - transcript
+```
+
+### 11.6 Activity result evidence model
+
+```yaml
+activity_result:
+  activity_id:
+  evidence_id:
+  submitted_as:
+    - typed_answer
+    - voice_note
+    - transcript
+    - screenshot
+    - photo
+    - pdf
+    - external_score
+    - command_output
+    - lab_log
+    - presentation_outline
+  result:
+    - correct
+    - partial
+    - incorrect
+    - insufficient_evidence
+  confidence:
+  mistake_tags: []
+  strengths: []
+  next_recommendation:
+  readiness_change:
+  review_scheduled:
+```
+
+### 11.7 Agent tool-building rule
+
+If a recurring learning activity creates evidence that is hard to inspect manually, the agent may build a small deterministic helper script to process it, as long as the script is local, transparent, validated, and does not replace teacher judgment.
+
+Examples:
+
+```yaml
+helper_scripts:
+  voice_note:
+    possible_tools:
+      - transcribe audio if a local/available transcription tool exists
+      - analyze duration
+      - detect long pauses if feasible
+      - count filler words from transcript
+      - extract structure markers
+      - compare against rubric
+    never_claim:
+      - "perfect emotional analysis"
+      - "objective charisma score"
+      - "medical or psychological diagnosis"
+
+  presentation_prep:
+    possible_tools:
+      - parse transcript
+      - check opening/structure/closing
+      - count jargon
+      - identify unsupported claims
+      - check timing against target duration
+      - compare against slide outline if available
+
+  interview_prep:
+    possible_tools:
+      - extract STAR structure
+      - detect vague claims
+      - check for concrete evidence
+      - flag overclaims
+      - classify answer length
+      - generate focused follow-up question
+
+  paper_math:
+    possible_tools:
+      - accept manually entered answers
+      - compare against generated answer key
+      - track mistake tags
+      - request photo upload when needed
+    limitation:
+      - OCR/photo grading is optional and should be treated as uncertain unless verified.
+
+  technical_lab:
+    possible_tools:
+      - parse command output
+      - check config snippets
+      - compare expected vs actual output
+      - extract error messages
+      - build a troubleshooting checklist
+```
+
+### 11.8 Interview prep support
+
+Track:
+
+```yaml
+interview_prep_state:
+  target_role:
+  company:
+  story_bank:
+    - id:
+      theme:
+      evidence:
+      weakness:
+      last_practiced:
+  weak_answer_patterns:
+    - too_vague
+    - too_long
+    - no_concrete_example
+    - overclaiming
+    - missing_business_impact
+    - weak_closing
+  practice_modes:
+    - behavioral
+    - technical
+    - role_fit
+    - pressure_followup
+    - salary_negotiation
+```
+
+Agent behavior:
+
+- Ask realistic questions.
+- Push for concrete examples.
+- Grade clarity, relevance, evidence, concision, and role fit.
+- Ask follow-up questions.
+- Suggest better answer structure.
+- Record improved answer versions.
+- Let learner override tone/style.
+
+### 11.9 Presentation prep support
+
+Track:
+
+```yaml
+presentation_prep_state:
+  presentation_goal:
+  audience:
+  target_duration_minutes:
+  outline:
+  rehearsal_history:
+  weak_patterns:
+    - unclear_opening
+    - too_much_jargon
+    - weak_transition
+    - unsupported_claim
+    - rushed_ending
+    - low_energy_delivery
+```
+
+Agent behavior:
+
+- Help structure the talk.
+- Review outline, slides, transcript, or voice note.
+- Give timing and clarity feedback.
+- Suggest one improvement at a time.
+- Encourage rehearsal.
+- Track evidence from repeated attempts.
+- Avoid vague motivational feedback.
+
+### 11.10 Learner control
+
+Every recommendation ends with:
+
+```text
+StudyDD recommendation: <activity>.
+
+Reason: <why this is the highest-value learning move right now>.
+
+You can accept, modify, or override this.
+```
+
+If the learner overrides a strong recommendation, record:
+
+```yaml
+override:
+  timestamp:
+  recommended_activity:
+  chosen_activity:
+  reason:
+  agent_warning:
+  next_recommendation:
+```
+
+### 11.11 Context-pack and demo integration
+
+The context pack should include the active activity, due review, recommended next activity, expected evidence, learner activity preferences, and recent activity effectiveness — using compact summaries only.
+
+The demo should show one non-question activity:
+
+```text
+StudyDD recommendation: short comparison drill.
+
+The learner completed the activity outside the chat and uploaded/entered the result.
+StudyDD reviewed the submitted evidence, updated skill state, scheduled review, and recorded the next action.
+```
+
+### 11.12 Startup/product note
+
+In a future startup version, this becomes the real product surface:
+
+- source panel
+- upload zone
+- voice-note review
+- whiteboard/diagram review
+- interview rehearsal
+- presentation rehearsal
+- exercise platform integration
+- paper-work photo review
+- progress map
+- evidence-backed mastery state
+
+The current template should stay repo-native and coding-agent-first. No UI, web app, database, or external integrations are added in this direction yet.
+
+### 11.13 Scope boundary for the current slice
+
+The Source-Grounded Question Quality v1 slice (Sections 1–8) remains the immediate implementation scope. The Learning Activity Orchestrator is the next product direction and should be designed and implemented in a follow-up slice after v1 is complete.
