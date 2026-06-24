@@ -19,9 +19,8 @@ skill_id: "<skill_id>"
 cognitive_level: "recall | apply | troubleshoot | choose-best | explain | design"
 difficulty: 1-5
 # At least one source reference is required.
-# Use source_ids (preferred) tied to sources/SOURCE_STATE.yaml, or source_ref (legacy).
-source_ref: "<source_id or URL>"   # legacy, still accepted
-source_ids:
+source_ref: "<source_id or URL>"   # legacy; accepted if source_ids is absent
+source_ids:                         # preferred for moderate/volatile/live topics
   - "<source_id>"
 public_prompt: |
   The learner-facing question text.
@@ -37,22 +36,21 @@ rubric:
 common_traps:
   - "Common distractor 1"
   - "Common distractor 2"
-transfer_probe: |
-  Optional follow-up scenario that tests transfer.
 last_used: "YYYY-MM-DD"
 cooldown_days: 7
 ```
 
 ## Optional quality and freshness fields
 
-```yaml
-# Legacy single-source reference is still accepted.
-source_ref: "<source_id or URL>"
+Source references are declared in the required block above. Use `source_ids`
+with IDs from `sources/SOURCE_STATE.yaml` for moderate, volatile, or live topics;
+`source_ref` is the legacy single-source fallback and is still accepted when
+`source_ids` is absent.
 
-# Preferred for moderate, volatile, and live topics: list source IDs from
-# sources/SOURCE_STATE.yaml.
-source_ids:
-  - mslearn_ai_search_overview
+```yaml
+# Optional follow-up scenario that tests transfer.
+transfer_probe: |
+  A short scenario that asks the learner to apply the same concept in a new context.
 
 # Volatility class for this specific question. Defaults to the target's declared
 # volatility if omitted.
