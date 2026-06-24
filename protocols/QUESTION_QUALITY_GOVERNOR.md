@@ -1,4 +1,4 @@
-# QUESTION_QUALITY_GOVERNOR.md — Question Quality Gate
+# QUESTION_QUALITY_GOVERNOR — Question Quality Gate
 
 This policy defines the quality gate that every generated question must pass before it is shown to the learner.
 
@@ -16,6 +16,10 @@ This policy defines the quality gate that every generated question must pass bef
   - When sources are fresh and authoritative: "This question is based on a fresh official source."
   - When sources are stale or absent: "This is conceptual practice only; I have not refreshed current vendor details."
 
+## Taxonomy Note
+
+The `cognitive_level` field in the quality record below is a Bloom-style quality classification (`recall | understand | apply | analyze | evaluate | create`). This is separate from the internal question-plan taxonomy defined in `protocols/QUESTION_QUALITY.md`, which agents use when designing a question (`recall / apply / troubleshoot / choose-best / explain / design`). The two taxonomies serve different purposes: the internal plan describes how the learner will be asked to act, while the quality record classifies the resulting cognitive demand for review and audit.
+
 ## Question Quality Record Shape
 
 ```yaml
@@ -26,15 +30,15 @@ question_quality:
   study_skill: ...
   volatility: ...
   source_ids: [...]
-  source_freshness_status: fresh | stale | not_required | unverified
-  cognitive_level: recall | understand | apply | analyze | evaluate | create
-  question_type: scenario | calculation | interpretation | troubleshooting | explanation | production
+  source_freshness_status: "fresh | stale | not_required | unverified"
+  cognitive_level: "recall | understand | apply | analyze | evaluate | create"
+  question_type: "scenario | calculation | interpretation | troubleshooting | explanation | procedural"
   answer_key_visibility: private_until_grading
   distractor_quality: plausible
   learner_fit: appropriate
-  estimated_difficulty: easy | medium | hard
-  generated_from_memory_allowed: true | false
-  quality_gate: pass | warn | fail
+  estimated_difficulty: "easy | medium | hard"
+  generated_from_memory_allowed: "true | false"
+  quality_gate: "pass | warn | fail"
   quality_gate_reason: ""
   notes: ""
 ```
