@@ -1,0 +1,114 @@
+---
+learner:
+  name: "Sam"
+  target: "Senior Product Engineer interview loop"
+  current_context: "Interview loop in three weeks; system design and behavioral are priorities"
+  preferred_language: "English"
+  preferred_tutoring_style: "Mock interviews with immediate feedback"
+
+study_target:
+  title: "Product Engineer Interview Loop"
+  exam_or_goal: "Senior Product Engineer onsite / virtual loop"
+  deadline: "2026-07-15"
+  current_readiness_estimate: "45%"
+  readiness_confidence: "Medium"
+  risk_level: "Moderate"
+
+skills:
+  - id: "pe-behavioral"
+    label: "Behavioral interviews (STAR, metrics, ownership)"
+    status: "practiced"
+    readiness: 60
+    confidence: "medium"
+    evidence:
+      - "E-20260623-PE-001: strong ownership story with metric"
+      - "E-20260623-PE-002: vague conflict resolution story; missing outcome"
+    next_validation_question: "Tell me about a time you had to say no to a stakeholder."
+
+  - id: "pe-system-design"
+    label: "System design tradeoffs for product features"
+    status: "weak"
+    readiness: 30
+    confidence: "low"
+    evidence:
+      - "E-20260622-PE-001: described API structure but could not justify database choice"
+    next_validation_question: "Design a notification system and justify consistency vs availability tradeoffs."
+
+  - id: "pe-product-sense"
+    label: "Product sense and prioritization"
+    status: "confirmed"
+    readiness: 75
+    confidence: "high"
+    evidence:
+      - "E-20260621-PE-001: correctly prioritized features by user impact and effort"
+      - "E-20260621-PE-002: framed tradeoff between churn reduction and activation"
+    next_validation_question: "How would you decide between building a feature in-house vs buying a vendor solution?"
+
+  - id: "pe-coding"
+    label: "Coding and algorithmic problem solving"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Solve a medium array/string problem and explain complexity."
+
+  - id: "pe-metrics"
+    label: "Metrics and experimentation"
+    status: "practiced"
+    readiness: 55
+    confidence: "medium"
+    evidence:
+      - "E-20260620-PE-001: correctly defined success metric for a feature launch"
+    next_validation_question: "Design an A/B test for a pricing page change."
+
+  - id: "pe-collaboration"
+    label: "Cross-functional collaboration"
+    status: "weak"
+    readiness: 40
+    confidence: "low"
+    evidence:
+      - "E-20260622-PE-002: answer focused only on engineering; ignored design and PM partners"
+    next_validation_question: "Describe how you would align engineering, design, and PM on a controversial decision."
+
+  - id: "pe-culture-fit"
+    label: "Culture and values alignment"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Why this company and role?"
+
+active_focus:
+  current_topic: "System design tradeoffs for product features"
+  reason: "Struggles to explain why one design wins over another in business terms"
+  next_question: "Q-20260624-PE-003"
+  blocking_confusions:
+    - "When to prioritize consistency over availability in a product feature"
+
+session_history:
+  - date: "2026-06-23"
+    focus: "Behavioral mock interview"
+    result: "Strong ownership story; weak conflict resolution story"
+    evidence_added:
+      - "E-20260623-PE-001"
+      - "E-20260623-PE-002"
+    state_change: "pe-behavioral marked practiced"
+
+  - date: "2026-06-22"
+    focus: "System design and collaboration"
+    result: "Weak system design justification; collaboration answer ignored partners"
+    evidence_added:
+      - "E-20260622-PE-001"
+      - "E-20260622-PE-002"
+    state_change: "pe-system-design and pe-collaboration marked weak"
+
+rules:
+  no_readiness_inflation: true
+  one_question_at_a_time: true
+  evidence_required_for_mastery: true
+  corrections_must_update_state: true
+
+metadata:
+  template_version: "0.2.0"
+  last_updated: "2026-06-24"
+  updated_by: "coding-agent"

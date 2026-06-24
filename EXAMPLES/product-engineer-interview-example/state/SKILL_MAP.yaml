@@ -1,0 +1,69 @@
+---
+skills:
+  - id: "pe-behavioral"
+    label: "Behavioral interviews (STAR, metrics, ownership)"
+    status: "practiced"
+    readiness: 60
+    confidence: "medium"
+    evidence:
+      - "E-20260623-PE-001"
+      - "E-20260623-PE-002"
+    next_validation_question: "Tell me about a time you had to say no to a stakeholder."
+
+  - id: "pe-system-design"
+    label: "System design tradeoffs for product features"
+    status: "weak"
+    readiness: 30
+    confidence: "low"
+    evidence:
+      - "E-20260622-PE-001"
+    next_validation_question: "Design a notification system and justify consistency vs availability tradeoffs."
+
+  - id: "pe-product-sense"
+    label: "Product sense and prioritization"
+    status: "confirmed"
+    readiness: 75
+    confidence: "high"
+    evidence:
+      - "E-20260621-PE-001"
+      - "E-20260621-PE-002"
+    next_validation_question: "How would you decide between building a feature in-house vs buying a vendor solution?"
+
+  - id: "pe-coding"
+    label: "Coding and algorithmic problem solving"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Solve a medium array/string problem and explain complexity."
+
+  - id: "pe-metrics"
+    label: "Metrics and experimentation"
+    status: "practiced"
+    readiness: 55
+    confidence: "medium"
+    evidence:
+      - "E-20260620-PE-001"
+    next_validation_question: "Design an A/B test for a pricing page change."
+
+  - id: "pe-collaboration"
+    label: "Cross-functional collaboration"
+    status: "weak"
+    readiness: 40
+    confidence: "low"
+    evidence:
+      - "E-20260622-PE-002"
+    next_validation_question: "Describe how you would align engineering, design, and PM on a controversial decision."
+
+  - id: "pe-culture-fit"
+    label: "Culture and values alignment"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Why this company and role?"
+
+metadata:
+  template_version: "0.2.0"
+  last_updated: "2026-06-24"
+  updated_by: "coding-agent"

@@ -102,6 +102,92 @@ Do not expose raw tool outputs, internal reasoning, or meta-commentary to the le
 - Updating state without learner confirmation unless explicitly authorized.
 - Hiding files, logs, or mistakes.
 
+## Worked state-update example
+
+This example shows how to update StudyDD state after one exam-style question. It demonstrates the correct discipline: grade the actual answer, record evidence, update the skill map without inflating readiness, clear the active question, and propose the next action.
+
+### Scenario
+
+- Skill ID: `ai103-search-rag`
+- Skill label: "Azure AI Search and RAG"
+- Previous status: `pending`, readiness 0
+- Active question ID: `Q-20260624-001`
+- Question: "What is the difference between keyword search and vector search in Azure AI Search, and when would you combine them?"
+- Expected answer format: short paragraph with a concrete scenario
+- Answer key: must mention keyword search (term matching), vector search (semantic similarity), and hybrid search (combining both for relevance)
+
+### Learner answer
+
+> Keyword search looks for exact words, while vector search finds similar meanings. I would combine them when a user query might miss the exact product name but describes what they want.
+
+### Grading
+
+Verdict: **partial**
+
+- Correct: keyword vs vector distinction, combining them for better relevance.
+- Missing: no concrete scenario, no mention of Azure AI Search-specific relevance scoring or hybrid search configuration.
+
+### Repair question
+
+"Describe one concrete Azure AI Search configuration choice you would make when setting up a hybrid retrieval pipeline."
+
+The learner answers correctly, mentioning an index with both `text` and `vector` fields and a query that requests both retrieval types with a weighted semantic ranker.
+
+### Evidence recorded
+
+Append to `state/EVIDENCE_LOG.md`:
+
+```markdown
+## Evidence items
+
+- **Date:** 2026-06-24
+- **Skill ID:** ai103-search-rag
+- **Question ID:** Q-20260624-001
+- **Question summary:** Difference between keyword and vector search in Azure AI Search and when to combine them.
+- **Learner answer summary:** Correct distinction; concrete hybrid config added after repair question.
+- **Verdict:** partial -> correct after repair
+- **Explanation:** Initial answer was conceptually right but lacked Azure-specific detail. Repair question demonstrated ability to describe a hybrid retrieval pipeline.
+- **Confidence:** medium
+```
+
+### State update proposal
+
+Do not mark `ai103-search-rag` as `confirmed` after one question. The learner demonstrated understanding after a repair, which is good evidence but not mastery.
+
+Proposed updates:
+
+- `state/SKILL_MAP.yaml`:
+  - status: `practiced`
+  - readiness: 55
+  - confidence: `medium`
+  - evidence: add reference to the new evidence item
+  - next_validation_question: "Design a RAG flow with vector + keyword + semantic ranking and explain the tradeoff of each retrieval mode."
+
+- `state/STUDY_STATE.yaml`:
+  - active_focus.current_topic: "Azure AI Search and RAG"
+  - active_focus.reason: "One practiced skill; need a second varied question before confirming."
+  - active_focus.next_question: "Q-20260624-002"
+  - active_focus.blocking_confusions: []
+  - session_history: append the session summary
+
+- `state/SESSION_LOG.md`:
+  - append session entry with focus, questions, results, evidence, state changes
+
+- `state/NEXT_STUDY_ACTIONS.md`:
+  - current next action: "Answer Q-20260624-002 on Azure AI Search RAG design."
+
+- `state/STUDY_STATUS.md`:
+  - update quick summary: 0 confirmed, 1 practiced, 0 weak, etc.
+
+Wait for learner confirmation before writing changes.
+
+### What not to do
+
+- Do not mark the skill `confirmed` after one repair-assisted answer.
+- Do not set readiness to 80 or higher.
+- Do not leave `active_focus.next_question` pointing to the closed question.
+- Do not skip recording the initial partial answer.
+
 ## When you are unsure
 
 If the state files are missing, incomplete, or contradictory, initialize or repair them before proceeding. If the learner's goal is unclear, ask one clarifying question at a time. If you are unsure whether an answer is correct, say so and propose how to validate it.
