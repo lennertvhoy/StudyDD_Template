@@ -119,6 +119,8 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/agent_privacy_check.py` = practical pre-push privacy scan
 - `scripts/schedule_review.py` = deterministic review scheduling
 - `scripts/select_next_study_action.py` = time-aware review-first recommendation
+- `scripts/run_demo_replay.py` = deterministic public demo of one full learning loop
+- `scripts/test_demo_replay.py` = asserts the demo replay produces expected artifacts
 - `state/STUDYDD_TEMPLATE_VERSION.yaml` = template version and upgrade origin
 - `reviews/REVIEW_STATE.yaml` = machine-readable spaced-repetition state
 - `reviews/REVIEW_OVERRIDES.md` = override log for skipped due reviews
@@ -135,8 +137,9 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - **Privacy review** — follow `protocols/PRIVACY_REVIEW.md` and run `scripts/agent_privacy_check.py` before pushing a learner instance publicly.
 - **Wrong-repo recovery** — if path, remote, branch, or mode looks wrong, follow `protocols/WRONG_REPO_RECOVERY.md`.
 - **Study-loop smoke test** — `scripts/test_study_loop_smoke.py` proves one full question/grade/update cycle without corrupting state.
+- **Public demo replay** — `scripts/run_demo_replay.py` and `docs/demo-walkthrough.md` demonstrate the StudyDD learning loop with fake, public-safe data. The replay creates a temporary instance and never touches private learner repos. `EXAMPLES/demo_ai_search_exam/` shows the resulting static fixture.
 - **Spaced repetition** — `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, `scripts/select_next_study_action.py`, `reviews/REVIEW_STATE.yaml`, and `reviews/REVIEW_OVERRIDES.md` make time-aware review-first behavior explicit and overrideable.
-- **CI validation** — `.github/workflows/validate.yml` runs the validator and smoke tests on every push and pull request.
+- **CI validation** — `.github/workflows/validate.yml` runs the validator, smoke tests, and demo replay test on every push and pull request.
 
 ## Core Rules
 

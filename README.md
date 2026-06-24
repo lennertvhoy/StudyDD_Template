@@ -219,6 +219,23 @@ state remains honest.
 See `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, and
 `scripts/select_next_study_action.py`.
 
+## Five-minute demo
+
+Run the public demo replay to see the full StudyDD learning loop in under a
+minute:
+
+```bash
+python3 scripts/run_demo_replay.py
+```
+
+The replay creates a temporary learner instance, asks one fake question, grades
+the answer honestly, writes evidence, schedules a review, demonstrates
+review-first selection, records an override, and validates the result.
+
+For a walkthrough meant for students, teachers, and LinkedIn viewers, see
+`docs/demo-walkthrough.md`. The final demo state is also available as a static
+fixture in `EXAMPLES/demo_ai_search_exam/`.
+
 ## Future Add-Ons
 
 These are intentionally backlog items, not part of the core slice:
@@ -232,6 +249,6 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.6 — spaced-repetition-first tutoring: time-aware review state,
-`schedule_review.py`, `select_next_study_action.py`, override logging, and
-validator support, on top of the v0.5 lifecycle hardening.
+v0.7 — public demo replay: `run_demo_replay.py`, `test_demo_replay.py`,
+`docs/demo-walkthrough.md`, and the `EXAMPLES/demo_ai_search_exam/` fixture,
+plus the v0.6 spaced-repetition-first tutoring stack.

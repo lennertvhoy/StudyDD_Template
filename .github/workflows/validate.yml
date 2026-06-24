@@ -33,5 +33,8 @@ jobs:
       - name: Run study-loop smoke test
         run: python3 scripts/test_study_loop_smoke.py
 
+      - name: Run demo replay test
+        run: python3 scripts/test_demo_replay.py
+
       - name: Check whitespace
         run: git diff --check
