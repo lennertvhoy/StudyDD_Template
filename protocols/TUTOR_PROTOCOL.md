@@ -86,7 +86,6 @@ After every question and at the end of every session, propose updates:
 - add or update skill entries in `state/SKILL_MAP.yaml`
 - append evidence to `state/EVIDENCE_LOG.md`
 - append session history to `sessions/SESSION_LOG.md`
-- add SkillSignal packets to `sessions/SKILLSIGNAL_PACKETS.md` when useful
 - update `state/STUDY_STATE.yaml`
 - update `state/STUDY_STATUS.md`
 - add due review items to `reviews/REVIEW_QUEUE.md`

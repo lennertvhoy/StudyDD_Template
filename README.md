@@ -43,7 +43,7 @@ There is no architecture menu in the core template. The default path is intentio
 - `state/` — current learner truth
 - `targets/` — one folder per study, certification, interview, or skill target
 - `reviews/` — spaced repetition queues
-- `sessions/` — tutor session logs and SkillSignal update packets
+- `sessions/` — tutor session logs and update history
 - `sources/` — trusted source tracking
 - `scripts/check_studydd.py` — repo sanity gate
 - `NEXT_ACTIONS.md` — the single next best study action
@@ -81,7 +81,6 @@ The agent will read `AGENTS.md`, inspect the current state, initialize the learn
 - `targets/` — target-specific files
 - `reviews/REVIEW_QUEUE.md` — spaced repetition queue
 - `sessions/SESSION_LOG.md` — session history
-- `sessions/SKILLSIGNAL_PACKETS.md` — proposed skill updates
 - `sources/SOURCE_INDEX.md` — trusted source registry
 - `NEXT_ACTIONS.md` — immediate next step
 
