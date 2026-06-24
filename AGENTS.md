@@ -125,6 +125,8 @@ Before every StudyDD session, read:
 45. `protocols/QUESTION_QUALITY_GOVERNOR.md`
 46. `protocols/LEARNER_ADAPTATION_POLICY.md`
 47. `protocols/LEARNER_FEEDBACK_POLICY.md`
+48. `state/LEARNER_PROFILE.yaml`
+49. `sources/SOURCE_STATE.yaml`
 
 Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
