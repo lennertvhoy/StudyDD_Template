@@ -1,0 +1,44 @@
+---
+# StudyDD performance budget.
+#
+# Defines how much state an agent may load and write in each execution mode.
+# This keeps StudyDD fast during real tutoring sessions while preserving
+# full auditability on demand.
+
+budget_version: "1.0"
+last_updated: "2026-06-24"
+
+budgets:
+  fast_path:
+    max_files_loaded: 14
+    max_raw_log_files_loaded: 0
+    max_state_files_written: 4
+    require_full_validation: false
+  session_boundary:
+    max_files_loaded: 20
+    max_raw_log_files_loaded: 2
+    max_state_files_written: 8
+    require_full_validation: true
+  deep_audit:
+    max_files_loaded: null
+    max_raw_log_files_loaded: null
+    max_state_files_written: null
+    require_full_validation: true
+
+rules:
+  ordinary_ask_question:
+    mode: fast_path
+  ordinary_grade_answer:
+    mode: fast_path
+  ordinary_schedule_review:
+    mode: fast_path
+  start_session:
+    mode: session_boundary
+  close_session:
+    mode: session_boundary
+  audit:
+    mode: deep_audit
+  repair:
+    mode: deep_audit
+  upgrade_instance:
+    mode: deep_audit

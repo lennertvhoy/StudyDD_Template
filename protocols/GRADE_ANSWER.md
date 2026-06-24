@@ -2,6 +2,8 @@
 
 > **Agent action.** Grade the learner's answer against the private answer key, guided by the active study skill.
 
+This is a **fast-path** operation. Load only the active question, rubric, learner answer, and relevant skill evidence.
+
 ## Verdicts
 
 - **correct** — fully meets the answer key.
@@ -12,7 +14,13 @@
 
 ## Context loading
 
-Build the context pack with `--task grade_answer`. Include the active question, rubric, learner answer, relevant skill evidence from `state/EVIDENCE_INDEX.yaml`, and the active study skill. Open the exact previous answer in `state/EVIDENCE_LOG.md` only when needed.
+Build a minimal context pack:
+
+```bash
+python3 scripts/build_context_pack.py --task grade_answer --skill-id <skill_id> --active-question <question_id>
+```
+
+Include the active question, rubric, learner answer, relevant skill evidence from `state/EVIDENCE_INDEX.yaml`, and the active study skill. Open the exact previous answer in `state/EVIDENCE_LOG.md` only when needed.
 
 ## Grading Steps
 
@@ -51,3 +59,11 @@ If the answer is partial, incorrect, or unclear, ask one focused repair question
 - A partial or repaired answer stays conservative.
 - An incorrect answer marks the skill `weak` or `blocked`.
 - A single answer does not move any skill to `confirmed`.
+
+## Fast-path validation
+
+After updating state, run targeted validation:
+
+```bash
+python3 scripts/validate_touched_state.py --skill-id <skill_id> --evidence-id <evidence_id>
+```
