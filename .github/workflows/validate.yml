@@ -11,7 +11,11 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,59 +25,83 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install PyYAML
-        run: pip install pyyaml
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run environment check
+        run: python scripts/check_environment.py
+
+      - name: Run cross-platform path tests
+        run: python scripts/test_cross_platform_paths.py
 
       - name: Run validator
-        run: python3 scripts/check_studydd.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/check_studydd.py
 
       - name: Run instantiation smoke test
-        run: python3 scripts/test_instantiate_template.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_instantiate_template.py
 
       - name: Run study-loop smoke test
-        run: python3 scripts/test_study_loop_smoke.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_study_loop_smoke.py
 
       - name: Run demo replay test
-        run: python3 scripts/test_demo_replay.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_demo_replay.py
 
       - name: Run compact state test
-        run: python3 scripts/test_compact_state.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_compact_state.py
 
       - name: Run context pack test
-        run: python3 scripts/test_context_pack.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_context_pack.py
 
       - name: Run study skills test
-        run: python3 scripts/test_study_skills.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_study_skills.py
 
       - name: Run performance policy test
-        run: python3 scripts/test_performance_policy.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_performance_policy.py
 
       - name: Run targeted validator test
-        run: python3 scripts/test_validate_touched_state.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_validate_touched_state.py
 
       - name: Run source freshness test
-        run: python3 scripts/test_source_freshness.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_source_freshness.py
 
       - name: Run question quality test
-        run: python3 scripts/test_question_quality.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_question_quality.py
 
       - name: Run learner adaptation test
-        run: python3 scripts/test_learner_adaptation.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_learner_adaptation.py
 
       - name: Check source freshness for demo target
-        run: python3 scripts/check_source_freshness.py --target-id demo-ai-search-exam --now "2026-06-24T12:00:00+00:00"
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/check_source_freshness.py --target-id demo-ai-search-exam --now "2026-06-24T12:00:00+00:00"
 
       - name: Lint questions
-        run: python3 scripts/lint_questions.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/lint_questions.py
 
       - name: Run study adjustment demo
-        run: python3 scripts/suggest_study_adjustment.py --demo
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/suggest_study_adjustment.py --demo
 
       - name: Run learning activities test
-        run: python3 scripts/test_learning_activities.py
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_learning_activities.py
 
       - name: Run activity planner demo
-        run: python3 scripts/plan_learning_activity.py --demo
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/plan_learning_activity.py --demo
 
       - name: Check whitespace
+        if: matrix.os == 'ubuntu-latest'
         run: git diff --check

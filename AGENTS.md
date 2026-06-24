@@ -267,6 +267,15 @@ Do not expose raw tool outputs, internal reasoning, or meta-commentary to the le
 
 Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`.
 
+## Cross-Platform and Dependency Consent Rules
+
+- **Do not install dependencies without explicit user consent.** Always explain what will be installed and ask before running any install command.
+- **Prefer local virtual environments.** Create and activate a `.venv` before installing packages. Avoid global installs unless the learner explicitly asks and understands the change.
+- **Never use `sudo` or system package managers** (`apt`, `dnf`, `brew`, `choco`, etc.) unless the human explicitly asks and understands the change.
+- **Keep scripts cross-platform.** Write code that works on Linux, macOS, and Windows PowerShell.
+- **Avoid hardcoded machine paths.** Do not hardcode `/home/ff`, `/Users/<name>`, `C:\`, or any other machine-specific path.
+- **Use `pathlib` for paths.** Prefer `pathlib.Path` over string concatenation or `os.path` when building file paths.
+
 ## Learning Science as Agent Rules
 
 Encode these principles into every session:
@@ -459,6 +468,9 @@ At the end of every agent session, leave a concise handoff that includes:
 - Turning the public template into a personal study instance without explicit instruction.
 - Adding architecture menus or alternate workflows to the core template.
 - Mentioning or seeding private learner state from another repo.
+- Installing dependencies without explicit user consent.
+- Using `sudo`, `apt`, `dnf`, `brew`, `choco`, or other system package managers without explicit instruction.
+- Hardcoding machine-specific paths such as `/home/ff`, `/Users/<name>`, or `C:\`.
 - Editing `/home/ff/Study_Lenny` or any repo outside the current StudyDD root.
 
 ## Worked State-Update Example
