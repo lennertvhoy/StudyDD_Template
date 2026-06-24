@@ -1,0 +1,3 @@
+# Canonical source freshness registry.
+# Template mode keeps this empty; learner instances populate it.
+sources: []

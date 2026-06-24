@@ -1,0 +1,20 @@
+learner_preferences:
+  explanation_style: ""
+  question_style_preference: ""
+  desired_difficulty: ""
+  feedback_style: ""
+  session_length_preference_minutes: null
+  low_energy_mode_preference: ""
+  source_refresh_preference: "ask_when_needed"
+
+adaptation_state:
+  methods_tried: []
+  methods_that_helped: []
+  methods_that_failed: []
+  recurring_friction: []
+  last_feedback_prompt_at: ""
+  feedback_prompt_cooldown_days: 7
+
+control:
+  learner_overrides: []
+  agent_recommendations_declined: []
