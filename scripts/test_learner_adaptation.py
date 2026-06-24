@@ -239,7 +239,10 @@ def test_two_weak_evidence_items_produce_moderate_recommendation() -> None:
         write_evidence_log(tmp_root, items)
 
         result = run_script(tmp_root, "--now", "2026-06-24T12:00:00+00:00")
-        print("--- test_two_weak_evidence_items_produce_moderate_recommendation stdout ---")
+        print(
+            "--- test_two_weak_evidence_items_produce_moderate_recommendation "
+            "stdout ---"
+        )
         print(result.stdout)
         if result.stderr:
             print("stderr:", result.stderr)
@@ -343,7 +346,7 @@ def test_non_weak_verdicts_are_ignored() -> None:
 
 
 def test_all_weak_verdicts_are_counted() -> None:
-    for verdict in ("incorrect", "unclear", "wrong"):
+    for verdict in ("partial", "incorrect", "unclear", "wrong"):
         with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
             tmp_root = Path(tmp)
             write_review_state(tmp_root, [])
