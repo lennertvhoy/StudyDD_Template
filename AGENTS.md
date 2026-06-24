@@ -47,9 +47,10 @@ When the human asks for a StudyDD session, the agent must:
 3. **Read state files** — read every required state, protocol, and source file.
 4. **Identify active target** — read `state/STUDY_STATE.yaml` and `targets/README.md`.
 5. **Inspect active target files** — read `targets/<active>/TARGET.yaml` and any target notes.
-6. **Inspect review queue** — read `reviews/REVIEW_QUEUE.md` and count due items.
-7. **Inspect last session** — read `sessions/SESSION_LOG.md` and note the last focus and weak areas.
-8. **Choose one next study action** — use `protocols/SELECT_NEXT_ACTION.md`.
+6. **Inspect review queue** — read `reviews/REVIEW_QUEUE.md` and `reviews/REVIEW_STATE.yaml`, then count due/overdue items using `scripts/select_next_study_action.py`.
+7. **Recommend review first** — if reviews are due or overdue, recommend them before new material. Record any override in `reviews/REVIEW_OVERRIDES.md`.
+8. **Inspect last session** — read `sessions/SESSION_LOG.md` and note the last focus and weak areas.
+9. **Choose one next study action** — use `protocols/SELECT_NEXT_ACTION.md`.
 9. **Ask exactly one question** — use `protocols/ASK_QUESTION.md` and `protocols/QUESTION_QUALITY.md`.
 10. **Wait for the learner's answer** — do not ask another question first.
 11. **Grade the answer** — use `protocols/GRADE_ANSWER.md` and `protocols/MISTAKE_TAXONOMY.md`.
@@ -83,20 +84,21 @@ Before every StudyDD session, read:
 16. `protocols/GIT_PROVENANCE.md`
 17. `protocols/PRIVACY_REVIEW.md`
 18. `protocols/WRONG_REPO_RECOVERY.md`
-19. `protocols/TUTOR_PROTOCOL.md`
-20. `protocols/SESSION_TEMPLATE.md`
-21. `protocols/START_SESSION.md`
-22. `protocols/SELECT_NEXT_ACTION.md`
-23. `protocols/ASK_QUESTION.md`
-24. `protocols/GRADE_ANSWER.md`
-25. `protocols/UPDATE_STATE.md`
-26. `protocols/SCHEDULE_REVIEW.md`
-27. `protocols/CLOSE_SESSION.md`
-28. `protocols/SOURCE_TRUST.md`
-29. `protocols/READINESS_POLICY.md`
-30. `protocols/QUESTION_QUALITY.md`
-31. `protocols/MISTAKE_TAXONOMY.md`
-32. `protocols/LOW_ENERGY_MODE.md`
+19. `protocols/SPACED_REPETITION_POLICY.md`
+20. `protocols/TUTOR_PROTOCOL.md`
+21. `protocols/SESSION_TEMPLATE.md`
+22. `protocols/START_SESSION.md`
+23. `protocols/SELECT_NEXT_ACTION.md`
+24. `protocols/ASK_QUESTION.md`
+25. `protocols/GRADE_ANSWER.md`
+26. `protocols/UPDATE_STATE.md`
+27. `protocols/SCHEDULE_REVIEW.md`
+28. `protocols/CLOSE_SESSION.md`
+29. `protocols/SOURCE_TRUST.md`
+30. `protocols/READINESS_POLICY.md`
+31. `protocols/QUESTION_QUALITY.md`
+32. `protocols/MISTAKE_TAXONOMY.md`
+33. `protocols/LOW_ENERGY_MODE.md`
 
 Only then propose or execute a study action.
 
@@ -115,7 +117,11 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/agent_evidence_check.py` = evidence reference sanity
 - `scripts/create_instance.py` = deterministic learner-instance creation
 - `scripts/agent_privacy_check.py` = practical pre-push privacy scan
+- `scripts/schedule_review.py` = deterministic review scheduling
+- `scripts/select_next_study_action.py` = time-aware review-first recommendation
 - `state/STUDYDD_TEMPLATE_VERSION.yaml` = template version and upgrade origin
+- `reviews/REVIEW_STATE.yaml` = machine-readable spaced-repetition state
+- `reviews/REVIEW_OVERRIDES.md` = override log for skipped due reviews
 - `NEXT_ACTIONS.md` = the single next best study action
 - `AGENTS.md` = how coding and tutor agents must behave
 - `protocols/` = actionable operating rules for agents
@@ -129,6 +135,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - **Privacy review** — follow `protocols/PRIVACY_REVIEW.md` and run `scripts/agent_privacy_check.py` before pushing a learner instance publicly.
 - **Wrong-repo recovery** — if path, remote, branch, or mode looks wrong, follow `protocols/WRONG_REPO_RECOVERY.md`.
 - **Study-loop smoke test** — `scripts/test_study_loop_smoke.py` proves one full question/grade/update cycle without corrupting state.
+- **Spaced repetition** — `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, `scripts/select_next_study_action.py`, `reviews/REVIEW_STATE.yaml`, and `reviews/REVIEW_OVERRIDES.md` make time-aware review-first behavior explicit and overrideable.
 - **CI validation** — `.github/workflows/validate.yml` runs the validator and smoke tests on every push and pull request.
 
 ## Core Rules
@@ -285,7 +292,9 @@ Each review item supports:
 - mistake type
 - review mode: recall, scenario, explain, troubleshoot, choose-best
 
-See `protocols/SCHEDULE_REVIEW.md`.
+Machine-readable state lives in `reviews/REVIEW_STATE.yaml`. Human-readable queue lives in `reviews/REVIEW_QUEUE.md`. Overrides live in `reviews/REVIEW_OVERRIDES.md`.
+
+See `protocols/SCHEDULE_REVIEW.md` and `protocols/SPACED_REPETITION_POLICY.md`.
 
 ## Mistake Taxonomy
 

@@ -1,0 +1,30 @@
+---
+review_items: []
+
+# Machine-readable review state for StudyDD.
+#
+# This file is the reliable agent/validator surface. Keep it in sync with the
+# human-readable `reviews/REVIEW_QUEUE.md` and `reviews/REVIEW_OVERRIDES.md`.
+#
+# Schema:
+# - id: rev_001
+#   skill_id: skill_example
+#   evidence_id: ev_001
+#   target_id: target_example
+#   due_at: "2026-06-25T09:00:00+02:00"
+#   last_reviewed_at: "2026-06-24T09:00:00+02:00"
+#   interval_days: 1
+#   stability: null
+#   difficulty: null
+#   lapses: 0
+#   priority: normal
+#   status: scheduled
+#   source: "missed_question"
+#   override_count: 0
+#
+# Status values:
+#   scheduled  - review planned but not yet due
+#   due        - review is due today
+#   overdue    - review past due_at
+#   completed  - reviewed successfully
+#   suspended  - paused (e.g., blocked prerequisite)

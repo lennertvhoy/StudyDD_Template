@@ -11,9 +11,10 @@ Run a realistic exam-style drill inside StudyDD.
 ## Setup
 
 1. Read all files listed in `AGENTS.md` "Required First Actions".
-2. Select a balanced set of questions covering weak areas, practiced areas, pending skills, and confirmed strengths.
-3. Use `protocols/QUESTION_QUALITY.md` to design each question.
-4. Simulate exam conditions: clear wording, no hints unless asked.
+2. Run or perform the equivalent of `scripts/select_next_study_action.py`. If reviews are due or overdue, recommend handling them first; the learner may override for the drill.
+3. Select a balanced set of questions covering weak areas, practiced areas, pending skills, and confirmed strengths.
+4. Use `protocols/QUESTION_QUALITY.md` to design each question.
+5. Simulate exam conditions: clear wording, no hints unless asked.
 
 ## During The Drill
 
