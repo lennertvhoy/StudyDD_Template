@@ -77,6 +77,8 @@ These files are written for you:
 - `docs/agent-native-quickstart.md` — fastest path to your first session
 - `docs/how-to-use-with-codex.md`
 - `docs/how-to-use-with-kimi-code.md`
+- `docs/how-to-use-with-claude-code.md`
+- `docs/how-to-use-with-cursor.md`
 - `docs/studydd-principles.md` — the ideas behind StudyDD
 - `docs/inspect-and-override-state.md` — how to audit or correct the agent
 
@@ -97,7 +99,8 @@ These files are the transparent project memory the agent reads and updates:
 - `protocols/TUTOR_PROTOCOL.md` — ask/grade/repair rules
 - `protocols/SESSION_TEMPLATE.md` — session structure
 - `PROMPTS/*.md` — copy-paste prompts for agents and tutors
-- `EXAMPLES/ai-103-example/` — a concrete worked example
+- `PROMPTS/interview_prep_prompt.md` — interview-specific rehearsal
+- `EXAMPLES/ai-103-example/` — a concrete certification example
 
 You are always allowed to inspect, edit, or override these files. They are plain Markdown and YAML. The default workflow, however, is that the agent maintains them for you.
 
@@ -121,9 +124,11 @@ Nothing is hidden. If you want to know why the agent thinks you are weak on a to
 
 StudyDD applies the same idea to education. Your study journey becomes a project the agent can maintain, audit, improve, and hand off between human learner, tutor AI, coding agent, teacher, coach, or mentor.
 
-## Example
+## Examples
 
-See `EXAMPLES/ai-103-example/` for a realistic Microsoft AI-103 study state. It shows how skills, evidence, session history, and next actions look once the agent has maintained them for a few sessions.
+- `EXAMPLES/ai-103-example/` — a realistic Microsoft AI-103 certification study state.
+
+Both show how skills, evidence, session history, and next actions look once the agent has maintained them for a few sessions.
 
 ## License
 
@@ -131,4 +136,4 @@ This project uses a custom permissive license. You may use it freely for study a
 
 ## Status
 
-v0.1 — agent-native template with AI-103 example.
+v0.2 — agent-native template with AI-103 and product scenario practice examples, expanded agent guidance, and stronger validation.
