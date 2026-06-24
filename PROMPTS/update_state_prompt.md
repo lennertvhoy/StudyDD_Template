@@ -2,6 +2,12 @@
 
 Apply a StudyDD state update based on new evidence or a completed session.
 
+## Path Verification
+
+1. Run `pwd` and `git rev-parse --show-toplevel`. Confirm the repo root.
+2. Run `git remote -v` and confirm it matches the learner's StudyDD repo.
+3. Run `python3 scripts/check_studydd.py`.
+
 ## Inputs
 
 Provide or infer:
@@ -12,6 +18,7 @@ Provide or infer:
 - questions asked
 - learner answers
 - verdicts
+- mistake tags
 - weak areas identified
 - review items due or created
 - human overrides, if any
@@ -42,5 +49,6 @@ Provide or infer:
 - Never inflate readiness.
 - Only update a skill status to `confirmed` if there is strong or varied evidence.
 - Record human overrides explicitly.
+- Tag mistakes using `protocols/MISTAKE_TAXONOMY.md`.
 - Keep files human-readable.
 - Propose changes before writing them unless auto-updates are authorized.

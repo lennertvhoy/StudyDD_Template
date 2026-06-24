@@ -28,8 +28,10 @@
 
 ## Quick summary
 
-- Confirmed strengths: 2
-- Weak areas: 3
+- Confirmed strengths: 1
+- Practiced skills: 2
+- Weak areas: 2
 - Pending validation: 2
+- Review items due: 2
 - Last session: 2026-06-23 — behavioral mock interview
 - Next action: Complete Q-20260624-PE-003 system design question, then rehearse a metrics-driven behavioral answer.

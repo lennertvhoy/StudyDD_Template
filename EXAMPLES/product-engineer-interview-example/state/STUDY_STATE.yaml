@@ -29,8 +29,8 @@ skills:
     readiness: 60
     confidence: "medium"
     evidence:
-      - "E-20260623-PE-001: strong ownership story with metric"
-      - "E-20260623-PE-002: vague conflict resolution story; missing outcome"
+      - "E-20260623-PE-001"
+      - "E-20260623-PE-002"
     next_validation_question: "Tell me about a time you had to say no to a stakeholder."
 
   - id: "pe-system-design"
@@ -39,7 +39,7 @@ skills:
     readiness: 30
     confidence: "low"
     evidence:
-      - "E-20260622-PE-001: described API structure but could not justify database choice"
+      - "E-20260622-PE-001"
     next_validation_question: "Design a notification system and justify consistency vs availability tradeoffs."
 
   - id: "pe-product-sense"
@@ -48,8 +48,8 @@ skills:
     readiness: 75
     confidence: "high"
     evidence:
-      - "E-20260621-PE-001: correctly prioritized features by user impact and effort"
-      - "E-20260621-PE-002: framed tradeoff between churn reduction and activation"
+      - "E-20260621-PE-001"
+      - "E-20260621-PE-002"
     next_validation_question: "How would you decide between building a feature in-house vs buying a vendor solution?"
 
   - id: "pe-coding"
@@ -66,7 +66,7 @@ skills:
     readiness: 55
     confidence: "medium"
     evidence:
-      - "E-20260620-PE-001: correctly defined success metric for a feature launch"
+      - "E-20260620-PE-001"
     next_validation_question: "Design an A/B test for a pricing page change."
 
   - id: "pe-collaboration"
@@ -75,7 +75,7 @@ skills:
     readiness: 40
     confidence: "low"
     evidence:
-      - "E-20260622-PE-002: answer focused only on engineering; ignored design and PM partners"
+      - "E-20260622-PE-002"
     next_validation_question: "Describe how you would align engineering, design, and PM on a controversial decision."
 
   - id: "pe-culture-fit"
@@ -95,7 +95,7 @@ active_focus:
 
 review:
   queue: "reviews/REVIEW_QUEUE.md"
-  due_count: 3
+  due_count: 2
 
 sources:
   index: "sources/SOURCE_INDEX.md"
@@ -128,8 +128,9 @@ rules:
   one_question_at_a_time: true
   evidence_required_for_mastery: true
   corrections_must_update_state: true
+  public_template_must_stay_generic: true
 
 metadata:
-  template_version: "0.3.0"
+  template_version: "0.4.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"

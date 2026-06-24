@@ -1,6 +1,6 @@
-# Exam Drill Prompt
+# Run A Checkpoint Session
 
-Run a realistic exam-style drill inside StudyDD.
+Use this prompt for mixed-review or exam-style checkpoint sessions.
 
 ## Path Verification
 
@@ -11,11 +11,16 @@ Run a realistic exam-style drill inside StudyDD.
 ## Setup
 
 1. Read all files listed in `AGENTS.md` "Required First Actions".
-2. Select a balanced set of questions covering weak areas, practiced areas, pending skills, and confirmed strengths.
+2. Select a balanced mix covering:
+   - weak areas
+   - practiced areas
+   - pending skills
+   - confirmed strengths
+   - due reviews
 3. Use `protocols/QUESTION_QUALITY.md` to design each question.
-4. Simulate exam conditions: clear wording, no hints unless asked.
+4. Prefer scenario, choose-best, and design questions over simple recall.
 
-## During The Drill
+## During The Checkpoint
 
 1. Ask one question at a time.
 2. Do not reveal the answer until the learner has responded.
@@ -30,9 +35,9 @@ Run a realistic exam-style drill inside StudyDD.
 - **incorrect** — does not meet the answer key
 - **unclear** — cannot be graded because the answer is ambiguous
 
-Be strict. Exam drills exist to find gaps, not to inflate readiness.
+Be strict. Checkpoints exist to find gaps, not to inflate readiness.
 
-## End Of Drill
+## End Of Checkpoint
 
 1. Report the score.
 2. Highlight weak areas that need more work.

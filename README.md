@@ -1,10 +1,12 @@
 # StudyDD_Template
 
-**One simple happy-path study system for coding agents.**
+**Repo-native study brain for coding agents.**
 
-StudyDD turns a plain repo directory into a personal study second brain. Give the repo to a coding agent, tell it who you are and what you want to learn, and it maintains your study library, tutor memory, readiness tracker, spaced-repetition queue, source registry, and next-action engine.
+StudyDD is not a human-facing app. It is a study brain operated by coding agents such as Codex, Kimi Code, Claude Code, or ChatGPT agents. The human says "Start a StudyDD session" and the agent runs the learning loop inside the repo.
 
-The files stay plain, inspectable, and editable. Your progress is never hidden inside an app database or chat history.
+Give the repo to a coding agent, tell it who you are and what you want to learn, and it maintains your study library, tutor memory, readiness tracker, spaced-repetition queue, source registry, and next-action engine in plain files.
+
+Your progress is never hidden inside an app database or chat history.
 
 ## The Promise
 
@@ -45,11 +47,14 @@ There is no architecture menu in the core template. The default path is intentio
 - `reviews/` — spaced repetition queues
 - `sessions/` — tutor session logs and update history
 - `sources/` — trusted source tracking
-- `scripts/check_studydd.py` — repo sanity gate
+- `scripts/check_studydd.py` — repo sanity and educational-drift gate
+- `scripts/agent_preflight.py` — quick agent orientation
+- `scripts/agent_consistency_check.py` — cross-file state consistency
+- `scripts/agent_evidence_check.py` — evidence reference sanity
 - `NEXT_ACTIONS.md` — the single next best study action
-- `AGENTS.md` — how coding and tutor agents must behave
-- `protocols/` — tutor and session rules
-- `PROMPTS/` — reusable prompts for coding agents and tutors
+- `AGENTS.md` — agent-operated learning loop contract
+- `protocols/` — actionable operating rules for agents
+- `PROMPTS/` — paste-ready prompts for coding agents
 - `EXAMPLES/` — reference states only, not defaults
 
 ## Quick Start
@@ -126,4 +131,4 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.3 — public template with one happy path, target/review/session/source surfaces, conservative readiness rules, and validation-backed agent workflow.
+v0.4 — agent-operated didactic engine: canonical agent lifecycle, operational protocols, evidence-gated readiness, question-quality gate, mistake taxonomy, review-queue semantics, low-energy/recovery modes, and agent-facing helper scripts.

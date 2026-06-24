@@ -12,6 +12,10 @@
   - E-20260623-001 — correct hybrid search explanation
   - E-20260623-002 — correct indexer pipeline mapping
   - E-20260623-003 — partial semantic ranking answer
+- **Mistake tags:**
+  - E-20260623-003: correct-concept-weak-implementation
+- **Reviews added:**
+  - R-20260624-AI103-003 — review semantic ranking knobs
 - **State changes:**
   - `ai103-search-rag` readiness 70 -> 80
 - **Next action proposed:** Drill semantic ranking knobs in the next session, then move to Foundry evaluations.
@@ -26,6 +30,12 @@
 - **Evidence added:**
   - E-20260622-001 — partial eval metrics answer
   - E-20260622-002 — incorrect agent tool-call answer
+- **Mistake tags:**
+  - E-20260622-001: correct-concept-weak-implementation
+  - E-20260622-002: service-boundary-confusion
+- **Reviews added:**
+  - R-20260624-AI103-001 — review evaluation flows
+  - R-20260624-AI103-002 — review agent tool-call orchestration
 - **State changes:**
   - `ai103-foundry-eval` marked weak
   - `ai103-agents` marked weak

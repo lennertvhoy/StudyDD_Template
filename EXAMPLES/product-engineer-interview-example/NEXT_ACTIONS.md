@@ -1,6 +1,6 @@
 # NEXT_ACTIONS — Product Engineer Interview Example
 
-> Example active queue for Sam's product engineer interview prep.
+> Example active queue for a product engineer interview prep.
 
 ## Current next action
 
