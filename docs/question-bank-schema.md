@@ -18,12 +18,19 @@ target_id: "<target_id>"
 skill_id: "<skill_id>"
 cognitive_level: "recall | apply | troubleshoot | choose-best | explain | design"
 difficulty: 1-5
-source_ref: "<source_id or URL>"
+# At least one source reference is required.
+# Use source_ids (preferred) tied to sources/SOURCE_STATE.yaml, or source_ref (legacy).
+source_ref: "<source_id or URL>"   # legacy, still accepted
+source_ids:
+  - "<source_id>"
 public_prompt: |
   The learner-facing question text.
   Do not include the answer key, rubric, or correct label here.
 private_answer_key: |
   The agent-only correct answer and reasoning.
+  # This field may be a plain string (legacy/simple) or a structured object with
+  # correct_answer, rationale, and source_support. The structured form is
+  # recommended for volatile/current topics.
 rubric:
   - "Required point 1"
   - "Required point 2"
@@ -69,6 +76,9 @@ private_answer_key:
       section: "Overview"
 
 # Internal quality gate record. The linter validates these values.
+# The top-level question file contains identifiers (id, target_id, skill_id, etc.);
+# the question_quality block records quality-specific metadata. The governor
+# describes a derived/flattened audit record.
 question_quality:
   cognitive_level: "recall | understand | apply | analyze | evaluate | create"
   question_type: "scenario | calculation | interpretation | troubleshooting | explanation | procedural"
@@ -76,7 +86,7 @@ question_quality:
   distractor_quality: "plausible"
   learner_fit: "appropriate"
   estimated_difficulty: "easy | medium | hard"
-  generated_from_memory_allowed: true | false   # derived/validated, not trusted
+  generated_from_memory_allowed: "true | false"   # derived/validated, not trusted
   quality_gate: "pass | warn | fail"
   quality_gate_reason: ""
   notes: ""
@@ -94,4 +104,5 @@ question_quality:
 
 - Existing question banks with only `source_ref` continue to validate.
 - For moderate, volatile, or live topics, `lint_questions.py` warns when only `source_ref` is used.
-- `source_freshness_status` and `generated_from_memory_allowed` are cached hints; the linter recomputes the canonical values from `sources/SOURCE_STATE.yaml`.
+- `source_freshness_status` and `generated_from_memory_allowed` are cached hints; the linter
+  recomputes the canonical values from `sources/SOURCE_STATE.yaml`.
