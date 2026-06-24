@@ -54,6 +54,7 @@ REQUIRED_STATE_FILES = [
     "state/STATE_MANIFEST.yaml",
     "state/PERFORMANCE_BUDGET.yaml",
     "state/LEARNER_PROFILE.yaml",
+    "state/ACTIVITY_STATE.yaml",
 ]
 
 REQUIRED_TARGET_FILES = [
@@ -77,6 +78,11 @@ REQUIRED_SOURCE_FILES = [
     "sources/README.md",
     "sources/SOURCE_INDEX.md",
     "sources/SOURCE_STATE.yaml",
+]
+
+REQUIRED_ACTIVITY_FILES = [
+    "activities/ACTIVITY_LOG.md",
+    "activities/ACTIVITY_TEMPLATES.yaml",
 ]
 
 REQUIRED_PROTOCOL_FILES = [
@@ -108,6 +114,12 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/QUESTION_QUALITY_GOVERNOR.md",
     "protocols/LEARNER_ADAPTATION_POLICY.md",
     "protocols/LEARNER_FEEDBACK_POLICY.md",
+    "protocols/LEARNING_ACTIVITY_POLICY.md",
+    "protocols/EVIDENCE_INTAKE_POLICY.md",
+    "protocols/EXTERNAL_RESOURCE_POLICY.md",
+    "protocols/VOICE_NOTE_REVIEW_POLICY.md",
+    "protocols/INTERVIEW_PREP_POLICY.md",
+    "protocols/PRESENTATION_PREP_POLICY.md",
 ]
 
 REQUIRED_PROMPT_FILES = [
@@ -148,6 +160,11 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/test_question_quality.py",
     "scripts/suggest_study_adjustment.py",
     "scripts/test_learner_adaptation.py",
+    "scripts/plan_learning_activity.py",
+    "scripts/record_activity_result.py",
+    "scripts/analyze_voice_note.py",
+    "scripts/analyze_presentation_rehearsal.py",
+    "scripts/test_learning_activities.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -202,6 +219,7 @@ REQUIRED_FILES = (
     + REQUIRED_REVIEW_FILES
     + REQUIRED_SESSION_FILES
     + REQUIRED_SOURCE_FILES
+    + REQUIRED_ACTIVITY_FILES
     + REQUIRED_PROTOCOL_FILES
     + REQUIRED_PROMPT_FILES
     + REQUIRED_SCRIPT_FILES
@@ -220,8 +238,10 @@ YAML_FILES = [
     "state/EVIDENCE_INDEX.yaml",
     "state/PERFORMANCE_BUDGET.yaml",
     "state/LEARNER_PROFILE.yaml",
+    "state/ACTIVITY_STATE.yaml",
     "sources/SOURCE_STATE.yaml",
     "reviews/REVIEW_STATE.yaml",
+    "activities/ACTIVITY_TEMPLATES.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
     "EXAMPLES/ai-103-example/targets/ai-103/TARGET.yaml",
@@ -1017,6 +1037,7 @@ def check_question_bank(yaml: object) -> list[str]:
 
 
 REVIEW_STATUSES = {"scheduled", "due", "overdue", "completed", "suspended"}
+ACTIVITY_STATUSES = {"proposed", "accepted", "modified", "overridden", "completed", "insufficient_evidence"}
 
 
 def _parse_iso_timestamp(value: str) -> datetime | None:
@@ -1121,6 +1142,149 @@ def check_review_state(yaml: object, warnings: list[str]) -> list[str]:
                 warnings.append(
                     f"Overdue review '{rid}' is not visible in reviews/REVIEW_QUEUE.md or NEXT_ACTIONS.md"
                 )
+
+    return errors
+
+
+def check_activity_state(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    activity_state_path = ROOT / "state" / "ACTIVITY_STATE.yaml"
+    if not activity_state_path.is_file():
+        errors.append("Missing state/ACTIVITY_STATE.yaml")
+        return errors
+
+    try:
+        data = yaml.safe_load(activity_state_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        errors.append(f"Could not parse state/ACTIVITY_STATE.yaml: {exc}")
+        return errors
+
+    active = data.get("active_activity") or {}
+    if active.get("id"):
+        if active.get("type") == "":
+            errors.append("Active activity has an id but no type")
+        if active.get("status") and active.get("status") not in ACTIVITY_STATUSES:
+            errors.append(
+                f"Active activity '{active.get('id')}' has invalid status {active.get('status')!r}; "
+                f"must be one of {sorted(ACTIVITY_STATUSES)}"
+            )
+
+    # In template mode, activity state must stay generic/empty.
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    try:
+        mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        mode_data = {}
+    if mode_data.get("mode") == "template":
+        if active.get("id"):
+            errors.append("Template mode should not have an active activity id")
+        recent = data.get("recent_activities") or []
+        if recent:
+            errors.append("Template mode should not have recent_activities entries")
+        prefs = data.get("activity_preferences") or {}
+        for key, value in prefs.items():
+            if isinstance(value, list) and value:
+                errors.append(
+                    f"Template mode: state/ACTIVITY_STATE.yaml activity_preferences.{key} must be empty"
+                )
+
+    return errors
+
+
+def check_activity_templates(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    templates_path = ROOT / "activities" / "ACTIVITY_TEMPLATES.yaml"
+    if not templates_path.is_file():
+        errors.append("Missing activities/ACTIVITY_TEMPLATES.yaml")
+        return errors
+
+    try:
+        data = yaml.safe_load(templates_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        errors.append(f"Could not parse activities/ACTIVITY_TEMPLATES.yaml: {exc}")
+        return errors
+
+    templates = data.get("templates") or []
+    if not isinstance(templates, list):
+        errors.append("activities/ACTIVITY_TEMPLATES.yaml 'templates' must be a list")
+        return errors
+
+    activity_types = data.get("activity_types") or {}
+    known_types = set(activity_types.keys())
+
+    for template in templates:
+        if not isinstance(template, dict):
+            errors.append("activities/ACTIVITY_TEMPLATES.yaml contains a non-mapping template entry")
+            continue
+        tid = template.get("id") or "<unknown>"
+        ttype = template.get("activity_type")
+        if not ttype:
+            errors.append(f"Activity template '{tid}' missing 'activity_type'")
+        elif ttype not in known_types:
+            errors.append(f"Activity template '{tid}' has unknown activity_type '{ttype}'")
+        expected = template.get("expected_evidence")
+        if not isinstance(expected, list) or not expected:
+            errors.append(f"Activity template '{tid}' missing or empty 'expected_evidence'")
+
+    return errors
+
+
+def check_activity_log() -> list[str]:
+    errors: list[str] = []
+    log_path = ROOT / "activities" / "ACTIVITY_LOG.md"
+    if not log_path.is_file():
+        errors.append("Missing activities/ACTIVITY_LOG.md")
+        return errors
+
+    text = log_path.read_text(encoding="utf-8")
+    for section in ("## Purpose", "## Activity entry format", "## Activities"):
+        if section not in text:
+            errors.append(f"activities/ACTIVITY_LOG.md missing section '{section}'")
+    return errors
+
+
+def check_activity_state_target_skill(yaml: object) -> list[str]:
+    """Check that learner-instance activity entries reference valid target/skill."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    activity_state_path = ROOT / "state" / "ACTIVITY_STATE.yaml"
+    if not activity_state_path.is_file():
+        return errors
+
+    try:
+        data = yaml.safe_load(activity_state_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return errors
+
+    skill_map = _load_yaml(ROOT / "state" / "SKILL_MAP.yaml", yaml)
+    skill_ids = {s.get("id") for s in skill_map.get("skills") or [] if s.get("id")}
+
+    recent = data.get("recent_activities") or []
+    if not isinstance(recent, list):
+        return errors
+
+    for activity in recent:
+        if not isinstance(activity, dict):
+            continue
+        target_id = activity.get("target_id")
+        skill_id = activity.get("skill_id")
+        activity_id = activity.get("id") or "<unknown>"
+        if target_id and not (ROOT / "targets" / target_id / "TARGET.yaml").is_file():
+            errors.append(
+                f"Recent activity '{activity_id}' references unknown target '{target_id}'"
+            )
+        if skill_id and skill_id not in skill_ids:
+            errors.append(
+                f"Recent activity '{activity_id}' references unknown skill '{skill_id}'"
+            )
 
     return errors
 
@@ -1777,6 +1941,10 @@ def main() -> int:
         errors.extend(check_answer_key_leakage())
         errors.extend(check_question_bank(yaml))
         errors.extend(check_review_state(yaml, warnings))
+        errors.extend(check_activity_state(yaml))
+        errors.extend(check_activity_templates(yaml))
+        errors.extend(check_activity_log())
+        errors.extend(check_activity_state_target_skill(yaml))
         errors.extend(check_state_manifest(yaml))
         errors.extend(check_context_pack_gitignored())
         errors.extend(check_state_cache_gitignored())

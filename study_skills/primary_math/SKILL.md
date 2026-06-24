@@ -84,7 +84,18 @@ Use review modes: recall, apply, explain-the-steps.
 
 Ask a slightly varied problem for the current skill, then ask the learner to explain each step in their own words.
 
+## Paper and photo evidence
+
+Primary math learners often produce work on paper. Use these activity types:
+
+- `paper_exercise` — solve problems on paper and upload a photo or type the answer.
+- `explain_back` — explain the steps in their own words.
+- `diagram_or_whiteboard` — draw a number line, model, or picture to show thinking.
+- `external_platform_exercise` — practice on a trusted platform and upload the score or notes.
+
+Distinguish arithmetic slips from conceptual misunderstanding in the evidence record. A photo of work can be stronger evidence than a typed final answer because it shows process. Use `scripts/record_activity_result.py` to log the result.
+
 ## Source freshness and learner adaptation
 
 - Math fundamentals are stable. Source freshness is rarely needed unless tied to a specific curriculum standard.
-- Use paper exercises and mistake tags to adapt the next activity. Never inflate readiness after easy questions.
+- Use paper exercises, photos, and mistake tags to adapt the next activity. Never inflate readiness after easy questions.

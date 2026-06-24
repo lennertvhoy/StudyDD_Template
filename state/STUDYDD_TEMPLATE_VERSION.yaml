@@ -17,7 +17,7 @@
 # Do not edit template_version manually in a learner instance. Use the upgrade
 # protocol in protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md.
 
-template_version: "0.8.1"
+template_version: "0.9.0"
 template_commit: ""
 instance_created_from_template_version: ""
 instance_created_from_template_commit: ""

@@ -94,7 +94,18 @@ Use review modes: recall, sentence production, comprehension.
 
 Review five due vocabulary items with active recall, then ask the learner to produce one original sentence using a new grammar pattern.
 
+## Production and voice activities
+
+Language learning requires production evidence, not just recognition:
+
+- `voice_note_review` — record or transcribe a spoken answer for structure, correctness, and target-fit review (see `protocols/VOICE_NOTE_REVIEW_POLICY.md`).
+- `explain_back` — explain a grammar point or vocabulary distinction in the target language.
+- `external_platform_exercise` — complete vocabulary/grammar drills and upload the score or notes.
+- `writing_or_essay_review` — submit a short written production for feedback.
+
+Use `scripts/analyze_voice_note.py` for transcript-based review. Do not infer emotion or charisma. Readiness upgrades require production evidence; recognition-only drills are acknowledged but do not prove mastery.
+
 ## Source freshness and learner adaptation
 
 - Language content is generally stable, but exam objectives or proficiency standards can change. Use `source_ids` for official curriculum objectives.
-- Adapt exercise types (listening, speaking, writing, grammar) from evidence of weak areas.
+- Adapt exercise types and activity types (voice, writing, external drill) from evidence of weak areas.

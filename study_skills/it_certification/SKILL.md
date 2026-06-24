@@ -89,6 +89,18 @@ Vary review modes: scenario, choose-best, troubleshoot, explain.
 
 Ask a choose-best scenario that forces a tradeoff between two similar services, then grade and explain the distractors.
 
+## Certification activities
+
+IT certification study can use varied activities to build objective-aligned evidence:
+
+- `retrieval_question` — one scenario or choose-best question.
+- `video_or_reading_task` — study an official doc or video and submit a summary or check-question answer.
+- `practical_lab` — run a command or configuration and upload command output or screenshots.
+- `external_platform_exercise` — complete practice questions on a trusted platform and upload the score or notes.
+- `explain_back` — explain why a correct answer is correct and why distractors are wrong.
+
+Use `scripts/record_activity_result.py` for lab, platform, or written submissions. Official reading tasks are completion evidence until a follow-up question proves understanding. Readiness upgrades still require objective-aligned correctness.
+
 ## Source freshness for volatile certification topics
 
 For volatile certification topics (new services, retiring features, changed limits, or updated exam objectives), run `scripts/check_source_freshness.py` and consult `sources/SOURCE_STATE.yaml` before generating authoritative questions. Prefer official vendor documentation and high-authority sources; do not invent current product names, pricing, portal labels, or exam details from memory.

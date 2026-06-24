@@ -1,0 +1,45 @@
+---
+# StudyDD activity orchestrator state.
+#
+# Tracks the active learning activity and recent activity history.
+# Template mode keeps this generic/empty; learner instances populate it.
+
+metadata:
+  template_version: "0.9.0"
+  last_updated: "2026-06-24"
+  updated_by: "coding-agent"
+
+active_activity:
+  id: ""
+  type: ""
+  target_id: ""
+  skill_id: ""
+  assigned_at: ""
+  due_at: ""
+  status: ""
+  reason: ""
+  expected_evidence: []
+  learner_override_allowed: true
+
+recent_activities: []
+
+activity_preferences:
+  learner_likes: []
+  learner_dislikes: []
+  effective_methods: []
+  ineffective_methods: []
+
+interview_prep_state:
+  target_role: ""
+  company: ""
+  story_bank: []
+  weak_answer_patterns: []
+  practice_modes: []
+
+presentation_prep_state:
+  presentation_goal: ""
+  audience: ""
+  target_duration_minutes: null
+  outline: []
+  rehearsal_history: []
+  weak_patterns: []

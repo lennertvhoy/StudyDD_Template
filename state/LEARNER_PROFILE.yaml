@@ -3,7 +3,7 @@
 # Template mode keeps this empty/generic; learner instances populate it.
 
 metadata:
-  template_version: "0.8.1"
+  template_version: "0.9.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"
 

@@ -77,9 +77,13 @@ Use `scripts/schedule_review.py` for weak, partial, or repaired answers. First i
 
 Review the weakest skill before introducing a new topic; ask one varied question to gather stronger evidence.
 
+## Activity orchestration fallback
+
+When no specialized skill applies, the agent still uses `protocols/LEARNING_ACTIVITY_POLICY.md` to choose the best next move. A question is the default fallback, but the agent may assign a paper exercise, explain-back task, video, external resource, or upload-and-review task when evidence shows that format is better. Always state expected evidence and end with: `You can accept, modify, or override this.`
+
 ## Source freshness and learner adaptation
 
 - This generic skill covers stable knowledge by default. For moderate/volatile/live topics, use `scripts/check_source_freshness.py` and `sources/SOURCE_STATE.yaml` before authoritative questions.
 - Prefer `authoritative_current` questions only when fresh official or high-authority sources exist.
 - For stable concepts, `conceptual_practice` is acceptable without source refresh.
-- Adapt question style from learner evidence, not preference alone.
+- Adapt question style and activity type from learner evidence, not preference alone.
