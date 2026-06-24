@@ -976,3 +976,9 @@ Expected: clean worktree, latest commit on main.
 ## Placeholder scan
 
 No TBD, TODO, or vague steps remain. Every task names exact files and shows concrete code or commands.
+
+## Backlog note: cross-platform setup and dependency consent
+
+This slice does not implement cross-platform setup. Track it as the next platform-hardening slice after Learning Activity Orchestrator. Add the following note to the final handoff:
+
+> Cross-platform dependency setup and consent is now tracked as the next platform-hardening concern; it was not implemented in this slice to keep scope focused. The next platform slice should add `requirements.txt`, `scripts/setup_studydd.py`, `docs/setup.md`, and CI coverage for Ubuntu/Windows/macOS, with explicit consent before installing dependencies.
