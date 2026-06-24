@@ -1,4 +1,4 @@
-# LEARNER_FEEDBACK_POLICY.md — Learner Feedback Rules
+# LEARNER_FEEDBACK_POLICY — Learner Feedback Rules
 
 This policy defines when and how StudyDD asks the learner for feedback about the study process itself.
 

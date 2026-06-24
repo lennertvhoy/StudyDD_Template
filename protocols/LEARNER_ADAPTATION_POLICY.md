@@ -1,4 +1,4 @@
-# LEARNER_ADAPTATION_POLICY.md — Learner Adaptation Rules
+# LEARNER_ADAPTATION_POLICY — Learner Adaptation Rules
 
 This policy governs how StudyDD adapts its tutoring approach to the learner without manipulating them.
 
