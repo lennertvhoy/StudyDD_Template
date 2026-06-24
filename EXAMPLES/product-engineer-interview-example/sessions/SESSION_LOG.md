@@ -12,8 +12,17 @@
   - E-20260623-PE-002 — vague conflict resolution story
 - **Mistake tags:**
   - E-20260623-PE-002: vague-answer
-- **Option randomization example:**
-  - Q-20260623-PE-001: final order B, D, A, C; correct label A
+- **Option randomization example (recorded after grading):**
+  - Q-20260623-PE-001:
+    - Internal option IDs before shuffle:
+      - opt_1 = Clarify the goal, explain the tradeoff, and propose a measurable experiment [correct]
+      - opt_2 = Escalate to the CEO immediately [distractor]
+      - opt_3 = Build what the loudest stakeholder asks for [distractor]
+      - opt_4 = Delay the decision until consensus emerges [distractor]
+    - Final visible order: B = opt_2, D = opt_3, A = opt_1, C = opt_4
+    - Correct visible label: A
+    - Learner answer: A
+    - Grading result: correct
 - **Reviews added:**
   - R-20260624-PE-003 — review conflict resolution with metric
 - **State changes:**
