@@ -160,6 +160,54 @@ Readiness is earned through demonstrated answers, not through source coverage or
 
 Examples show how maintained state can look after sessions. They are not the root template's default learner or target.
 
+## Create A Learner Instance With The Script
+
+From the template repo:
+
+```bash
+python3 scripts/create_instance.py \
+  --target ../Study_MyTarget \
+  --remote https://github.com/example/Study_MyTarget.git
+```
+
+Then open the new instance in your coding agent and paste the contents of
+`PROMPTS/coding_agent_start_prompt.md`.
+
+The script leaves the instance in `bootstrap` mode, detaches it from the
+`StudyDD_Template` Git history, records the template origin in
+`state/STUDYDD_TEMPLATE_VERSION.yaml`, and runs the validator before handing
+off.
+
+## Maintaining Learner Instances After Template Updates
+
+When the public template improves, apply generic upgrades safely:
+
+1. Read `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`.
+2. Paste `PROMPTS/upgrade_instance_from_template.md` into the agent.
+3. Never overwrite learner state files automatically.
+
+## Public/Private Safety
+
+- The `StudyDD_Template` repo itself must stay generic and public-safe.
+- Learner instances may contain private data; run `scripts/agent_privacy_check.py`
+  before pushing a learner instance to a public or shared remote.
+- Never push a learner instance publicly without the learner's explicit consent.
+
+## Validation And CI
+
+Local checks:
+
+```bash
+python3 scripts/check_studydd.py
+python3 scripts/test_instantiate_template.py
+python3 scripts/test_study_loop_smoke.py
+python3 scripts/test_create_instance.py
+```
+
+GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
+test, and `git diff --check` on every push and pull request. See
+`.github/workflows/validate.yml`.
+
 ## Future Add-Ons
 
 These are intentionally backlog items, not part of the core slice:
@@ -173,4 +221,7 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.4 — agent-operated didactic engine: canonical agent lifecycle, operational protocols, evidence-gated readiness, question-quality gate, mistake taxonomy, review-queue semantics, low-energy/recovery modes, and agent-facing helper scripts.
+v0.5 — lifecycle-hardened public template: deterministic instance creation,
+template version tracking, study-loop smoke test, cross-file validation,
+answer-key leakage guard, question bank schema, upgrade/provenance/privacy/
+wrong-repo recovery protocols, and CI validation.
