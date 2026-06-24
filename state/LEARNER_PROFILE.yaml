@@ -3,9 +3,9 @@
 # Template mode keeps this empty/generic; learner instances populate it.
 
 metadata:
-  template_version: "0.6.0"
+  template_version: "0.8.1"
   last_updated: "2026-06-24"
-  updated_by: "studydd-agent"
+  updated_by: "coding-agent"
 
 learner_preferences:
   explanation_style: ""
