@@ -18,6 +18,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
 TARGETS_DIR = ROOT / "targets"
+EXAMPLES_DIR = ROOT / "EXAMPLES"
 
 VOLATILITY_MAX_AGE_DAYS = {
     "stable": 3650,
@@ -62,10 +63,47 @@ def parse_now(value: str | None) -> datetime:
     return dt
 
 
+def _find_target_yaml(target_id: str) -> Path | None:
+    """Return the path to TARGET.yaml for a target in targets/ or EXAMPLES/."""
+    candidate = TARGETS_DIR / target_id / "TARGET.yaml"
+    if candidate.is_file():
+        return candidate
+    if EXAMPLES_DIR.is_dir():
+        for example_dir in EXAMPLES_DIR.iterdir():
+            if not example_dir.is_dir() or example_dir.name.startswith("."):
+                continue
+            candidate = example_dir / "targets" / target_id / "TARGET.yaml"
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def _source_state_path_for_target(target_yaml: Path) -> Path:
+    """Return the sources/SOURCE_STATE.yaml relative to the target's repo root."""
+    return target_yaml.parent.parent.parent / "sources" / "SOURCE_STATE.yaml"
+
+
+def _iter_target_dirs():
+    """Yield (target_id, target_dir) for targets in targets/ and EXAMPLES/."""
+    if TARGETS_DIR.is_dir():
+        for target_dir in TARGETS_DIR.iterdir():
+            if target_dir.is_dir() and not target_dir.name.startswith("."):
+                yield target_dir.name, target_dir
+    if EXAMPLES_DIR.is_dir():
+        for example_dir in EXAMPLES_DIR.iterdir():
+            if not example_dir.is_dir() or example_dir.name.startswith("."):
+                continue
+            example_targets = example_dir / "targets"
+            if example_targets.is_dir():
+                for target_dir in example_targets.iterdir():
+                    if target_dir.is_dir() and not target_dir.name.startswith("."):
+                        yield target_dir.name, target_dir
+
+
 def read_target_volatility(target_id: str) -> tuple[str, bool, str | None]:
     """Return (volatility_class, declared_explicitly, warning_message)."""
-    target_yaml = TARGETS_DIR / target_id / "TARGET.yaml"
-    if not target_yaml.is_file():
+    target_yaml = _find_target_yaml(target_id)
+    if target_yaml is None:
         return "moderate", False, "target does not declare volatility, defaulting to moderate"
     data = load_yaml(target_yaml)
     volatility = data.get("volatility")
@@ -78,15 +116,11 @@ def read_target_volatility(target_id: str) -> tuple[str, bool, str | None]:
 
 def target_id_from_question(question_id: str) -> str | None:
     """Find target_id by scanning target question banks."""
-    if not TARGETS_DIR.is_dir():
-        return None
-    for target_dir in TARGETS_DIR.iterdir():
-        if not target_dir.is_dir() or target_dir.name.startswith("."):
-            continue
+    for target_id, target_dir in _iter_target_dirs():
         question_file = target_dir / "questions" / f"{question_id}.yaml"
         if question_file.is_file():
             data = load_yaml(question_file)
-            return data.get("target_id") or target_dir.name
+            return data.get("target_id") or target_id
     return None
 
 
@@ -257,8 +291,6 @@ def main() -> int:
     args = parser.parse_args()
 
     now = parse_now(args.now)
-    source_state = load_yaml(SOURCE_STATE_PATH)
-    all_sources: list[dict[str, Any]] = source_state.get("sources") or []
 
     if args.allow_stale:
         print("Source freshness check")
@@ -278,19 +310,17 @@ def main() -> int:
             print(f"Could not find target for question {args.question_id}")
             return 1
     else:
-        # Default: check every target referenced in SOURCE_STATE.yaml.
+        # Default: check every target in targets/ and EXAMPLES/*/targets/.
         seen: set[str] = set()
-        for s in all_sources:
-            for tid in s.get("target_ids", []):
-                if tid:
-                    seen.add(tid)
+        for target_id, _target_dir in _iter_target_dirs():
+            seen.add(target_id)
         target_ids = sorted(seen)
 
     if not target_ids:
-        # No targets referenced; nothing to fail.
+        # No targets found; nothing to fail.
         print("Source freshness check")
         print("")
-        print("No targets referenced in sources/SOURCE_STATE.yaml.")
+        print("No targets found.")
         print("Nothing to check.")
         return 0
 
@@ -298,6 +328,12 @@ def main() -> int:
     output_blocks: list[list[str]] = []
 
     for target_id in target_ids:
+        target_yaml = _find_target_yaml(target_id)
+        if target_yaml is None:
+            continue
+        source_state_path = _source_state_path_for_target(target_yaml)
+        source_state = load_yaml(source_state_path)
+        all_sources: list[dict[str, Any]] = source_state.get("sources") or []
         volatility, declared, vol_warning = read_target_volatility(target_id)
         target_sources = [s for s in all_sources if target_id in s.get("target_ids", [])]
         report_lines, exit_code = build_report(

@@ -16,6 +16,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -1582,15 +1583,28 @@ def check_volatile_target_freshness(yaml: object, warnings: list[str]) -> list[s
     return errors
 
 
+def _source_state_for_question(path: Path, yaml: object) -> tuple[list[dict[str, Any]], set[str]]:
+    """Return (sources, known_source_ids) for the repo root that contains the question.
+
+    Example fixtures use their own sources/SOURCE_STATE.yaml; the main repo uses ROOT.
+    """
+    rel_parts = path.relative_to(ROOT).parts
+    if len(rel_parts) >= 2 and rel_parts[0] == "EXAMPLES":
+        source_state_path = ROOT / "EXAMPLES" / rel_parts[1] / "sources" / "SOURCE_STATE.yaml"
+    else:
+        source_state_path = ROOT / "sources" / "SOURCE_STATE.yaml"
+
+    source_state = _load_yaml(source_state_path, yaml)
+    sources = source_state.get("sources") or []
+    known_source_ids = {s.get("id") for s in sources if s.get("id")}
+    return sources, known_source_ids
+
+
 def check_question_quality_records(yaml: object) -> list[str]:
     """Validate question-quality metadata and source grounding for question banks."""
     errors: list[str] = []
     if yaml is None:
         return errors
-
-    source_state = _load_yaml(ROOT / "sources" / "SOURCE_STATE.yaml", yaml)
-    sources = source_state.get("sources") or []
-    known_source_ids = {s.get("id") for s in sources if s.get("id")}
 
     now = datetime.now(timezone.utc)
 
@@ -1598,6 +1612,8 @@ def check_question_quality_records(yaml: object) -> list[str]:
         data = _load_yaml(path, yaml)
         if not isinstance(data, dict):
             continue
+
+        sources, known_source_ids = _source_state_for_question(path, yaml)
 
         qid = data.get("id") or path.stem
         rel = path.relative_to(ROOT)

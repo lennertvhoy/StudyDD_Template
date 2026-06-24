@@ -57,8 +57,14 @@ def parse_now(value: str | None) -> datetime:
     return dt
 
 
-def read_source_state() -> list[dict[str, Any]]:
-    data = load_yaml(SOURCE_STATE_PATH)
+def read_source_state(target_root: Path) -> list[dict[str, Any]]:
+    """Read sources/SOURCE_STATE.yaml relative to the target root's repo root.
+
+    For example fixtures, the source state lives under EXAMPLES/<example>/sources/.
+    For the main repo, it lives under ROOT/sources/.
+    """
+    source_state_path = target_root.parent / "sources" / "SOURCE_STATE.yaml"
+    data = load_yaml(source_state_path)
     return data.get("sources") or []
 
 
@@ -498,7 +504,6 @@ def main() -> int:
     args = parser.parse_args()
 
     now = parse_now(args.now)
-    sources = read_source_state()
 
     question_files = discover_question_files(args.target_id)
 
@@ -518,6 +523,7 @@ def main() -> int:
             per_question_results.append((qid, ["question file is not a YAML mapping"], []))
             continue
 
+        sources = read_source_state(target_root)
         target_id = question.get("target_id") or question_file.parent.parent.name
         qid = question.get("id") or question_file.stem
         failures, warnings = lint_question(question, target_id, target_root, sources, now)
