@@ -52,6 +52,14 @@ def main() -> int:
         "Selector when review is due: review first",
         "Learner override recorded with reason",
         "Validation passed",
+        "StudyDD checks source freshness before generating product-current questions",
+        "The demo uses a demo official source marked fresh",
+        "The agent does not search the web because the cached source is fresh enough",
+        "If the source were stale, StudyDD would ask to refresh or choose a stable review instead",
+        "StudyDD suggestion:",
+        "You missed a scenario tradeoff. Next time, use a short comparison drill.",
+        "Learner control:",
+        "You can accept, modify, or override this.",
     ]
 
     missing = []
