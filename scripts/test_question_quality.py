@@ -220,7 +220,8 @@ def test_authoritative_current_stale_source_fails_quality_gate() -> None:
             print("stderr:", result.stderr)
         assert result.returncode != 0, f"Expected non-zero exit, got {result.returncode}"
         assert "Q-004: fail" in result.stdout
-        assert "stale source 'old-source'" in result.stdout
+        assert "source 'old-source' is stale" in result.stdout
+        assert "set quality_gate: fail" in result.stdout
 
 
 def test_quality_gate_reason_required_for_warn_fail() -> None:
@@ -287,7 +288,7 @@ def test_strict_turns_warnings_into_failures() -> None:
         print(result.stdout)
         if result.stderr:
             print("stderr:", result.stderr)
-        assert result.returncode != 0, f"Expected non-zero exit under --strict, got {result.returncode}"
+        assert result.returncode != 0, f"Expected exit 0 under --strict, got {result.returncode}"
 
 
 def test_fresh_source_allows_generated_false_only() -> None:
@@ -328,6 +329,170 @@ def test_fresh_source_allows_generated_false_only() -> None:
         assert "generated_from_memory_allowed: false" in result.stdout
 
 
+def test_question_volatility_overrides_target() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "override-target"
+        write_mode(tmp_root, "learner_instance")
+        # Target says moderate (90 days); question says live (1 day).
+        write_target(tmp_root, target_id, volatility="moderate")
+        write_source_state(
+            tmp_root,
+            [
+                {
+                    "id": "checked-source",
+                    "target_ids": [target_id],
+                    "authority": "official",
+                    "usable_for_questions": True,
+                    "last_checked_at": "2026-06-23T10:00:00+00:00",
+                }
+            ],
+        )
+        write_question(
+            tmp_root,
+            target_id,
+            "Q-008",
+            {
+                "question_mode": "authoritative_current",
+                "source_ids": ["checked-source"],
+                "volatility": "live",
+            },
+        )
+
+        result = run_script(tmp_root, "--target-id", target_id, "--now", "2026-06-24T12:00:00+00:00")
+        print("--- test_question_volatility_overrides_target stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode != 0, f"Expected non-zero exit, got {result.returncode}"
+        assert "Q-008: fail" in result.stdout
+        assert "source 'checked-source' is stale" in result.stdout
+
+
+def test_skill_question_balance_warns_on_recall_only() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "recall-heavy-target"
+        skill_id = f"{target_id}-skill"
+        write_mode(tmp_root, "learner_instance")
+        write_target(tmp_root, target_id, volatility="stable")
+        write_source_state(tmp_root, [])
+        for i in range(3):
+            write_question(
+                tmp_root,
+                target_id,
+                f"Q-RECALL-{i:03d}",
+                {
+                    "cognitive_level": "recall",
+                    "skill_id": skill_id,
+                    "public_prompt": f"Recall question {i}?",
+                    "private_answer_key": "Answer.",
+                },
+            )
+
+        result = run_script(tmp_root, "--target-id", target_id)
+        print("--- test_skill_question_balance_warns_on_recall_only stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "recall-only questions and no application/transfer questions" in result.stdout
+
+
+def test_option_position_bias_warns() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "position-bias-target"
+        skill_id = f"{target_id}-skill"
+        write_mode(tmp_root, "learner_instance")
+        write_target(tmp_root, target_id, volatility="stable")
+        write_source_state(tmp_root, [])
+        for i in range(2):
+            write_question(
+                tmp_root,
+                target_id,
+                f"Q-POS-{i:03d}",
+                {
+                    "cognitive_level": "choose-best",
+                    "skill_id": skill_id,
+                    "public_prompt": f"Choose the best option {i}?",
+                    "options": ["Alpha", "Beta", "Gamma", "Delta"],
+                    "correct_label": "A",
+                    "private_answer_key": "Alpha",
+                },
+            )
+
+        result = run_script(tmp_root, "--target-id", target_id)
+        print("--- test_option_position_bias_warns stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "correct option is always in position 1" in result.stdout
+
+
+def test_discovers_example_target_questions() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "example-target"
+        write_mode(tmp_root, "template")
+        # No targets/ dir; question lives under EXAMPLES/demo/targets/.
+        write_source_state(tmp_root, [])
+        write_question(
+            tmp_root,
+            target_id,
+            "Q-EXAMPLE-001",
+            {"cognitive_level": "explain", "volatility": "stable"},
+            example=True,
+        )
+
+        result = run_script(tmp_root)
+        print("--- test_discovers_example_target_questions stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "Q-EXAMPLE-001: pass" in result.stdout
+
+
+def test_generated_from_memory_false_with_fresh_source_passes() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "fresh-ok-target"
+        write_mode(tmp_root, "learner_instance")
+        write_target(tmp_root, target_id, volatility="volatile")
+        write_source_state(
+            tmp_root,
+            [
+                {
+                    "id": "fresh-source",
+                    "target_ids": [target_id],
+                    "authority": "official",
+                    "usable_for_questions": True,
+                    "last_checked_at": "2026-06-24T10:00:00+00:00",
+                }
+            ],
+        )
+        write_question(
+            tmp_root,
+            target_id,
+            "Q-009",
+            {
+                "question_mode": "authoritative_current",
+                "source_ids": ["fresh-source"],
+                "generated_from_memory_allowed": False,
+            },
+        )
+
+        result = run_script(tmp_root, "--target-id", target_id, "--now", "2026-06-24T12:00:00+00:00")
+        print("--- test_generated_from_memory_false_with_fresh_source_passes stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "Q-009: pass" in result.stdout
+
+
 def main() -> int:
     tests = [
         test_volatile_no_source_fails,
@@ -338,6 +503,11 @@ def main() -> int:
         test_template_mode_does_not_fail_on_missing_learner_bank,
         test_strict_turns_warnings_into_failures,
         test_fresh_source_allows_generated_false_only,
+        test_question_volatility_overrides_target,
+        test_skill_question_balance_warns_on_recall_only,
+        test_option_position_bias_warns,
+        test_discovers_example_target_questions,
+        test_generated_from_memory_false_with_fresh_source_passes,
     ]
 
     failures = 0
