@@ -174,7 +174,6 @@ def initialize_target(target: Path) -> None:
         "skill_id: demo-search-basics\n"
         "cognitive_level: explain\n"
         "difficulty: 2\n"
-        "source_ref: demo-source\n"
         "source_ids:\n"
         "  - mslearn_ai_search_overview\n"
         "volatility: volatile\n"
@@ -463,7 +462,9 @@ def copy_fixture(source: Path, destination: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the StudyDD public demo replay")
     parser.add_argument(
+        "--dump-to",
         "--dump-fixture",
+        dest="dump_fixture",
         default=None,
         help="Copy the final demo instance to this path (e.g. EXAMPLES/demo_ai_search_exam)",
     )

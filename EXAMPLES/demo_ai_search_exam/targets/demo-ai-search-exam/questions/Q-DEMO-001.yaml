@@ -4,7 +4,6 @@ target_id: demo-ai-search-exam
 skill_id: demo-search-basics
 cognitive_level: explain
 difficulty: 2
-source_ref: demo-source
 source_ids:
   - mslearn_ai_search_overview
 volatility: volatile
