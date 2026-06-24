@@ -622,6 +622,7 @@ Create `Evidence/005-2026-06-24-studydd-source-grounded-question-quality/` with 
 - Study skills may declare more granular source/freshness requirements over time.
 - The source refresh protocol may later integrate a deliberate web-search tool call, but only when the freshness gate explicitly requests it.
 - Learning Activity + Evidence Intake Orchestrator (see Section 11) is the next major product direction.
+- Cross-platform setup and dependency consent: track as a platform-hardening concern. Add `requirements.txt`, `scripts/setup_studydd.py`, `docs/setup.md`, and CI coverage for Ubuntu/Windows/macOS. Never install dependencies without explicit consent.
 
 ## 10. Open questions / none
 
