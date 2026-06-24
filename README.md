@@ -128,13 +128,13 @@ StudyDD applies the same idea to education. Your study journey becomes a project
 ## Examples
 
 - `EXAMPLES/ai-103-example/` — a realistic Microsoft AI-103 certification study state.
-- `EXAMPLES/product-engineer-interview-example/` — a realistic interview prep state for a senior product engineer role.
+- `EXAMPLES/product-engineer-interview-example/` — a realistic product engineer interview prep state.
 
 Both show how skills, evidence, session history, and next actions look once the agent has maintained them for a few sessions.
 
 ## License
 
-This project uses a custom permissive license. You may use it freely for study and commercial purposes. The author reserves the right to use this work as a teaching tool in sessions, webinars, courses, and similar educational contexts. See `LICENSE.md` for the full text.
+This project is licensed under the MIT License. See `LICENSE.md` for the full text.
 
 ## Status
 
