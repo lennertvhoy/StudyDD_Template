@@ -84,15 +84,31 @@ def initialize_learner_profile(target: Path) -> None:
     save_yaml(study_state_path, study_state)
 
 
+def initialize_sources(target: Path) -> None:
+    source_index_path = target / "sources" / "SOURCE_INDEX.md"
+    source_index_path.write_text(
+        "# Source Index\n\n"
+        "Trusted sources for the demo target.\n\n"
+        "- **Source ID:** demo-official\n"
+        "  - **Type:** official\n"
+        "  - **Authority:** high\n"
+        "  - **Title:** AI Search Fundamentals Official Guide\n"
+        "  - **URL:** https://example.com/demo-source\n"
+        "  - **Last checked:** 2026-06-24\n",
+        encoding="utf-8",
+    )
+
+
 def initialize_target(target: Path) -> None:
     target_dir = target / "targets" / "demo-ai-search-exam"
     target_dir.mkdir(parents=True, exist_ok=True)
     (target_dir / "TARGET.yaml").write_text(
         "---\n"
         "id: demo-ai-search-exam\n"
-        "type: skill\n"
+        "type: certification\n"
         "title: AI Search Fundamentals Demo\n"
-        "description: A fictional, public-safe demo target for showing the StudyDD learning loop.\n",
+        "description: A fictional, public-safe demo target for showing the StudyDD learning loop.\n"
+        "study_skill: it_certification\n",
         encoding="utf-8",
     )
 
@@ -228,6 +244,22 @@ def select_next_action(target: Path, now: str) -> str:
     return result.stdout
 
 
+def build_and_show_context_pack(target: Path) -> None:
+    print("Building StudyDD context pack instead of loading every file...")
+    result = run(
+        [sys.executable, "scripts/build_context_pack.py", "--task", "start_session"],
+        target,
+        check=False,
+    )
+    if result.returncode != 0:
+        print(result.stdout)
+        print(result.stderr)
+        raise subprocess.CalledProcessError(result.returncode, ["scripts/build_context_pack.py"])
+    # Show the first few lines that prove intelligent loading.
+    for line in result.stdout.splitlines()[:12]:
+        print(f"  {line}")
+
+
 def record_override(target: Path, review_id: str) -> None:
     review_state_path = target / "reviews" / "REVIEW_STATE.yaml"
     review_state = load_yaml(review_state_path)
@@ -303,6 +335,14 @@ def update_session_and_next_action(target: Path, review_id: str) -> None:
     )
 
 
+def compact_state(target: Path) -> None:
+    result = run([sys.executable, "scripts/compact_state.py"], target, check=False)
+    if result.returncode != 0:
+        print(result.stdout)
+        print(result.stderr)
+        raise subprocess.CalledProcessError(result.returncode, ["scripts/compact_state.py"])
+
+
 def validate(target: Path) -> None:
     result = run([sys.executable, "scripts/check_studydd.py"], target, check=False)
     if result.returncode != 0:
@@ -318,21 +358,24 @@ def print_transcript(review_id: str, before_due: str, when_due: str) -> None:
     print("1. Created learner instance from template.")
     print("2. Initialized learner profile: Demo Learner.")
     print("3. Initialized target: AI Search Fundamentals Demo.")
-    print("4. Agent asked one question: Q-DEMO-001.")
-    print("5. Learner answered: distinguished keyword and vector search, no scenario.")
-    print("6. Agent graded honestly: partial.")
-    print("7. Evidence recorded: ev_demo_001.")
-    print(f"8. Review scheduled: {review_id} due in 1 day.")
-    print("9. Selector before due: new material is allowed.")
+    print("4. Active study skill: it_certification.")
+    print("5. Built a context pack instead of loading every file.")
+    print("6. Agent asked one question: Q-DEMO-001.")
+    print("7. Learner answered: distinguished keyword and vector search, no scenario.")
+    print("8. Agent graded honestly: partial.")
+    print("9. Evidence recorded: ev_demo_001.")
+    print(f"10. Review scheduled: {review_id} due in 1 day.")
+    print("11. Selector before due: new material is allowed.")
     print("   ", before_due.splitlines()[0])
-    print("10. Selector when review is due: review first.")
+    print("12. Selector when review is due: review first.")
     print("    ", when_due.splitlines()[0])
-    print("11. Learner override recorded with reason.")
-    print("12. Validation passed.")
+    print("13. Learner override recorded with reason.")
+    print("14. Validation passed.")
     print("")
     print("The repo now contains evidence, a spaced-repetition review, an override log,")
-    print("and a clear next action. Run `python3 scripts/check_studydd.py` in the instance")
-    print("to verify repo health at any time.")
+    print("a compact context pack, and a clear next action. Raw logs remain available")
+    print("for audit, but the agent loads only the relevant context by default.")
+    print("Run `python3 scripts/check_studydd.py` in the instance to verify repo health.")
 
 
 def copy_fixture(source: Path, destination: Path) -> None:
@@ -373,7 +416,9 @@ def main() -> int:
         create_instance(target, remote)
         switch_to_learner_instance(target)
         initialize_learner_profile(target)
+        initialize_sources(target)
         initialize_target(target)
+        build_and_show_context_pack(target)
         record_evidence(target)
         review_id = schedule_review(target)
 
@@ -382,6 +427,7 @@ def main() -> int:
 
         record_override(target, review_id)
         update_session_and_next_action(target, review_id)
+        compact_state(target)
         validate(target)
         print_transcript(review_id, before_due, when_due)
 

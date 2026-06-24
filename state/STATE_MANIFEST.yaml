@@ -1,0 +1,70 @@
+---
+# StudyDD State Manifest
+#
+# Declares the role of important state files so agents and validators know
+# whether a file is canonical truth, append-only audit, or derived summary.
+#
+# Roles:
+#   - canonical          : small machine-readable current truth; load first.
+#   - append_only_audit  : historical log; never delete; not default context.
+#   - derived_summary    : generated compact view; safe to regenerate.
+#   - derived_index      : generated lookup; safe to regenerate.
+#   - protected          : required for repo health.
+
+manifest_version: "1.0"
+last_updated: "2026-06-24"
+generated_by: "manual"
+
+files:
+  state/STUDY_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  state/SKILL_MAP.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  reviews/REVIEW_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  state/STUDYDD_MODE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  state/STUDYDD_TEMPLATE_VERSION.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  state/EVIDENCE_LOG.md:
+    role: append_only_audit
+    load_default: false
+    indexed_by: state/EVIDENCE_INDEX.yaml
+  sessions/SESSION_LOG.md:
+    role: append_only_audit
+    load_default: false
+    summarized_by: sessions/SESSION_SUMMARIES.md
+  reviews/REVIEW_OVERRIDES.md:
+    role: append_only_audit
+    load_default: false
+  state/CURRENT_CONTEXT.md:
+    role: derived_summary
+    load_default: true
+    generated_by: scripts/compact_state.py
+  state/EVIDENCE_INDEX.yaml:
+    role: derived_index
+    load_default: true
+    generated_by: scripts/compact_state.py
+  sessions/SESSION_SUMMARIES.md:
+    role: derived_summary
+    load_default: true
+    generated_by: scripts/compact_state.py
+  state/STATE_MANIFEST.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  .studydd/context_pack.md:
+    role: generated_context
+    load_default: false
+    generated_by: scripts/build_context_pack.py
+    gitignore: true

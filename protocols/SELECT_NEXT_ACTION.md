@@ -10,6 +10,10 @@ Before choosing any new material, check the current time and `reviews/REVIEW_STA
 
 > **Spaced repetition is the default. Human override is allowed. Silent neglect is not.**
 
+## Context loading
+
+Build the context pack with `--task start_session` or `--task schedule_review`. Include `state/CURRENT_CONTEXT.md`, `state/SKILL_MAP.yaml`, `reviews/REVIEW_STATE.yaml`, and the active study skill. Do not load full raw logs.
+
 ## Selection Priority
 
 Choose the first item that applies:
@@ -20,6 +24,8 @@ Choose the first item that applies:
 4. **Pending skill near the active focus** — a `pending` skill related to the current target.
 5. **Practiced skill needing varied evidence** — a `practiced` skill that has only one correct answer on record.
 6. **Confirmed skill needing maintenance** — only in mixed checkpoint sessions or when other items are exhausted.
+
+Apply the active study skill when choosing question style, mode, and difficulty.
 
 ## Override Handling
 

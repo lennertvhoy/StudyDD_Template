@@ -36,5 +36,14 @@ jobs:
       - name: Run demo replay test
         run: python3 scripts/test_demo_replay.py
 
+      - name: Run compact state test
+        run: python3 scripts/test_compact_state.py
+
+      - name: Run context pack test
+        run: python3 scripts/test_context_pack.py
+
+      - name: Run study skills test
+        run: python3 scripts/test_study_skills.py
+
       - name: Check whitespace
         run: git diff --check

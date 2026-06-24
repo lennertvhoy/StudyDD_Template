@@ -42,6 +42,8 @@ def main() -> int:
         "Created learner instance",
         "Initialized learner profile: Demo Learner",
         "Initialized target: AI Search Fundamentals Demo",
+        "Active study skill: it_certification",
+        "Built a context pack instead of loading every file",
         "Agent asked one question",
         "Learner answered",
         "Agent graded honestly: partial",

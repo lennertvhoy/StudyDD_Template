@@ -4,6 +4,8 @@
 
 ## Before Asking
 
+Build the context pack with `--task ask_question`. Load the active target, weak skills, due reviews, question bank metadata, and the active study skill. Do not load full raw logs unless needed.
+
 Internally define:
 
 - target ID
@@ -18,6 +20,8 @@ Internally define:
 - grading rubric
 - source reference
 - whether this question can affect readiness
+
+Shape the question according to the active study skill (e.g., scenario for IT certification, argument reconstruction for philosophy, concrete word problem for primary maths).
 
 The learner must not see the answer key before answering.
 

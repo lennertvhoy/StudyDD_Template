@@ -44,23 +44,30 @@ When the human asks for a StudyDD session, the agent must:
 
 1. **Verify repo path and remote** — confirm the repo root and remote match expectations; stop if they do not.
 2. **Run validator** — run `python3 scripts/check_studydd.py` and report the result.
-3. **Read state files** — read every required state, protocol, and source file.
-4. **Identify active target** — read `state/STUDY_STATE.yaml` and `targets/README.md`.
-5. **Inspect active target files** — read `targets/<active>/TARGET.yaml` and any target notes.
-6. **Inspect review queue** — read `reviews/REVIEW_QUEUE.md` and `reviews/REVIEW_STATE.yaml`, then count due/overdue items using `scripts/select_next_study_action.py`.
-7. **Recommend review first** — if reviews are due or overdue, recommend them before new material. Record any override in `reviews/REVIEW_OVERRIDES.md`.
-8. **Inspect last session** — read `sessions/SESSION_LOG.md` and note the last focus and weak areas.
-9. **Choose one next study action** — use `protocols/SELECT_NEXT_ACTION.md`.
-9. **Ask exactly one question** — use `protocols/ASK_QUESTION.md` and `protocols/QUESTION_QUALITY.md`.
-10. **Wait for the learner's answer** — do not ask another question first.
-11. **Grade the answer** — use `protocols/GRADE_ANSWER.md` and `protocols/MISTAKE_TAXONOMY.md`.
-12. **Update state immediately** — use `protocols/UPDATE_STATE.md`; propose changes before writing unless auto-updates are authorized.
-13. **Add evidence** — append to `state/EVIDENCE_LOG.md`.
-14. **Schedule review** — use `protocols/SCHEDULE_REVIEW.md` for weak or repaired answers.
-15. **Update next action** — write the single next step to `NEXT_ACTIONS.md`.
-16. **Validate** — run `python3 scripts/check_studydd.py` again.
-17. **Commit/push only when instructed** — never push without explicit instruction.
-18. **Leave clean worktree and truthful handoff** — summarize what changed, what is due next, and any blockers.
+3. **Build compact context** — run or perform the equivalent of:
+   ```bash
+   python3 scripts/compact_state.py
+   python3 scripts/build_context_pack.py --task start_session
+   ```
+4. **Read the context pack** — read `.studydd/context_pack.md` instead of loading every raw log.
+5. **Open raw logs only when necessary** — use `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, or `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator references them, or when grading/auditing requires exact historical text.
+6. **Identify active target** — read `state/STUDY_STATE.yaml` and `targets/README.md`.
+7. **Inspect active target files** — read `targets/<active>/TARGET.yaml` and any target notes.
+8. **Load active study skill** — if the active target declares `study_skill`, read `study_skills/<id>/SKILL.md`; otherwise read `study_skills/generic/SKILL.md`.
+9. **Inspect review queue** — read `reviews/REVIEW_STATE.yaml` and `state/CURRENT_CONTEXT.md`, then count due/overdue items using `scripts/select_next_study_action.py`.
+10. **Recommend review first** — if reviews are due or overdue, recommend them before new material. Record any override in `reviews/REVIEW_OVERRIDES.md`.
+11. **Inspect last session** — read `sessions/SESSION_SUMMARIES.md` and note the last focus and weak areas.
+12. **Choose one next study action** — use `protocols/SELECT_NEXT_ACTION.md`.
+13. **Ask exactly one question** — use `protocols/ASK_QUESTION.md`, `protocols/QUESTION_QUALITY.md`, and the active study skill.
+14. **Wait for the learner's answer** — do not ask another question first.
+15. **Grade the answer** — use `protocols/GRADE_ANSWER.md`, `protocols/MISTAKE_TAXONOMY.md`, and the active study skill.
+16. **Update state immediately** — use `protocols/UPDATE_STATE.md`; propose changes before writing unless auto-updates are authorized.
+17. **Add evidence** — append to `state/EVIDENCE_LOG.md`.
+18. **Schedule review** — use `protocols/SCHEDULE_REVIEW.md` for weak or repaired answers.
+19. **Update next action** — write the single next step to `NEXT_ACTIONS.md`.
+20. **Compact and validate** — run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
+21. **Commit/push only when instructed** — never push without explicit instruction.
+22. **Leave clean worktree and truthful handoff** — summarize what changed, what is due next, and any blockers.
 
 ## Required First Actions
 
@@ -69,38 +76,45 @@ Before every StudyDD session, read:
 1. `AGENTS.md` (this file)
 2. `state/STUDYDD_MODE.yaml`
 3. `state/STUDYDD_TEMPLATE_VERSION.yaml`
-4. `state/STUDY_STATUS.md`
-5. `state/STUDY_STATE.yaml`
-6. `NEXT_ACTIONS.md`
-7. `state/STUDY_BACKLOG.md`
+4. `state/STATE_MANIFEST.yaml`
+5. `state/STUDY_STATUS.md`
+6. `state/STUDY_STATE.yaml`
+7. `state/CURRENT_CONTEXT.md`
 8. `state/SKILL_MAP.yaml`
-9. `state/EVIDENCE_LOG.md`
-10. `targets/README.md`
-11. `reviews/REVIEW_QUEUE.md`
-12. `sessions/SESSION_LOG.md`
-13. `sources/SOURCE_INDEX.md`
-14. `protocols/INSTANTIATE_TEMPLATE.md`
-15. `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`
-16. `protocols/GIT_PROVENANCE.md`
-17. `protocols/PRIVACY_REVIEW.md`
-18. `protocols/WRONG_REPO_RECOVERY.md`
-19. `protocols/SPACED_REPETITION_POLICY.md`
-20. `protocols/TUTOR_PROTOCOL.md`
-21. `protocols/SESSION_TEMPLATE.md`
-22. `protocols/START_SESSION.md`
-23. `protocols/SELECT_NEXT_ACTION.md`
-24. `protocols/ASK_QUESTION.md`
-25. `protocols/GRADE_ANSWER.md`
-26. `protocols/UPDATE_STATE.md`
-27. `protocols/SCHEDULE_REVIEW.md`
-28. `protocols/CLOSE_SESSION.md`
-29. `protocols/SOURCE_TRUST.md`
-30. `protocols/READINESS_POLICY.md`
-31. `protocols/QUESTION_QUALITY.md`
-32. `protocols/MISTAKE_TAXONOMY.md`
-33. `protocols/LOW_ENERGY_MODE.md`
+9. `state/EVIDENCE_INDEX.yaml`
+10. `NEXT_ACTIONS.md`
+11. `state/STUDY_BACKLOG.md`
+12. `targets/README.md`
+13. `reviews/REVIEW_STATE.yaml`
+14. `reviews/REVIEW_QUEUE.md`
+15. `sessions/SESSION_SUMMARIES.md`
+16. `sources/SOURCE_INDEX.md`
+17. `.studydd/context_pack.md` (built by `scripts/build_context_pack.py`)
+18. The active target's `TARGET.yaml`
+19. The active target's `study_skills/<id>/SKILL.md`
+20. `protocols/INSTANTIATE_TEMPLATE.md`
+21. `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`
+22. `protocols/GIT_PROVENANCE.md`
+23. `protocols/PRIVACY_REVIEW.md`
+24. `protocols/WRONG_REPO_RECOVERY.md`
+25. `protocols/SPACED_REPETITION_POLICY.md`
+26. `protocols/TUTOR_PROTOCOL.md`
+27. `protocols/SESSION_TEMPLATE.md`
+28. `protocols/START_SESSION.md`
+29. `protocols/SELECT_NEXT_ACTION.md`
+30. `protocols/ASK_QUESTION.md`
+31. `protocols/GRADE_ANSWER.md`
+32. `protocols/UPDATE_STATE.md`
+33. `protocols/SCHEDULE_REVIEW.md`
+34. `protocols/CLOSE_SESSION.md`
+35. `protocols/STATE_LOADING_POLICY.md`
+36. `protocols/SOURCE_TRUST.md`
+37. `protocols/READINESS_POLICY.md`
+38. `protocols/QUESTION_QUALITY.md`
+39. `protocols/MISTAKE_TAXONOMY.md`
+40. `protocols/LOW_ENERGY_MODE.md`
 
-Only then propose or execute a study action.
+Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
 ## Core Architecture
 
@@ -119,11 +133,19 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/agent_privacy_check.py` = practical pre-push privacy scan
 - `scripts/schedule_review.py` = deterministic review scheduling
 - `scripts/select_next_study_action.py` = time-aware review-first recommendation
+- `scripts/compact_state.py` = compacts append-only logs into derived summaries/indexes
+- `scripts/build_context_pack.py` = builds the task-specific context pack agents load
 - `scripts/run_demo_replay.py` = deterministic public demo of one full learning loop
 - `scripts/test_demo_replay.py` = asserts the demo replay produces expected artifacts
 - `state/STUDYDD_TEMPLATE_VERSION.yaml` = template version and upgrade origin
+- `state/STATE_MANIFEST.yaml` = declares file roles (canonical, audit, derived, protected)
+- `state/CURRENT_CONTEXT.md` = compact human/agent-readable learner summary
+- `state/EVIDENCE_INDEX.yaml` = machine-readable evidence lookup
 - `reviews/REVIEW_STATE.yaml` = machine-readable spaced-repetition state
 - `reviews/REVIEW_OVERRIDES.md` = override log for skipped due reviews
+- `sessions/SESSION_SUMMARIES.md` = compact session summaries
+- `.studydd/context_pack.md` = task-specific runtime context for agents
+- `study_skills/<id>/SKILL.md` = domain-specific tutoring policy
 - `NEXT_ACTIONS.md` = the single next best study action
 - `AGENTS.md` = how coding and tutor agents must behave
 - `protocols/` = actionable operating rules for agents
@@ -323,23 +345,26 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 
 ## Session Flow
 
-1. Read all required state and protocol files.
+1. Read `AGENTS.md` and safety protocols.
 2. Verify repo path and remote.
 3. Run `python3 scripts/check_studydd.py`.
-4. Confirm session mode with the learner (normal, deep, low-energy, recovery).
-5. Confirm the active focus and next question with the learner.
-6. Ask one question.
-7. Receive the answer.
-8. Grade against the answer key.
-9. Explain the result.
-10. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
-11. Record the interaction in `sessions/SESSION_LOG.md` and `state/EVIDENCE_LOG.md`.
-12. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
-13. Propose state updates.
-14. Confirm or apply authorized updates.
-15. Run `python3 scripts/check_studydd.py`.
-16. End with the next best action in `NEXT_ACTIONS.md`.
-17. Leave a truthful handoff.
+4. Run `python3 scripts/compact_state.py` and `python3 scripts/build_context_pack.py --task start_session`.
+5. Read `.studydd/context_pack.md` and the active study skill.
+6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
+7. Confirm the active focus and next question with the learner.
+8. Ask one question, guided by the active study skill.
+9. Receive the answer.
+10. Grade against the answer key, guided by the active study skill.
+11. Explain the result.
+12. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
+13. Record the interaction in `sessions/SESSION_LOG.md` and `state/EVIDENCE_LOG.md`.
+14. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
+15. Run `python3 scripts/compact_state.py` to update derived summaries.
+16. Propose state updates.
+17. Confirm or apply authorized updates.
+18. Run `python3 scripts/check_studydd.py`.
+19. End with the next best action in `NEXT_ACTIONS.md`.
+20. Leave a truthful handoff.
 
 ## Handoff Requirements
 

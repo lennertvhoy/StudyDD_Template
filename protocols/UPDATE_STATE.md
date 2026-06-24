@@ -18,6 +18,10 @@
 6. `NEXT_ACTIONS.md` — write the single next action.
 7. `reviews/REVIEW_QUEUE.md` — add or update review items.
 
+## Compact after writing
+
+After appending evidence and session entries, run `python3 scripts/compact_state.py` so `state/CURRENT_CONTEXT.md`, `state/EVIDENCE_INDEX.yaml`, and `sessions/SESSION_SUMMARIES.md` stay current.
+
 ## Evidence Item Format
 
 ```markdown
@@ -41,6 +45,8 @@
 - An incorrect or vague answer marks the skill `weak`.
 - A persistent confusion marks the skill `blocked`.
 - `confirmed` requires strong or varied evidence.
+- Apply the active study skill's readiness rules in addition to the general readiness policy.
+- If the study skill conflicts with general StudyDD policy, the stricter anti-inflation rule wins.
 - Update timestamps and `updated_by` in YAML metadata.
 
 ## After Updating
