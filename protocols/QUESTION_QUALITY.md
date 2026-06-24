@@ -42,13 +42,14 @@ The learner must not see the answer key before answering.
 
 For multiple-choice, choose-two, choose-three, and matching-style questions:
 
-1. **Create the private answer key first.** Know the correct option content before deciding visible labels.
-2. **Shuffle visible options.** Do not let the correct answer repeatedly be A, first, longest, most detailed, or most obviously worded.
-3. **Verify the answer key after shuffling.** Confirm that the answer key points to the correct visible labels, not the original positions.
-4. **Randomize choose-two/choose-three positions too.** Correct answers should not cluster as A+B or C+D.
-5. **Keep distractors plausible.** Do not make wrong answers obviously weaker just because the correct option moved.
-6. **Track recent answer positions.** For generated practice sets, avoid repeating the same label too often.
-7. **Record the final order.** The session log must include the final visible option order, the correct answer label(s), the learner answer, and the grading result.
+1. **Create stable internal option IDs first.** Assign IDs like `opt_1`, `opt_2`, `opt_3`, `opt_4` to option content before any visible label exists. Mark which IDs are correct in the private answer key.
+2. **Do not leak the private answer key before the learner answers.** The answer key may live in the agent's working context only. Do not write it to repo files, active question files, session logs, or evidence logs before grading.
+3. **Shuffle visible options.** Assign shuffled visible labels (A, B, C, D) to the stable option IDs. Do not let the correct answer repeatedly be A, first, longest, most detailed, or most obviously worded.
+4. **Verify the answer key after shuffling.** Confirm that the answer key points to the correct visible labels, not the original positions.
+5. **Randomize choose-two/choose-three positions too.** Correct answers should not cluster as A+B or C+D.
+6. **Keep distractors plausible.** Do not make wrong answers obviously weaker just because the correct option moved.
+7. **Track recent answer positions.** For generated practice sets, avoid repeating the same label too often.
+8. **Record the final order after grading.** The session/evidence log may include the final visible option order, correct visible label(s), learner answer, grading result, and optionally the internal option-ID mapping.
 
 The learner should pass because they understand the concept, not because the template accidentally teaches answer-position habits.
 
@@ -56,11 +57,13 @@ The learner should pass because they understand the concept, not because the tem
 
 Before presenting a fixed-option question, confirm:
 
+- [ ] Stable internal option IDs are created before visible labels are assigned.
 - [ ] Private answer key is defined before visible labels are assigned.
+- [ ] Private answer key is not written to repo files before the learner answers.
 - [ ] Options are shuffled randomly.
 - [ ] Answer key is verified against the final visible labels.
 - [ ] Correct answer is not always A, first, longest, or most detailed.
 - [ ] For choose-two/choose-three, correct labels do not always cluster (e.g., A+B or C+D).
 - [ ] Distractors remain plausible after shuffling.
 - [ ] Recent practice-set history does not over-use the same correct label.
-- [ ] Session log will record final option order, correct label(s), learner answer, and result.
+- [ ] After grading, session/evidence log records final option order, correct label(s), learner answer, result, and optional option-ID mapping.

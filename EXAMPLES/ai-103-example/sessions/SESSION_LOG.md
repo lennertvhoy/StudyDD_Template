@@ -14,8 +14,17 @@
   - E-20260623-003 — partial semantic ranking answer
 - **Mistake tags:**
   - E-20260623-003: correct-concept-weak-implementation
-- **Option randomization example:**
-  - Q-20260623-002: final order C, A, D, B; correct label C
+- **Option randomization example (recorded after grading):**
+  - Q-20260623-002:
+    - Internal option IDs before shuffle:
+      - opt_1 = Use vector search only [distractor]
+      - opt_2 = Use keyword search only [distractor]
+      - opt_3 = Combine vector + keyword + semantic ranking [correct]
+      - opt_4 = Fine-tune a model on the index [distractor]
+    - Final visible order: C = opt_1, A = opt_2, D = opt_4, B = opt_3
+    - Correct visible label: B
+    - Learner answer: B
+    - Grading result: correct
 - **Reviews added:**
   - R-20260624-AI103-003 — review semantic ranking knobs
 - **State changes:**
