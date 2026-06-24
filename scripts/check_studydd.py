@@ -134,6 +134,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/build_context_pack.py",
     "scripts/validate_touched_state.py",
     "scripts/plan_state_update.py",
+    "scripts/check_source_freshness.py",
+    "scripts/test_source_freshness.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -941,17 +943,16 @@ def check_question_bank(yaml: object) -> list[str]:
                         f"Question file {path.relative_to(ROOT)} missing or empty source reference ('source_ref' or 'source_ids')"
                     )
                 continue
-            if field == "transfer_probe":
-                # Optional, but if present it must not be empty.
-                if "transfer_probe" in data and data["transfer_probe"] in (None, ""):
-                    errors.append(
-                        f"Question file {path.relative_to(ROOT)} has empty optional field 'transfer_probe'"
-                    )
-                continue
             if field not in data or data[field] in (None, ""):
                 errors.append(
                     f"Question file {path.relative_to(ROOT)} missing or empty field '{field}'"
                 )
+
+        # Optional transfer_probe: if present, must not be empty.
+        if "transfer_probe" in data and data["transfer_probe"] in (None, ""):
+            errors.append(
+                f"Question file {path.relative_to(ROOT)} has empty optional field 'transfer_probe'"
+            )
 
     return errors
 
