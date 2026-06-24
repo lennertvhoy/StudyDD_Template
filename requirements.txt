@@ -1,0 +1,3 @@
+# StudyDD minimal runtime dependencies
+# Install only after reading docs/setup.md and confirming you want these packages.
+PyYAML>=6.0,<7.0

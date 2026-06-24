@@ -149,6 +149,31 @@ If you are editing `StudyDD_Template` itself, you are maintaining the mold. Keep
 
 You can inspect or override any of these files. They are plain Markdown and YAML.
 
+## Quick setup
+
+StudyDD runs on Linux, macOS, and Windows PowerShell with Python 3.10+. It does
+not install dependencies without your explicit consent.
+
+```bash
+# 1. Check your environment
+python scripts/check_environment.py
+
+# 2. Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate        # Linux/macOS
+# .\.venv\Scripts\Activate.ps1  # Windows PowerShell
+
+# 3. Review what would be installed, then install with consent
+python scripts/setup_studydd.py --check
+python scripts/setup_studydd.py --install
+
+# 4. Run validation and the demo replay
+python scripts/check_studydd.py
+python scripts/run_demo_replay.py
+```
+
+See [`docs/setup.md`](docs/setup.md) for the full setup guide and troubleshooting.
+
 ## Validation
 
 Run the sanity gate after setup or state changes:
@@ -294,4 +319,4 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.9.0 — learning activity and evidence intake orchestrator (`protocols/LEARNING_ACTIVITY_POLICY.md`, `protocols/EVIDENCE_INTAKE_POLICY.md`, `state/ACTIVITY_STATE.yaml`, `activities/ACTIVITY_TEMPLATES.yaml`, `scripts/plan_learning_activity.py`, `scripts/record_activity_result.py`) layered on top of source-grounded question quality and learner adaptation.
+v0.10.0 — cross-platform setup and dependency consent (`requirements.txt`, `docs/setup.md`, `scripts/check_environment.py`, `scripts/setup_studydd.py`, `scripts/test_cross_platform_paths.py`, `.github/workflows/validate.yml` matrix) layered on top of the learning activity orchestrator.
