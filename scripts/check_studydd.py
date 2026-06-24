@@ -51,6 +51,7 @@ REQUIRED_STATE_FILES = [
     "state/CURRENT_CONTEXT.md",
     "state/EVIDENCE_INDEX.yaml",
     "state/STATE_MANIFEST.yaml",
+    "state/PERFORMANCE_BUDGET.yaml",
 ]
 
 REQUIRED_TARGET_FILES = [
@@ -97,6 +98,8 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/MISTAKE_TAXONOMY.md",
     "protocols/LOW_ENERGY_MODE.md",
     "protocols/STATE_LOADING_POLICY.md",
+    "protocols/PERFORMANCE_POLICY.md",
+    "protocols/STATE_WRITE_POLICY.md",
 ]
 
 REQUIRED_PROMPT_FILES = [
@@ -129,6 +132,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/test_demo_replay.py",
     "scripts/compact_state.py",
     "scripts/build_context_pack.py",
+    "scripts/validate_touched_state.py",
+    "scripts/plan_state_update.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -199,6 +204,7 @@ YAML_FILES = [
     "state/SKILL_MAP.yaml",
     "state/STATE_MANIFEST.yaml",
     "state/EVIDENCE_INDEX.yaml",
+    "state/PERFORMANCE_BUDGET.yaml",
     "reviews/REVIEW_STATE.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
@@ -1110,6 +1116,19 @@ def check_context_pack_gitignored() -> list[str]:
     return errors
 
 
+def check_state_cache_gitignored() -> list[str]:
+    errors: list[str] = []
+    gitignore = ROOT / ".gitignore"
+    if not gitignore.is_file():
+        errors.append("Missing .gitignore; .studydd/state_cache.json must be ignored")
+        return errors
+
+    text = gitignore.read_text(encoding="utf-8")
+    if ".studydd/state_cache.json" not in text and ".studydd/" not in text and ".studydd" not in text:
+        errors.append(".studydd/state_cache.json is not ignored in .gitignore")
+    return errors
+
+
 def check_evidence_index(yaml: object) -> list[str]:
     errors: list[str] = []
     if yaml is None:
@@ -1323,6 +1342,7 @@ def main() -> int:
         errors.extend(check_review_state(yaml, warnings))
         errors.extend(check_state_manifest(yaml))
         errors.extend(check_context_pack_gitignored())
+        errors.extend(check_state_cache_gitignored())
         errors.extend(check_evidence_index(yaml))
         errors.extend(check_session_summaries())
         errors.extend(check_current_context())

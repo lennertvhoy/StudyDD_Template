@@ -206,6 +206,8 @@ python3 scripts/test_create_instance.py
 python3 scripts/test_compact_state.py
 python3 scripts/test_context_pack.py
 python3 scripts/test_study_skills.py
+python3 scripts/test_performance_policy.py
+python3 scripts/test_validate_touched_state.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
@@ -217,6 +219,12 @@ test, and `git diff --check` on every push and pull request. See
 StudyDD keeps long audit logs, but agents do not load everything by default. Before a session, the repo builds a compact context pack from canonical state, indexes, summaries, due reviews, and relevant evidence. Raw logs stay available for audit and repair.
 
 See `protocols/STATE_LOADING_POLICY.md`, `scripts/compact_state.py`, and `scripts/build_context_pack.py`.
+
+### Fast path state updates
+
+StudyDD keeps a full audit trail, but ordinary tutoring turns use a fast path. The agent loads the current context pack, touches only the relevant skill/evidence/review records, and runs targeted validation. Full compaction and full validation happen at session boundaries, CI, audit, or repair.
+
+See `protocols/PERFORMANCE_POLICY.md`, `protocols/STATE_WRITE_POLICY.md`, `scripts/validate_touched_state.py`, and `scripts/plan_state_update.py`.
 
 ### Study skills
 
@@ -270,4 +278,4 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.8 — intelligent state loading (`scripts/compact_state.py`, `scripts/build_context_pack.py`, `state/STATE_MANIFEST.yaml`) and study-domain skills (`study_skills/<id>/SKILL.md`).
+v0.8.1 — fast-path state policy (`protocols/PERFORMANCE_POLICY.md`, `state/PERFORMANCE_BUDGET.yaml`, `scripts/validate_touched_state.py`, `scripts/plan_state_update.py`) layered on top of intelligent state loading and study-domain skills.

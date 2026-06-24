@@ -2,6 +2,8 @@
 
 > **Agent action.** Run this protocol at the end of every StudyDD session.
 
+This is a **session-boundary** operation. Full compaction and full validation are appropriate here.
+
 ## Must Do
 
 1. **Summarize what was covered.**
@@ -25,7 +27,7 @@
    - `reviews/REVIEW_QUEUE.md`
    - `NEXT_ACTIONS.md`
 
-5. **Compact state.**
+5. **Compact state (session boundary).**
    - Run `python3 scripts/compact_state.py` after appending evidence and sessions.
 
 6. **Confirm or apply authorized updates.**
@@ -34,10 +36,10 @@
 7. **Run validator.**
    - `python3 scripts/check_studydd.py`
 
-7. **Write the next action.**
+8. **Write the next action.**
    - One clear next action in `NEXT_ACTIONS.md`.
 
-8. **Leave a truthful handoff.**
+9. **Leave a truthful handoff.**
    - repo path
    - branch
    - HEAD commit
@@ -48,6 +50,8 @@
    - summary of didactic and operational upgrades (template work only)
    - weak areas still open
    - next best action
+   - mode used (fast path, session boundary, or deep audit)
+   - files read and written
 
 ## Do Not
 
@@ -55,3 +59,4 @@
 - Inflate readiness in the summary.
 - Leave the worktree dirty with unreported changes.
 - Push without explicit instruction.
+- Run full compaction during ordinary fast-path turns.
