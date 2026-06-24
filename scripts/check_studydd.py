@@ -36,6 +36,8 @@ REQUIRED_DOC_FILES = [
     "docs/studydd-principles.md",
     "docs/inspect-and-override-state.md",
     "docs/question-bank-schema.md",
+    "docs/demo-walkthrough.md",
+    "docs/linkedin-product-blurb.md",
 ]
 
 REQUIRED_STATE_FILES = [
@@ -118,6 +120,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/agent_privacy_check.py",
     "scripts/schedule_review.py",
     "scripts/select_next_study_action.py",
+    "scripts/run_demo_replay.py",
+    "scripts/test_demo_replay.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -142,6 +146,22 @@ REQUIRED_INTERVIEW_EXAMPLE_FILES = [
     "EXAMPLES/product-engineer-interview-example/targets/product-engineer-interview/TARGET.yaml",
 ]
 
+REQUIRED_DEMO_EXAMPLE_FILES = [
+    "EXAMPLES/demo_ai_search_exam/README.md",
+    "EXAMPLES/demo_ai_search_exam/NEXT_ACTIONS.md",
+    "EXAMPLES/demo_ai_search_exam/state/STUDY_STATUS.md",
+    "EXAMPLES/demo_ai_search_exam/state/STUDY_STATE.yaml",
+    "EXAMPLES/demo_ai_search_exam/state/SKILL_MAP.yaml",
+    "EXAMPLES/demo_ai_search_exam/state/EVIDENCE_LOG.md",
+    "EXAMPLES/demo_ai_search_exam/reviews/REVIEW_QUEUE.md",
+    "EXAMPLES/demo_ai_search_exam/reviews/REVIEW_STATE.yaml",
+    "EXAMPLES/demo_ai_search_exam/reviews/REVIEW_OVERRIDES.md",
+    "EXAMPLES/demo_ai_search_exam/sessions/SESSION_LOG.md",
+    "EXAMPLES/demo_ai_search_exam/sources/SOURCE_INDEX.md",
+    "EXAMPLES/demo_ai_search_exam/targets/demo-ai-search-exam/TARGET.yaml",
+    "EXAMPLES/demo_ai_search_exam/targets/demo-ai-search-exam/questions/Q-DEMO-001.yaml",
+]
+
 REQUIRED_GITHUB_TEMPLATES = [
     ".github/ISSUE_TEMPLATE/bug_report.md",
     ".github/ISSUE_TEMPLATE/feature_request.md",
@@ -161,6 +181,7 @@ REQUIRED_FILES = (
     + REQUIRED_SCRIPT_FILES
     + REQUIRED_AI103_EXAMPLE_FILES
     + REQUIRED_INTERVIEW_EXAMPLE_FILES
+    + REQUIRED_DEMO_EXAMPLE_FILES
     + REQUIRED_GITHUB_TEMPLATES
 )
 
@@ -176,6 +197,11 @@ YAML_FILES = [
     "EXAMPLES/product-engineer-interview-example/state/STUDY_STATE.yaml",
     "EXAMPLES/product-engineer-interview-example/state/SKILL_MAP.yaml",
     "EXAMPLES/product-engineer-interview-example/targets/product-engineer-interview/TARGET.yaml",
+    "EXAMPLES/demo_ai_search_exam/state/STUDY_STATE.yaml",
+    "EXAMPLES/demo_ai_search_exam/state/SKILL_MAP.yaml",
+    "EXAMPLES/demo_ai_search_exam/reviews/REVIEW_STATE.yaml",
+    "EXAMPLES/demo_ai_search_exam/targets/demo-ai-search-exam/TARGET.yaml",
+    "EXAMPLES/demo_ai_search_exam/targets/demo-ai-search-exam/questions/Q-DEMO-001.yaml",
 ]
 
 REQUIRED_STUDY_STATE_KEYS = [

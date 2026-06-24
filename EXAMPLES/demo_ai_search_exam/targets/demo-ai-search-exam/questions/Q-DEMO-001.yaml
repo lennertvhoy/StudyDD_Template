@@ -1,0 +1,22 @@
+---
+id: Q-DEMO-001
+target_id: demo-ai-search-exam
+skill_id: demo-search-basics
+cognitive_level: explain
+difficulty: 2
+source_ref: demo-source
+public_prompt: >
+  Explain the difference between keyword search and vector search, and describe one situation
+  where you would combine them.
+private_answer_key: |
+  Keyword search matches exact terms. Vector search matches semantic similarity.
+  Combine them in hybrid retrieval when a query may miss exact terms but still describes intent.
+rubric:
+  - Distinguishes term matching from semantic similarity
+  - Gives a concrete hybrid-retrieval scenario
+common_traps:
+  - Calling keyword search dumb instead of explaining term matching
+  - Forgetting to mention a concrete scenario
+transfer_probe: When would you choose keyword-only, vector-only, and hybrid retrieval?
+last_used: 2026-06-24
+cooldown_days: 7

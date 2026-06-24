@@ -1,0 +1,15 @@
+review_items:
+- id: rev_demo-search-basics_20260624_100000
+  skill_id: demo-search-basics
+  evidence_id: ev_demo_001
+  target_id: demo-ai-search-exam
+  due_at: '2026-06-25T10:00:00+00:00'
+  last_reviewed_at: null
+  interval_days: 1
+  stability: null
+  difficulty: null
+  lapses: 0
+  priority: normal
+  status: due
+  source: partial_answer
+  override_count: 1

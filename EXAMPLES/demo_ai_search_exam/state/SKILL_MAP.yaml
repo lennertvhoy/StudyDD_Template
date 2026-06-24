@@ -1,0 +1,94 @@
+skills:
+- id: demo-search-basics
+  label: Keyword vs vector search
+  status: weak
+  readiness: 35
+  confidence: low
+  evidence:
+  - ev_demo_001
+  next_validation_question: Q-DEMO-001
+- id: demo-hybrid-retrieval
+  label: Hybrid retrieval design
+  status: pending
+  readiness: 0
+  confidence: low
+  evidence: []
+  next_validation_question: Q-DEMO-002
+- id: demo-eval-relevance
+  label: Retrieval relevance metrics
+  status: pending
+  readiness: 0
+  confidence: low
+  evidence: []
+  next_validation_question: Q-DEMO-003
+status_values:
+  confirmed: Demonstrated by repeated or strong evidence.
+  demonstrated: Demonstrated across varied targeted questions.
+  practiced: Answered correctly at least once but not yet stable.
+  weak: Answered incorrectly or incompletely.
+  pending: Not yet assessed.
+  blocked: Held back by a confusion that must be resolved first.
+readiness_policy:
+  evidence_required: true
+  default_new_skill_readiness: 0
+  single_repair_max_readiness: 55
+  confirmed_requires_varied_evidence: true
+  bands:
+  - range: 0-30
+    label: exposed / new
+    description: Has seen the topic, no or weak evidence.
+  - range: 31-50
+    label: familiar
+    description: Can talk about the topic, evidence is thin or unrepaired.
+  - range: 51-70
+    label: practiced
+    description: Correct in targeted questions, not yet stable.
+  - range: 71-80
+    label: demonstrated
+    description: Correct across varied targeted questions.
+  - range: 81-90
+    label: mixed-checkpoint ready
+    description: Holds up in mixed-topic drills.
+  - range: 91-100
+    label: exam ready
+    description: Repeated high-pressure or timed evidence.
+  rules:
+  - A single correct answer moves a skill to practiced, not confirmed.
+  - A repaired answer stays at or below practiced.
+  - Summary notes, reading, or source coverage never prove readiness.
+  - High readiness needs mixed evidence.
+  - Certification confidence needs fresh official sources.
+  - Stale source maps should block high confidence.
+cognitive_levels:
+- recall
+- apply
+- troubleshoot
+- choose-best
+- explain
+- design
+review_modes:
+- recall
+- scenario
+- explain
+- troubleshoot
+- choose-best
+mistake_types:
+- missed-constraint
+- stale-source-assumption
+- service-boundary-confusion
+- chose-training-when-retrieval-was-better
+- ignored-cost
+- ignored-monitoring
+- ignored-security
+- overconfident-guess
+- keyword-trap
+- vague-answer
+- correct-concept-weak-implementation
+- repaired-after-hint
+- source-confusion
+- memorized-wording-without-transfer
+- answer-changed-after-feedback
+metadata:
+  template_version: 0.6.0
+  last_updated: '2026-06-24'
+  updated_by: coding-agent
