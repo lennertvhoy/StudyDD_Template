@@ -116,7 +116,9 @@ def item_mistake_tags(fields: dict[str, str]) -> list[str]:
 
 def is_weak_evidence(fields: dict[str, str]) -> bool:
     verdict = fields.get("Verdict", "").strip().lower()
-    return any(weak in verdict for weak in WEAK_VERDICTS)
+    return bool(
+        re.search(r"\b(partial|incorrect|unclear|wrong)\b", verdict, re.IGNORECASE)
+    )
 
 
 def count_recent_mistakes(
@@ -144,20 +146,20 @@ def topic_for_tag(tag: str) -> str:
 
 def why_for_tag(tag: str, count: int) -> str:
     topic = topic_for_tag(tag)
-    item_label = "item" if count == 1 else "items"
     if tag == "service-boundary-confusion":
         return (
-            f"The last {count} weak evidence {item_label} involve choosing between similar services."
+            "The last "
+            f"{count} weak evidence items involve choosing between similar services."
         )
     if tag == "missed-constraint":
-        return f"The last {count} weak evidence {item_label} miss stated constraints."
+        return f"The last {count} weak evidence items miss stated constraints."
     if tag == "stale-source-assumption":
-        return f"The last {count} weak evidence {item_label} rely on stale source assumptions."
+        return f"The last {count} weak evidence items rely on stale source assumptions."
     if tag == "overconfident-guess":
-        return f"The last {count} weak evidence {item_label} look like confident guesses."
+        return f"The last {count} weak evidence items look like confident guesses."
     if tag == "vague-answer":
-        return f"The last {count} weak evidence {item_label} are too vague to count as mastery."
-    return f"The last {count} weak evidence {item_label} relate to {topic}."
+        return f"The last {count} weak evidence items are too vague to count as mastery."
+    return f"The last {count} weak evidence items relate to {topic}."
 
 
 def build_evidence_recommendation(tag: str, count: int) -> str:

@@ -315,6 +315,109 @@ def test_overdue_reviews_produce_moderate_recommendation() -> None:
         assert "Learner control:" in result.stdout
 
 
+def test_non_weak_verdicts_are_ignored() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
+        tmp_root = Path(tmp)
+        write_review_state(tmp_root, [])
+        items = [
+            {
+                "date": "2026-06-24T10:00:00+00:00",
+                "verdict": "correct",
+                "mistake_type": "service-boundary-confusion",
+            },
+            {
+                "date": "2026-06-24T11:00:00+00:00",
+                "verdict": "impartial",
+                "mistake_type": "service-boundary-confusion",
+            },
+        ]
+        write_evidence_log(tmp_root, items)
+
+        result = run_script(tmp_root, "--now", "2026-06-24T12:00:00+00:00")
+        print("--- test_non_weak_verdicts_are_ignored stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "No recommendation: insufficient evidence." in result.stdout
+
+
+def test_all_weak_verdicts_are_counted() -> None:
+    for verdict in ("incorrect", "unclear", "wrong"):
+        with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
+            tmp_root = Path(tmp)
+            write_review_state(tmp_root, [])
+            items = [
+                {
+                    "date": f"2026-06-{22 + i:02d}T10:00:00+00:00",
+                    "verdict": verdict,
+                    "mistake_type": "service-boundary-confusion",
+                }
+                for i in range(2)
+            ]
+            write_evidence_log(tmp_root, items)
+
+            result = run_script(tmp_root, "--now", "2026-06-24T12:00:00+00:00")
+            print(f"--- test_all_weak_verdicts_are_counted ({verdict}) stdout ---")
+            print(result.stdout)
+            if result.stderr:
+                print("stderr:", result.stderr)
+            assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+            assert "service-boundary" in result.stdout
+            assert "Recommendation strength: moderate" in result.stdout
+
+
+def test_plural_overdue_reviews_message() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-adapt-") as tmp:
+        tmp_root = Path(tmp)
+        write_review_state(
+            tmp_root,
+            [
+                {
+                    "id": "rev_001",
+                    "skill_id": "skill-example",
+                    "evidence_id": "ev_001",
+                    "target_id": "target-example",
+                    "due_at": "2026-06-23T10:00:00+00:00",
+                    "last_reviewed_at": None,
+                    "interval_days": 1,
+                    "stability": None,
+                    "difficulty": None,
+                    "lapses": 0,
+                    "priority": "normal",
+                    "status": "scheduled",
+                    "source": "missed_question",
+                    "override_count": 0,
+                },
+                {
+                    "id": "rev_002",
+                    "skill_id": "skill-example",
+                    "evidence_id": "ev_002",
+                    "target_id": "target-example",
+                    "due_at": "2026-06-22T10:00:00+00:00",
+                    "last_reviewed_at": None,
+                    "interval_days": 2,
+                    "stability": None,
+                    "difficulty": None,
+                    "lapses": 0,
+                    "priority": "normal",
+                    "status": "scheduled",
+                    "source": "missed_question",
+                    "override_count": 0,
+                },
+            ],
+        )
+        write_evidence_log(tmp_root, [])
+
+        result = run_script(tmp_root, "--now", "2026-06-24T12:00:00+00:00")
+        print("--- test_plural_overdue_reviews_message stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "There are 2 review items past their due date." in result.stdout
+
+
 def main() -> int:
     tests = [
         test_learner_profile_remains_generic_and_unmutated,
@@ -325,6 +428,9 @@ def main() -> int:
         test_two_weak_evidence_items_produce_moderate_recommendation,
         test_compound_repaired_verdict_counts_as_weak_evidence,
         test_overdue_reviews_produce_moderate_recommendation,
+        test_non_weak_verdicts_are_ignored,
+        test_all_weak_verdicts_are_counted,
+        test_plural_overdue_reviews_message,
     ]
 
     failures = 0
