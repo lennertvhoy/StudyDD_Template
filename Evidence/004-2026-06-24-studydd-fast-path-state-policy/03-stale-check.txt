@@ -1,0 +1,1 @@
+State is stale. Run scripts/compact_state.py to rebuild derived summaries.

@@ -8,11 +8,16 @@ files that agents can load quickly:
 - state/EVIDENCE_INDEX.yaml
 - sessions/SESSION_SUMMARIES.md
 
-It is deterministic enough for tests and safe to run repeatedly.
+It is deterministic enough for tests and safe to run repeatedly. With
+`--check-stale` it reports whether compaction is needed without rewriting
+files. With `--force` it ignores the state cache and rebuilds everything.
 """
 
 from __future__ import annotations
 
+import argparse
+import hashlib
+import json
 import re
 import sys
 from datetime import datetime, timedelta, timezone
@@ -30,6 +35,18 @@ NEXT_ACTIONS_PATH = ROOT / "NEXT_ACTIONS.md"
 CURRENT_CONTEXT_PATH = ROOT / "state" / "CURRENT_CONTEXT.md"
 EVIDENCE_INDEX_PATH = ROOT / "state" / "EVIDENCE_INDEX.yaml"
 SESSION_SUMMARIES_PATH = ROOT / "sessions" / "SESSION_SUMMARIES.md"
+
+STATE_CACHE_DIR = ROOT / ".studydd"
+STATE_CACHE_PATH = STATE_CACHE_DIR / "state_cache.json"
+
+SOURCE_FILES = {
+    "evidence_log": EVIDENCE_LOG_PATH,
+    "session_log": SESSION_LOG_PATH,
+    "study_state": STUDY_STATE_PATH,
+    "skill_map": SKILL_MAP_PATH,
+    "review_state": REVIEW_STATE_PATH,
+    "next_actions": NEXT_ACTIONS_PATH,
+}
 
 
 def load_yaml(path: Path) -> dict:
@@ -185,6 +202,54 @@ def parse_session_entries(text: str) -> list[dict]:
             continue
         entries.append(entry)
     return entries
+
+
+def file_fingerprint(path: Path) -> dict:
+    """Return a stable fingerprint for a file, or empty dict if missing."""
+    if not path.is_file():
+        return {}
+    try:
+        data = path.read_bytes()
+        return {
+            "mtime": path.stat().st_mtime,
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "size": len(data),
+        }
+    except Exception:
+        return {}
+
+
+def load_state_cache() -> dict:
+    if not STATE_CACHE_PATH.is_file():
+        return {}
+    try:
+        return json.loads(STATE_CACHE_PATH.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+
+
+def save_state_cache(cache: dict) -> None:
+    STATE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    STATE_CACHE_PATH.write_text(json.dumps(cache, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def current_fingerprints() -> dict:
+    return {
+        name: file_fingerprint(path)
+        for name, path in SOURCE_FILES.items()
+    }
+
+
+def is_stale(cache: dict) -> tuple[bool, dict]:
+    """Return (stale, new_fingerprints). Stale means cache missing or any fingerprint changed."""
+    new = current_fingerprints()
+    old = cache.get("source_file_fingerprints") or {}
+    if not old:
+        return True, new
+    for name, fingerprint in new.items():
+        if old.get(name) != fingerprint:
+            return True, new
+    return False, new
 
 
 def build_current_context(
@@ -353,8 +418,23 @@ def build_session_summaries() -> str:
     return "\n".join(lines)
 
 
-def main() -> int:
-    print("Compacting StudyDD state...")
+def compact(force: bool = False, dry_run: bool = False) -> tuple[bool, dict]:
+    """Rebuild derived files as needed. Return (did_work, new_cache)."""
+    cache = load_state_cache()
+    stale, new_fingerprints = is_stale(cache)
+
+    # Determine which derived files need rebuilding.
+    evidence_fingerprint = new_fingerprints.get("evidence_log") or {}
+    session_fingerprint = new_fingerprints.get("session_log") or {}
+    old_fingerprints = cache.get("source_file_fingerprints") or {}
+
+    rebuild_evidence = force or stale or (old_fingerprints.get("evidence_log") != evidence_fingerprint)
+    rebuild_sessions = force or stale or (old_fingerprints.get("session_log") != session_fingerprint)
+    # Current context depends on multiple source files; rebuild if anything changed.
+    rebuild_context = force or stale
+
+    if dry_run:
+        return (rebuild_evidence or rebuild_sessions or rebuild_context, new_fingerprints)
 
     now = datetime.now(timezone.utc)
     study_state = load_yaml(STUDY_STATE_PATH)
@@ -362,20 +442,60 @@ def main() -> int:
     review_state = load_yaml(REVIEW_STATE_PATH)
     next_actions_text = NEXT_ACTIONS_PATH.read_text(encoding="utf-8") if NEXT_ACTIONS_PATH.is_file() else ""
 
-    context = build_current_context(study_state, skill_map, review_state, next_actions_text, now)
-    CURRENT_CONTEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    CURRENT_CONTEXT_PATH.write_text(context + "\n", encoding="utf-8")
+    if rebuild_context:
+        context = build_current_context(study_state, skill_map, review_state, next_actions_text, now)
+        CURRENT_CONTEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CURRENT_CONTEXT_PATH.write_text(context + "\n", encoding="utf-8")
+        print(f"Updated {CURRENT_CONTEXT_PATH.relative_to(ROOT)}")
 
-    evidence_index = build_evidence_index()
-    save_yaml(EVIDENCE_INDEX_PATH, evidence_index)
+    if rebuild_evidence:
+        evidence_index = build_evidence_index()
+        save_yaml(EVIDENCE_INDEX_PATH, evidence_index)
+        print(f"Updated {EVIDENCE_INDEX_PATH.relative_to(ROOT)} ({evidence_index['count']} evidence items)")
 
-    session_summaries = build_session_summaries()
-    SESSION_SUMMARIES_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SESSION_SUMMARIES_PATH.write_text(session_summaries, encoding="utf-8")
+    if rebuild_sessions:
+        session_summaries = build_session_summaries()
+        SESSION_SUMMARIES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SESSION_SUMMARIES_PATH.write_text(session_summaries, encoding="utf-8")
+        print(f"Updated {SESSION_SUMMARIES_PATH.relative_to(ROOT)}")
 
-    print(f"Updated {CURRENT_CONTEXT_PATH.relative_to(ROOT)}")
-    print(f"Updated {EVIDENCE_INDEX_PATH.relative_to(ROOT)} ({evidence_index['count']} evidence items)")
-    print(f"Updated {SESSION_SUMMARIES_PATH.relative_to(ROOT)}")
+    if not (rebuild_context or rebuild_evidence or rebuild_sessions):
+        print("No state changes detected. Derived summaries are up to date.")
+
+    cache = {
+        "last_compacted_at": now.isoformat(),
+        "source_file_fingerprints": new_fingerprints,
+    }
+    save_state_cache(cache)
+    return (rebuild_context or rebuild_evidence or rebuild_sessions, cache)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Compact StudyDD state into derived summaries")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Ignore the state cache and rebuild all derived files",
+    )
+    parser.add_argument(
+        "--check-stale",
+        action="store_true",
+        help="Report whether compaction is needed without rewriting files",
+    )
+    args = parser.parse_args()
+
+    if args.check_stale:
+        stale, _ = is_stale(load_state_cache())
+        if stale:
+            print("State is stale. Run scripts/compact_state.py to rebuild derived summaries.")
+            return 0
+        print("State is up to date. No compaction needed.")
+        return 0
+
+    print("Compacting StudyDD state...")
+    did_work, _ = compact(force=args.force)
+    if not did_work:
+        print("(Use --force to rebuild anyway.)")
     return 0
 
 

@@ -44,13 +44,14 @@ When the human asks for a StudyDD session, the agent must:
 
 1. **Verify repo path and remote** — confirm the repo root and remote match expectations; stop if they do not.
 2. **Run validator** — run `python3 scripts/check_studydd.py` and report the result.
-3. **Build compact context** — run or perform the equivalent of:
+3. **Build compact context (session boundary)** — run or perform the equivalent of:
    ```bash
-   python3 scripts/compact_state.py
+   python3 scripts/compact_state.py --check-stale
    python3 scripts/build_context_pack.py --task start_session
    ```
+   Only run `compact_state.py` without `--check-stale` if summaries are stale.
 4. **Read the context pack** — read `.studydd/context_pack.md` instead of loading every raw log.
-5. **Open raw logs only when necessary** — use `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, or `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator references them, or when grading/auditing requires exact historical text.
+5. **Open raw logs only when necessary** — use `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, or `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator references them, or when grading/auditing requires exact historical text. During ordinary fast-path turns, do not open raw logs.
 6. **Identify active target** — read `state/STUDY_STATE.yaml` and `targets/README.md`.
 7. **Inspect active target files** — read `targets/<active>/TARGET.yaml` and any target notes.
 8. **Load active study skill** — if the active target declares `study_skill`, read `study_skills/<id>/SKILL.md`; otherwise read `study_skills/generic/SKILL.md`.
@@ -65,7 +66,11 @@ When the human asks for a StudyDD session, the agent must:
 17. **Add evidence** — append to `state/EVIDENCE_LOG.md`.
 18. **Schedule review** — use `protocols/SCHEDULE_REVIEW.md` for weak or repaired answers.
 19. **Update next action** — write the single next step to `NEXT_ACTIONS.md`.
-20. **Compact and validate** — run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
+20. **Validate touched state (fast path)** — after small updates, run targeted validation:
+    ```bash
+    python3 scripts/validate_touched_state.py --skill-id <skill_id> --evidence-id <evidence_id>
+    ```
+    Run `python3 scripts/compact_state.py` and `python3 scripts/check_studydd.py` only at session boundaries or when targeted validation fails.
 21. **Commit/push only when instructed** — never push without explicit instruction.
 22. **Leave clean worktree and truthful handoff** — summarize what changed, what is due next, and any blockers.
 
@@ -108,7 +113,9 @@ Before every StudyDD session, read:
 33. `protocols/SCHEDULE_REVIEW.md`
 34. `protocols/CLOSE_SESSION.md`
 35. `protocols/STATE_LOADING_POLICY.md`
-36. `protocols/SOURCE_TRUST.md`
+36. `protocols/PERFORMANCE_POLICY.md`
+37. `protocols/STATE_WRITE_POLICY.md`
+38. `protocols/SOURCE_TRUST.md`
 37. `protocols/READINESS_POLICY.md`
 38. `protocols/QUESTION_QUALITY.md`
 39. `protocols/MISTAKE_TAXONOMY.md`
@@ -135,16 +142,20 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/select_next_study_action.py` = time-aware review-first recommendation
 - `scripts/compact_state.py` = compacts append-only logs into derived summaries/indexes
 - `scripts/build_context_pack.py` = builds the task-specific context pack agents load
+- `scripts/validate_touched_state.py` = fast-path validator for touched IDs only
+- `scripts/plan_state_update.py` = prints expected touched files for an operation
 - `scripts/run_demo_replay.py` = deterministic public demo of one full learning loop
 - `scripts/test_demo_replay.py` = asserts the demo replay produces expected artifacts
 - `state/STUDYDD_TEMPLATE_VERSION.yaml` = template version and upgrade origin
 - `state/STATE_MANIFEST.yaml` = declares file roles (canonical, audit, derived, protected)
+- `state/PERFORMANCE_BUDGET.yaml` = numeric loading/writing limits per execution mode
 - `state/CURRENT_CONTEXT.md` = compact human/agent-readable learner summary
 - `state/EVIDENCE_INDEX.yaml` = machine-readable evidence lookup
 - `reviews/REVIEW_STATE.yaml` = machine-readable spaced-repetition state
 - `reviews/REVIEW_OVERRIDES.md` = override log for skipped due reviews
 - `sessions/SESSION_SUMMARIES.md` = compact session summaries
 - `.studydd/context_pack.md` = task-specific runtime context for agents
+- `.studydd/state_cache.json` = generated fingerprints to skip unnecessary compaction
 - `study_skills/<id>/SKILL.md` = domain-specific tutoring policy
 - `NEXT_ACTIONS.md` = the single next best study action
 - `AGENTS.md` = how coding and tutor agents must behave
@@ -348,23 +359,23 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 1. Read `AGENTS.md` and safety protocols.
 2. Verify repo path and remote.
 3. Run `python3 scripts/check_studydd.py`.
-4. Run `python3 scripts/compact_state.py` and `python3 scripts/build_context_pack.py --task start_session`.
+4. Run `python3 scripts/compact_state.py --check-stale` and `python3 scripts/build_context_pack.py --task start_session`.
 5. Read `.studydd/context_pack.md` and the active study skill.
 6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
 7. Confirm the active focus and next question with the learner.
-8. Ask one question, guided by the active study skill.
+8. Ask one question, guided by the active study skill. Stay on the fast path.
 9. Receive the answer.
-10. Grade against the answer key, guided by the active study skill.
+10. Grade against the answer key, guided by the active study skill. Stay on the fast path.
 11. Explain the result.
 12. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
-13. Record the interaction in `sessions/SESSION_LOG.md` and `state/EVIDENCE_LOG.md`.
+13. Append evidence to `state/EVIDENCE_LOG.md` and update touched canonical state.
 14. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
-15. Run `python3 scripts/compact_state.py` to update derived summaries.
+15. Run `python3 scripts/validate_touched_state.py` on the touched IDs.
 16. Propose state updates.
 17. Confirm or apply authorized updates.
-18. Run `python3 scripts/check_studydd.py`.
+18. At session close, run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
 19. End with the next best action in `NEXT_ACTIONS.md`.
-20. Leave a truthful handoff.
+20. Leave a truthful handoff that lists the mode, files read, and files written.
 
 ## Handoff Requirements
 

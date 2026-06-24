@@ -2,6 +2,8 @@
 
 > **Agent action.** Run this protocol at the start of every StudyDD session.
 
+This is a **session-boundary** operation: compaction and full validation are appropriate here.
+
 ## Must Do
 
 1. **Verify repo path.**
@@ -24,8 +26,8 @@
    - Report pass/fail.
    - Fix validator failures before asking the first question.
 
-5. **Build and read the context pack.**
-   - Run `python3 scripts/compact_state.py`.
+5. **Build and read the context pack (session boundary).**
+   - Run `python3 scripts/compact_state.py --check-stale` and only run `python3 scripts/compact_state.py` if stale.
    - Run `python3 scripts/build_context_pack.py --task start_session`.
    - Read `.studydd/context_pack.md`.
    - Load the active target's `study_skills/<id>/SKILL.md` or fall back to `study_skills/generic/SKILL.md`.

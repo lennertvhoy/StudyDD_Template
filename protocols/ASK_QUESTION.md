@@ -2,9 +2,17 @@
 
 > **Agent action.** Use this protocol every time you ask a question.
 
+This is a **fast-path** operation. Do not load full raw logs or run full validation.
+
 ## Before Asking
 
-Build the context pack with `--task ask_question`. Load the active target, weak skills, due reviews, question bank metadata, and the active study skill. Do not load full raw logs unless needed.
+Build a minimal context pack:
+
+```bash
+python3 scripts/build_context_pack.py --task ask_question --skill-id <skill_id>
+```
+
+Load the active target, weak skills, due reviews, question bank metadata, and the active study skill. Do not load full raw logs unless needed.
 
 Internally define:
 
