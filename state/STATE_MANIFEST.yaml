@@ -36,6 +36,14 @@ files:
     role: canonical
     load_default: true
     protected: true
+  sources/SOURCE_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+  state/LEARNER_PROFILE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
   state/EVIDENCE_LOG.md:
     role: append_only_audit
     load_default: false
