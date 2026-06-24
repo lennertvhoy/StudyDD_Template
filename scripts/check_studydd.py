@@ -26,6 +26,7 @@ REQUIRED_ROOT_FILES = [
     "NEXT_ACTIONS.md",
     "LICENSE.md",
     "CONTRIBUTING.md",
+    "requirements.txt",
 ]
 
 REQUIRED_DOC_FILES = [
@@ -39,6 +40,7 @@ REQUIRED_DOC_FILES = [
     "docs/question-bank-schema.md",
     "docs/demo-walkthrough.md",
     "docs/linkedin-product-blurb.md",
+    "docs/setup.md",
 ]
 
 REQUIRED_STATE_FILES = [
@@ -165,6 +167,9 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/analyze_voice_note.py",
     "scripts/analyze_presentation_rehearsal.py",
     "scripts/test_learning_activities.py",
+    "scripts/check_environment.py",
+    "scripts/setup_studydd.py",
+    "scripts/test_cross_platform_paths.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [

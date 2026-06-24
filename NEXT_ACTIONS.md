@@ -4,7 +4,7 @@
 
 ## Current next action
 
-1. Initialize the learner profile, add the first study target, build an initial skill map from trusted sources, and start one active tutoring question.
+1. Continue lowering adoption friction: begin StudyDD Containerized Setup v1 (Docker / Podman / devcontainer) so learners can run StudyDD without manually managing a local Python environment, or add a lightweight CLI entry point that wraps `check_environment`, `setup_studydd`, and `run_demo_replay`.
 
 ## Pending actions
 
