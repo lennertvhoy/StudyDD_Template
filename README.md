@@ -8,6 +8,14 @@ Give the repo to a coding agent, tell it who you are and what you want to learn,
 
 Your progress is never hidden inside an app database or chat history.
 
+### Source-grounded question quality
+
+StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source refresh is cached and deliberate, not performed on every question.
+
+### Learner adaptation with learner control
+
+StudyDD adapts question style, review strategy, and study recommendations from evidence and learner feedback. It may suggest better approaches, but the learner can accept, modify, or override them. Overrides are recorded so the study state remains honest.
+
 ## The Promise
 
 > Give this repo to a coding agent, tell it who you are and what you want to learn, and it turns the directory into your personal study library, tutor memory, readiness tracker, spaced-repetition queue, and next-action engine.
