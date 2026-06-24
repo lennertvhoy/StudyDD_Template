@@ -3,6 +3,7 @@ skills: []
 
 status_values:
   confirmed: "Demonstrated by repeated or strong evidence."
+  demonstrated: "Demonstrated across varied targeted questions."
   practiced: "Answered correctly at least once but not yet stable."
   weak: "Answered incorrectly or incompletely."
   pending: "Not yet assessed."
@@ -73,6 +74,6 @@ mistake_types:
   - answer-changed-after-feedback
 
 metadata:
-  template_version: "0.4.0"
+  template_version: "0.5.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"
