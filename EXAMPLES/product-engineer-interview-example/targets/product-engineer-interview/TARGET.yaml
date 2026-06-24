@@ -1,0 +1,16 @@
+---
+id: "product-engineer-interview"
+title: "Product Engineer Interview Loop"
+type: "interview"
+exam_or_goal: "Product engineer onsite / virtual loop"
+deadline: "2026-07-15"
+success_criteria:
+  - "Answer behavioral questions with concrete examples, metrics, and reflection."
+  - "Explain system design tradeoffs in user and business terms."
+  - "Demonstrate enough coding fluency for a medium exercise."
+trusted_sources:
+  - "S-PE-001"
+  - "S-PE-002"
+readiness_policy:
+  conservative: true
+  confirmed_requires_varied_evidence: true

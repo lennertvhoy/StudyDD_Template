@@ -1,7 +1,20 @@
 ---
 skills: []
 
+status_values:
+  confirmed: "Demonstrated by repeated or strong evidence."
+  practiced: "Answered correctly at least once but not yet stable."
+  weak: "Answered incorrectly or incompletely."
+  pending: "Not yet assessed."
+  blocked: "Held back by a confusion that must be resolved first."
+
+readiness_policy:
+  evidence_required: true
+  default_new_skill_readiness: 0
+  single_repair_max_readiness: 55
+  confirmed_requires_varied_evidence: true
+
 metadata:
-  template_version: "0.1.0"
-  last_updated: ""
-  updated_by: ""
+  template_version: "0.3.0"
+  last_updated: "2026-06-24"
+  updated_by: "coding-agent"

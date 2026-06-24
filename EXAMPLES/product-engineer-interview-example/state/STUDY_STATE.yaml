@@ -6,6 +6,14 @@ learner:
   preferred_language: "English"
   preferred_tutoring_style: "Mock interviews with immediate feedback"
 
+active_target_id: "product-engineer-interview"
+
+targets:
+  - id: "product-engineer-interview"
+    path: "targets/product-engineer-interview/TARGET.yaml"
+    title: "Product Engineer Interview Loop"
+    status: "active"
+
 study_target:
   title: "Product Engineer Interview Loop"
   exam_or_goal: "Product engineer onsite / virtual loop"
@@ -85,6 +93,14 @@ active_focus:
   blocking_confusions:
     - "When to prioritize consistency over availability in a product feature"
 
+review:
+  queue: "reviews/REVIEW_QUEUE.md"
+  due_count: 3
+
+sources:
+  index: "sources/SOURCE_INDEX.md"
+  trusted_source_policy: "Use target company materials, job description, and interview rubric first; treat generic prep notes as secondary."
+
 session_history:
   - date: "2026-06-23"
     focus: "Behavioral mock interview"
@@ -102,6 +118,11 @@ session_history:
       - "E-20260622-PE-002"
     state_change: "pe-system-design and pe-collaboration marked weak"
 
+workflow:
+  happy_path_step: 5
+  stage: "active_tutoring"
+  next_action_ref: "NEXT_ACTIONS.md"
+
 rules:
   no_readiness_inflation: true
   one_question_at_a_time: true
@@ -109,6 +130,6 @@ rules:
   corrections_must_update_state: true
 
 metadata:
-  template_version: "0.2.0"
+  template_version: "0.3.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"

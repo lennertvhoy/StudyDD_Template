@@ -15,6 +15,7 @@ Thank you for helping improve StudyDD.
 - Web apps, databases, hosted services, or beginner CLI apps
 - Heavy frameworks
 - Features that hide the state files from the learner
+- Personal learner state in the root public template
 
 ## How to contribute
 
@@ -31,3 +32,4 @@ Thank you for helping improve StudyDD.
 - Keep YAML valid and human-editable.
 - Prefer clarity over cleverness.
 - Do not inflate readiness in examples.
+- Keep the root template generic; real learner instances belong in private copies or clearly marked example folders.

@@ -6,6 +6,14 @@ learner:
   preferred_language: "English"
   preferred_tutoring_style: "Exam-style drills with short explanations"
 
+active_target_id: "ai-103"
+
+targets:
+  - id: "ai-103"
+    path: "targets/ai-103/TARGET.yaml"
+    title: "Microsoft AI-103"
+    status: "active"
+
 study_target:
   title: "Microsoft AI-103"
   exam_or_goal: "Azure AI Engineer Associate certification"
@@ -84,6 +92,14 @@ active_focus:
   blocking_confusions:
     - "Difference between manual review and automated evaluator runs"
 
+review:
+  queue: "reviews/REVIEW_QUEUE.md"
+  due_count: 3
+
+sources:
+  index: "sources/SOURCE_INDEX.md"
+  trusted_source_policy: "Use Microsoft Learn certification and product documentation first; treat notes and summaries as secondary."
+
 session_history:
   - date: "2026-06-23"
     focus: "Azure AI Search and RAG exam drill"
@@ -100,6 +116,11 @@ session_history:
       - "E-20260622-002"
     state_change: "ai103-foundry-eval and ai103-agents marked weak"
 
+workflow:
+  happy_path_step: 5
+  stage: "active_tutoring"
+  next_action_ref: "NEXT_ACTIONS.md"
+
 rules:
   no_readiness_inflation: true
   one_question_at_a_time: true
@@ -107,6 +128,6 @@ rules:
   corrections_must_update_state: true
 
 metadata:
-  template_version: "0.1.0"
+  template_version: "0.3.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"
