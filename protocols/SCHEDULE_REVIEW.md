@@ -18,6 +18,24 @@ Do not schedule a review for:
 - a single confident correct answer on a freshly learned skill
 - a `confirmed` skill with recent strong evidence
 
+## How To Schedule
+
+Use `scripts/schedule_review.py` to create a machine-readable item in `reviews/REVIEW_STATE.yaml` and a human-readable mirror in `reviews/REVIEW_QUEUE.md`.
+
+Example:
+
+```bash
+python3 scripts/schedule_review.py \
+  --skill-id skill_example \
+  --evidence-id ev_001 \
+  --target-id target_example \
+  --grade partial \
+  --confidence low \
+  --now "2026-06-24T18:30:00+02:00"
+```
+
+`due_at` must be a timezone-aware ISO 8601 timestamp.
+
 ## Review Item Format
 
 ```markdown
@@ -37,10 +55,18 @@ Do not schedule a review for:
 
 ## Interval Guidance
 
-- First review after a weak/repaired answer: 1 day.
-- Correct recall: double the interval (1d → 2d → 4d → 8d → …), capped at the target deadline or 30 days.
-- Partial or lapse: reset interval to 1 day and increment lapse count.
-- Stale confirmed skill: 14 days or shorter if the target deadline is near.
+The simple transparent scheduler uses these intervals:
+
+- wrong + low confidence: same day (0 days)
+- wrong + medium/high confidence: 1 day
+- partial: 1 day
+- correct + low confidence: 2 days
+- correct + medium confidence: 4 days
+- correct + high confidence: 7 days
+- repeated success: expand interval gradually
+- lapse: reset to the shortest interval and increment lapse count
+
+A future algorithm (FSRS, SM-2) can replace this map once the review data is stable, without changing the file surface.
 
 ## Review Mode Selection
 
