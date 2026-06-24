@@ -32,7 +32,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `state/` = current learner truth
 - `targets/` = one folder per study, certification, interview, or skill target
 - `reviews/` = spaced repetition queue
-- `sessions/` = tutor session logs and SkillSignal update packets
+- `sessions/` = tutor session logs and update history
 - `sources/` = trusted source tracking
 - `scripts/check_studydd.py` = repo health gate
 - `NEXT_ACTIONS.md` = the single next best study action

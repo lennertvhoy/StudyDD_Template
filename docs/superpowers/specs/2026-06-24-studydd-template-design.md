@@ -47,7 +47,6 @@ StudyDD_Template/
   sessions/
     README.md
     SESSION_LOG.md
-    SKILLSIGNAL_PACKETS.md
   sources/
     README.md
     SOURCE_INDEX.md
