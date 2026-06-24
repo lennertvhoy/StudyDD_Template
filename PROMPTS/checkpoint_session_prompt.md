@@ -24,9 +24,15 @@ Use this prompt for mixed-review or exam-style checkpoint sessions.
 
 1. Ask one question at a time.
 2. Do not reveal the answer until the learner has responded.
-3. Grade strictly against the answer key.
-4. Record every result as evidence.
-5. Tag mistakes using `protocols/MISTAKE_TAXONOMY.md`.
+3. For multiple-choice, choose-two, choose-three, and matching questions:
+   - create the private answer key first
+   - shuffle visible options randomly
+   - verify the answer key still points to the correct visible labels
+   - avoid repeating the same correct label too often
+4. Grade strictly against the answer key.
+5. Record every result as evidence.
+6. Record the final visible option order, correct answer label(s), learner answer, and grading result in the session log.
+7. Tag mistakes using `protocols/MISTAKE_TAXONOMY.md`.
 
 ## Grading
 

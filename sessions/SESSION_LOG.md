@@ -16,6 +16,13 @@ Each entry should include:
 - **State changes:** what changed in `state/STUDY_STATE.yaml` or `state/SKILL_MAP.yaml`
 - **Next action proposed:** what the learner should do next
 
+For fixed-option questions (multiple-choice, choose-two, choose-three, matching), also record per question:
+
+- **Final visible option order:** the shuffled labels and option content shown to the learner
+- **Correct answer label(s):** the label(s) that mapped to the private answer key after shuffling
+- **Learner answer:** the label(s) the learner selected
+- **Grading result:** correct / partial / incorrect / unclear
+
 ## Sessions
 
 None yet.
