@@ -204,12 +204,16 @@ def count_overdue_reviews(review_state: dict[str, Any], now: datetime) -> int:
 
 
 def build_review_recommendation(overdue_count: int) -> str:
+    if overdue_count == 1:
+        why = "There is 1 review item past its due date."
+    else:
+        why = f"There are {overdue_count} review items past their due date."
     return (
         f"StudyDD suggestion:\n\n"
         f"You have overdue reviews. Recommended adjustment:\n"
         f"Do your due reviews before adding new material.\n\n"
         f"Why:\n"
-        f"There are {overdue_count} review item(s) past their due date.\n\n"
+        f"{why}\n\n"
         f"Recommendation strength: moderate\n\n"
         f"Learner control:\n"
         f"You can accept, modify, or override this."
