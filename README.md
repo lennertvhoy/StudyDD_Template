@@ -1,42 +1,58 @@
 # StudyDD_Template
 
-**Agent-native educational state template.**
+**One simple happy-path study system for coding agents.**
 
-StudyDD applies [StateDD](https://github.com/lennertvhoy/StateDD_Template) principles to learning, certification prep, interview prep, and skill development.
+StudyDD turns a plain repo directory into a personal study second brain. Give the repo to a coding agent, tell it who you are and what you want to learn, and it maintains your study library, tutor memory, readiness tracker, spaced-repetition queue, source registry, and next-action engine.
 
-You talk to a coding agent. The agent maintains the study state. The state stays plain, inspectable, and editable — so your learning progress is never hidden inside a black box.
+The files stay plain, inspectable, and editable. Your progress is never hidden inside an app database or chat history.
 
-## The problem
+## The Promise
+
+> Give this repo to a coding agent, tell it who you are and what you want to learn, and it turns the directory into your personal study library, tutor memory, readiness tracker, spaced-repetition queue, and next-action engine.
+
+## Why This Exists
 
 AI tutors and coding agents are useful study companions, but they often:
 
 - forget what you already know
-- inflate your readiness after one easy answer
+- inflate readiness after one easy answer
 - lose track of weak areas
 - grade against the answer they expected instead of what you actually said
 - drift into generic encouragement instead of exam-style challenge
 - make mistakes and never update the learning state
 
-StudyDD fixes this by making your learning state explicit, evidence-based, and auditable.
+StudyDD fixes this by making learning state explicit, evidence-based, and auditable.
 
-## What StudyDD gives you
+## The Happy Path
 
-The same structure serious projects have, applied to your study journey:
+1. Initialize learner profile.
+2. Add first target.
+3. Build skill map from trusted sources.
+4. Set conservative readiness.
+5. Start one-question-at-a-time active tutoring.
+6. Log answer and feedback.
+7. Update readiness only with evidence.
+8. Add weak items to spaced repetition.
+9. Choose the next best study action.
+10. Validate repo health.
 
-- **current state** — what you are studying, what you know, and what is still weak
-- **evidence log** — proof of what you have actually demonstrated
-- **session log** — record of each study session
-- **backlog** — topics and skills still to cover
-- **next actions** — the next best study move
-- **tutor protocol** — rules for asking, grading, and repairing questions
-- **skill map** — tracked competencies with readiness and confidence
-- **correction history** — where the tutor or agent made a mistake and how it was fixed
+There is no architecture menu in the core template. The default path is intentionally boring and powerful.
 
-## How to start
+## Folder Model
 
-StudyDD is designed for **coding-agent workflows**: Codex, Kimi Code, Claude Code, Cursor, OpenClaw, or similar.
+- `state/` — current learner truth
+- `targets/` — one folder per study, certification, interview, or skill target
+- `reviews/` — spaced repetition queues
+- `sessions/` — tutor session logs and SkillSignal update packets
+- `sources/` — trusted source tracking
+- `scripts/check_studydd.py` — repo sanity gate
+- `NEXT_ACTIONS.md` — the single next best study action
+- `AGENTS.md` — how coding and tutor agents must behave
+- `protocols/` — tutor and session rules
+- `PROMPTS/` — reusable prompts for coding agents and tutors
+- `EXAMPLES/` — reference states only, not defaults
 
-### Quick start
+## Quick Start
 
 1. Clone or copy this template into your own folder.
 
@@ -46,89 +62,63 @@ cd StudyDD_Template
 ```
 
 2. Open the folder in your coding agent.
-3. Open `PROMPTS/coding_agent_start_prompt.md` and paste it into the agent chat.
-4. Tell the agent what you are studying.
+3. Paste `PROMPTS/coding_agent_start_prompt.md` into the agent chat.
+4. Tell the agent what you want to learn.
 
 Example:
 
-> I am studying for Microsoft AI-103. Set up StudyDD for me and start a hard exam-style study session.
+> Initialize this StudyDD copy for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
 
-The agent will:
+The agent will read `AGENTS.md`, inspect the current state, initialize the learner profile and first target, build a conservative skill map from trusted sources, and set the first next action.
 
-- read `AGENTS.md`
-- inspect existing state
-- ask only essential setup questions
-- initialize missing state files
-- run one study question at a time
-- grade your actual answer
-- record evidence
-- update weak areas and next actions
-- avoid inflating your readiness
-- preserve any human override you give
-- end with a clear next action
+## What The Agent Maintains
 
-## Two surfaces
-
-### User surface — what the human touches
-
-These files are written for you:
-
-- `README.md` — this file
-- `docs/agent-native-quickstart.md` — fastest path to your first session
-- `docs/how-to-use-with-codex.md`
-- `docs/how-to-use-with-kimi-code.md`
-- `docs/how-to-use-with-claude-code.md`
-- `docs/how-to-use-with-cursor.md`
-- `docs/studydd-principles.md` — the ideas behind StudyDD
-- `docs/inspect-and-override-state.md` — how to audit or correct the agent
-
-Your normal workflow is the coding-agent chat plus these docs.
-
-### Agent surface — what the agent maintains
-
-These files are the transparent project memory the agent reads and updates:
-
-- `AGENTS.md` — agent behavior contract
 - `state/STUDY_STATUS.md` — short human-readable snapshot
 - `state/STUDY_STATE.yaml` — structured current truth
-- `state/NEXT_STUDY_ACTIONS.md` — active queue
-- `state/STUDY_BACKLOG.md` — roadmap and backlog
-- `state/SESSION_LOG.md` — session history
-- `state/EVIDENCE_LOG.md` — demonstrated evidence
 - `state/SKILL_MAP.yaml` — skills with readiness and confidence
-- `protocols/TUTOR_PROTOCOL.md` — ask/grade/repair rules
-- `protocols/SESSION_TEMPLATE.md` — session structure
-- `PROMPTS/*.md` — copy-paste prompts for agents and tutors
-- `PROMPTS/interview_prep_prompt.md` — interview-specific rehearsal
-- `EXAMPLES/ai-103-example/` — a concrete certification example
+- `state/EVIDENCE_LOG.md` — demonstrated evidence
+- `state/STUDY_BACKLOG.md` — strategic backlog
+- `targets/` — target-specific files
+- `reviews/REVIEW_QUEUE.md` — spaced repetition queue
+- `sessions/SESSION_LOG.md` — session history
+- `sessions/SKILLSIGNAL_PACKETS.md` — proposed skill updates
+- `sources/SOURCE_INDEX.md` — trusted source registry
+- `NEXT_ACTIONS.md` — immediate next step
 
-You are always allowed to inspect, edit, or override these files. They are plain Markdown and YAML. The default workflow, however, is that the agent maintains them for you.
+You can inspect or override any of these files. They are plain Markdown and YAML.
 
-## You can always inspect the state
+## Validation
 
-Nothing is hidden. If you want to know why the agent thinks you are weak on a topic, read `state/SKILL_MAP.yaml` and `state/EVIDENCE_LOG.md`. If the agent misgrades an answer or makes a mistake, correct it and the agent must update the state rather than hide the error.
+Run the sanity gate after setup or state changes:
 
-## Who it is for
+```bash
+python3 scripts/check_studydd.py
+```
 
-- certification prep
-- exam study
-- professional upskilling
-- interview preparation
-- course design
-- self-study with AI tutors
-- teacher or trainer-guided learning paths
+The validator checks required files, parses YAML when PyYAML is available, and verifies the happy-path folder structure.
 
-## How it relates to StateDD
+## Source And Readiness Discipline
 
-[StateDD](https://github.com/lennertvhoy/StateDD_Template) treats a software project as something with explicit, inspectable state: current truth, backlog, next actions, evidence, and handoff discipline.
+Readiness is earned through demonstrated answers, not through source coverage or encouragement.
 
-StudyDD applies the same idea to education. Your study journey becomes a project the agent can maintain, audit, improve, and hand off between human learner, tutor AI, coding agent, teacher, coach, or mentor.
+- A new skill starts as `pending`.
+- One good answer can make a skill `practiced`, not `confirmed`.
+- Weak and repaired answers go into `reviews/REVIEW_QUEUE.md`.
+- Confirmed status requires strong or varied evidence.
+- Official and authoritative sources come first. Old spreadsheets, exports, notes, blogs, and generated summaries are secondary until verified.
 
 ## Examples
 
-- `EXAMPLES/ai-103-example/` — a realistic Microsoft AI-103 certification study state.
+- `EXAMPLES/ai-103-example/` — reference certification study state.
 
-Both show how skills, evidence, session history, and next actions look once the agent has maintained them for a few sessions.
+Examples show how maintained state can look after sessions. They are not the root template's default learner or target.
+
+## Future Add-Ons
+
+These are intentionally backlog items, not part of the core slice:
+
+- `addon-telegram-study-bot` — daily review prompt, answer capture, reminders, low-energy study mode.
+- `addon-containerized-studydd` — Docker, Podman, devcontainer, or compose setup for portable local execution.
 
 ## License
 
@@ -136,4 +126,4 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.2 — agent-native template with AI-103 and product scenario practice examples, expanded agent guidance, and stronger validation.
+v0.3 — public template with one happy path, target/review/session/source surfaces, conservative readiness rules, and validation-backed agent workflow.

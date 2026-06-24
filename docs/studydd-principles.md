@@ -2,46 +2,54 @@
 
 StudyDD applies StateDD principles to learning.
 
-## 1. The learner's current state is the source of truth
+## 1. One Happy Path
 
-Everything — questions, grading, next actions — starts from the documented state. No invented progress. No hidden assumptions.
+The template has one default workflow: initialize learner, add first target, build skill map from trusted sources, tutor one question at a time, log evidence, update readiness conservatively, schedule reviews, choose the next action, and validate the repo.
 
-## 2. The tutor must not inflate readiness
+## 2. The Learner's Current State Is The Source Of Truth
+
+Everything starts from documented state. No invented progress. No hidden assumptions.
+
+## 3. The Tutor Must Not Inflate Readiness
 
 "Doing great" is not evidence. Readiness is earned through demonstrated answers.
 
-## 3. Every readiness claim must be linked to demonstrated evidence
+## 4. Every Readiness Claim Must Link To Evidence
 
 If a skill is marked strong, there must be evidence showing why. If there is no evidence, the skill is pending.
 
-## 4. Study sessions should produce small state updates
+## 5. Sources Are Tracked Explicitly
 
-A session is not a vague chat. It produces a clear record: what was asked, what was answered, what changed, and what to do next.
+Trusted sources live in `sources/SOURCE_INDEX.md`. Official and authoritative sources come first. Secondary materials are useful, but they should not silently override a trusted source.
 
-## 5. Distinguish five categories
+## 6. Study Sessions Produce Small State Updates
 
-- **confirmed strengths** — demonstrated repeatedly and correctly
-- **weak areas** — answered incorrectly or incompletely
-- **pending validation** — not yet tested
-- **next best questions** — chosen from weak areas and pending topics
-- **exam or interview readiness** — only claimed when evidence supports it
+A session is not a vague chat. It produces a clear record: what was asked, what was answered, what changed, what needs review, and what to do next.
 
-## 6. AI tutors must ask one question at a time
+## 7. Distinguish Five Skill States
+
+- **confirmed** — demonstrated by repeated or strong evidence
+- **practiced** — answered correctly at least once but not yet stable
+- **weak** — answered incorrectly or incompletely
+- **pending** — not yet assessed
+- **blocked** — held back by a confusion that must be resolved first
+
+## 8. AI Tutors Ask One Question At A Time
 
 One active question. One answer. One grade. Then the next.
 
-## 7. AI tutors must grade the learner's actual answer
+## 9. AI Tutors Grade The Actual Answer
 
 Grade what was said, not what the tutor expected. Partial credit is real. Lucky guesses are not mastery.
 
-## 8. If the tutor makes a mistake, the state should be corrected rather than hidden
+## 10. Mistakes Are Corrected In State
 
-Errors are data. Fix the state, record the correction, and move on.
+If the tutor makes a mistake, fix the state, record the correction, and move on.
 
-## 9. The template supports human override, but overrides must be recorded
+## 11. Human Override Is Allowed And Logged
 
-The learner owns the learning journey. If they override the agent, the override is logged.
+The learner owns the learning journey. If they override the agent, the override is recorded in evidence and session logs.
 
-## 10. Learning is iterative project work
+## 12. Learning Is Iterative Project Work
 
 Not vague motivation. Not endless encouragement. Inspectable, improvable, handoff-ready project work.

@@ -2,10 +2,10 @@
 
 StudyDD is easiest when you use it with a coding agent. You do not need to edit YAML by hand.
 
-## What you need
+## What You Need
 
 - A copy of this template.
-- A coding-agent workflow such as Codex, Kimi Code, Claude Code, Cursor, or OpenClaw.
+- A coding-agent workflow such as Codex, Kimi Code, Claude Code, Cursor, OpenClaw, or similar.
 
 ## Steps
 
@@ -22,15 +22,15 @@ StudyDD is easiest when you use it with a coding agent. You do not need to edit 
 
    Open `PROMPTS/coding_agent_start_prompt.md` and paste the whole thing into the agent chat.
 
-4. **Tell the agent your goal.**
+4. **Tell the agent to initialize your copy.**
 
    Example:
 
-   > I am studying for Microsoft AI-103. Set up StudyDD for me and start a hard exam-style study session.
+   > Initialize this StudyDD copy for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
 
-5. **Let the agent work.**
+5. **Let the agent build the first target.**
 
-   It will read the contract, inspect state, ask only essential setup questions, initialize files, and start the session.
+   It will read the contract, inspect state, ask only essential setup questions, create the first target folder, register trusted sources, build a conservative skill map, and set `NEXT_ACTIONS.md`.
 
 6. **Answer one question at a time.**
 
@@ -38,19 +38,28 @@ StudyDD is easiest when you use it with a coding agent. You do not need to edit 
 
    The agent will propose updates to the state files. Confirm or correct them.
 
-## What the agent maintains
+8. **Run validation.**
+
+   ```bash
+   python3 scripts/check_studydd.py
+   ```
+
+## What The Agent Maintains
 
 - `state/STUDY_STATE.yaml` — current truth
 - `state/SKILL_MAP.yaml` — skills and readiness
-- `state/SESSION_LOG.md` — session history
 - `state/EVIDENCE_LOG.md` — demonstrated evidence
-- `state/NEXT_STUDY_ACTIONS.md` — what to do next
 - `state/STUDY_STATUS.md` — human-readable snapshot
+- `targets/` — one folder per study target
+- `reviews/REVIEW_QUEUE.md` — spaced repetition queue
+- `sessions/SESSION_LOG.md` — session history
+- `sources/SOURCE_INDEX.md` — trusted source registry
+- `NEXT_ACTIONS.md` — what to do next
 
 You can inspect these files whenever you want. They are plain Markdown and YAML.
 
-## Next steps
+## Next Steps
 
-- Read `docs/studydd-principles.md` to understand the ideas.
+- Read `docs/studydd-principles.md` to understand the rules.
 - Read `docs/inspect-and-override-state.md` to learn how to correct the agent.
-- Read `docs/how-to-use-with-codex.md` or `docs/how-to-use-with-kimi-code.md` for platform-specific tips.
+- Read a platform guide such as `docs/how-to-use-with-codex.md` for workflow tips.

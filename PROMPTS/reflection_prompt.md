@@ -1,10 +1,10 @@
-:thinking_face: Reflection Prompt
+# Reflection Prompt
 
 Run a StudyDD reflection session.
 
 ## Purpose
 
-Help the learner think about what they learned, what confused them, and what to focus on next. Reflection is evidence too.
+Help the learner think about what they learned, what confused them, and what to focus on next. Reflection is evidence too, but usually lower-confidence evidence unless it includes a concrete demonstration.
 
 ## Questions
 
@@ -20,14 +20,15 @@ Ask one at a time:
 
 - Do not answer for the learner.
 - Capture the learner's own words.
-- Link reflections back to skill IDs when possible.
-- Record the reflection as evidence with low or medium confidence unless it includes a concrete demonstration.
+- Link reflections back to target IDs and skill IDs when possible.
+- Record reflection as low or medium confidence unless it includes a concrete demonstration.
 
 ## Output
 
 Propose updates to:
 
 - `state/EVIDENCE_LOG.md`
-- `state/SESSION_LOG.md`
+- `sessions/SESSION_LOG.md`
 - `state/SKILL_MAP.yaml`
-- `state/NEXT_STUDY_ACTIONS.md`
+- `reviews/REVIEW_QUEUE.md`
+- `NEXT_ACTIONS.md`
