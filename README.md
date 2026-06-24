@@ -57,24 +57,51 @@ There is no architecture menu in the core template. The default path is intentio
 - `PROMPTS/` — paste-ready prompts for coding agents
 - `EXAMPLES/` — reference states only, not defaults
 
-## Quick Start
+## Two Phases
 
-1. Clone or copy this template into your own folder.
+StudyDD has two phases:
+
+1. **Template phase** — maintain the reusable educational operating system in `StudyDD_Template`.
+2. **Instance phase** — clone/reinit into a personal study repo operated by coding agents.
+
+Do not personalize the template repo. Personalization happens only after reinitializing a learner instance.
+
+## How To Create A New StudyDD Learner Instance
+
+Run these commands to cast the mold into a new learner repo:
 
 ```bash
-git clone https://github.com/lennertvhoy/StudyDD_Template.git
-cd StudyDD_Template
+git clone https://github.com/lennertvhoy/StudyDD_Template.git Study_Lenny
+cd Study_Lenny
+rm -rf .git
+git init
+git branch -M main
+git remote add origin https://github.com/lennertvhoy/Study_Lenny.git
+python3 scripts/check_studydd.py
+git add .
+git commit -m "chore: initialize StudyDD learner instance"
+git push -u origin main
 ```
 
-2. Open the folder in your coding agent.
-3. Paste `PROMPTS/coding_agent_start_prompt.md` into the agent chat.
-4. Tell the agent what you want to learn.
+Replace `Study_Lenny` and the remote URL with your own learner/project name.
+
+**Warning:** Do not personalize the template repo. The commands above remove the template Git history and reinitialize Git so the new directory becomes a separate learner instance.
+
+## After Creating An Instance
+
+1. Open the new learner folder in your coding agent.
+2. Paste `PROMPTS/coding_agent_start_prompt.md` into the agent chat.
+3. Tell the agent what you want to learn.
 
 Example:
 
-> Initialize this StudyDD copy for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
+> Initialize this StudyDD instance for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
 
 The agent will read `AGENTS.md`, inspect the current state, initialize the learner profile and first target, build a conservative skill map from trusted sources, and set the first next action.
+
+## Template Maintenance
+
+If you are editing `StudyDD_Template` itself, you are maintaining the mold. Keep the repo generic and public-safe. Do not seed learner state, active targets, or private data.
 
 ## What The Agent Maintains
 
