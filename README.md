@@ -132,7 +132,7 @@ Both show how skills, evidence, session history, and next actions look once the 
 
 ## License
 
-This project uses a custom permissive license. You may use it freely for study and commercial purposes. The author reserves the right to use this work as a teaching tool in sessions, webinars, courses, and similar educational contexts. See `LICENSE.md` for the full text.
+This project is licensed under the MIT License. See `LICENSE.md` for the full text.
 
 ## Status
 
