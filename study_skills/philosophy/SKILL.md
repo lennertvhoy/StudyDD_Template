@@ -65,6 +65,11 @@ Use review modes: explain, compare, apply-to-new-passage.
 - To move above 80, perform well in mixed-topic checkpoint sessions.
 - High readiness requires transfer: applying a concept to a new text or problem without hints.
 
+## Source freshness and learner adaptation
+
+- Philosophical arguments and texts are stable. Source freshness applies mainly to syllabus/curriculum changes or contemporary applications.
+- Adapt question style between argument analysis, explain-back, and essay tasks based on evidence.
+
 ## Common learner failure modes
 
 - `vague-answer` — hand-wavy summary instead of precise reconstruction.
