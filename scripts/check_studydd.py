@@ -276,7 +276,14 @@ def get_git_remotes() -> str:
         return ""
 
 
-def check_mode(yaml: object) -> list[str]:
+def _load_yaml(path: Path, yaml: object) -> dict:
+    try:
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+
+
+def check_mode(yaml: object, warnings: list[str]) -> list[str]:
     errors: list[str] = []
     if yaml is None:
         return errors
@@ -289,46 +296,70 @@ def check_mode(yaml: object) -> list[str]:
         return errors
 
     mode = mode_data.get("mode")
-    if mode not in ("template", "learner_instance"):
-        errors.append(f"state/STUDYDD_MODE.yaml mode must be 'template' or 'learner_instance', got {mode!r}")
+    allowed_modes = ("template", "bootstrap", "learner_instance")
+    if mode not in allowed_modes:
+        errors.append(
+            f"state/STUDYDD_MODE.yaml mode must be one of {allowed_modes}, got {mode!r}"
+        )
+        return errors
 
     remotes = get_git_remotes()
     is_template_remote = "StudyDD_Template" in remotes
+    has_remote = bool(remotes.strip())
+
+    study_state_path = ROOT / "state/STUDY_STATE.yaml"
+    study_state = _load_yaml(study_state_path, yaml)
+    learner = study_state.get("learner") or {}
+    active_target_id = study_state.get("active_target_id")
+
+    skill_map_path = ROOT / "state/SKILL_MAP.yaml"
+    skill_map = _load_yaml(skill_map_path, yaml)
+    has_skills = bool(skill_map.get("skills"))
 
     if mode == "template":
+        if has_remote and not is_template_remote:
+            errors.append(
+                "Template mode should use the StudyDD_Template remote. "
+                "If this is a new learner instance, switch mode to bootstrap first."
+            )
         if is_template_remote and not mode_data.get("public_safe", True):
             errors.append("Template mode requires public_safe: true")
         if mode_data.get("personalized", False):
             errors.append("Template mode must have personalized: false")
 
-        # Template should not contain active learner state.
-        study_state_path = ROOT / "state/STUDY_STATE.yaml"
-        try:
-            study_state = yaml.safe_load(study_state_path.read_text(encoding="utf-8")) or {}
-        except Exception:
-            study_state = {}
-
-        active_target_id = study_state.get("active_target_id")
         if active_target_id:
             errors.append(
                 f"Template mode should not have an active_target_id ({active_target_id}). "
                 "Learner state belongs in a learner instance."
             )
 
-        learner = study_state.get("learner") or {}
         if learner.get("name"):
             errors.append(
                 f"Template mode should not have a learner name ({learner.get('name')}). "
                 "Learner state belongs in a learner instance."
             )
 
-        skill_map_path = ROOT / "state/SKILL_MAP.yaml"
-        try:
-            skill_map = yaml.safe_load(skill_map_path.read_text(encoding="utf-8")) or {}
-        except Exception:
-            skill_map = {}
-        if (skill_map.get("skills") or []):
+        if has_skills:
             errors.append("Template mode should not have populated skills in state/SKILL_MAP.yaml")
+
+    elif mode == "bootstrap":
+        if is_template_remote:
+            errors.append(
+                "Bootstrap mode cannot use the StudyDD_Template remote. "
+                "Set the learner's remote before leaving bootstrap."
+            )
+        if mode_data.get("personalized", False):
+            errors.append(
+                "Bootstrap mode must have personalized: false until learner initialization is complete."
+            )
+
+        warnings.append(
+            "Bootstrap mode: learner profile and first target are not initialized yet. "
+            "Complete personalization and then switch mode to learner_instance."
+        )
+
+        # A bootstrap repo is expected to have empty learner state. Do not enforce
+        # active target or learner name here; that happens in learner_instance mode.
 
     elif mode == "learner_instance":
         if is_template_remote:
@@ -338,18 +369,36 @@ def check_mode(yaml: object) -> list[str]:
             )
         if not mode_data.get("personalized", False):
             errors.append("Learner instance mode should have personalized: true")
+        if mode_data.get("public_safe", False) is True:
+            errors.append("Learner instance mode should not be public_safe: true")
 
-        study_state_path = ROOT / "state/STUDY_STATE.yaml"
-        try:
-            study_state = yaml.safe_load(study_state_path.read_text(encoding="utf-8")) or {}
-        except Exception:
-            study_state = {}
-
-        learner = study_state.get("learner") or {}
         if not learner.get("name"):
             errors.append("Learner instance mode requires a learner name in state/STUDY_STATE.yaml")
-        if not study_state.get("active_target_id"):
+        if not active_target_id:
             errors.append("Learner instance mode requires an active_target_id in state/STUDY_STATE.yaml")
+
+        # Learner-instance surfaces must be present and structured.
+        evidence_path = ROOT / "state/EVIDENCE_LOG.md"
+        if not evidence_path.is_file():
+            errors.append("Learner instance mode requires state/EVIDENCE_LOG.md")
+        else:
+            ev_text = evidence_path.read_text(encoding="utf-8")
+            if "## Evidence" not in ev_text and "## Evidence items" not in ev_text:
+                errors.append("state/EVIDENCE_LOG.md missing '## Evidence' or '## Evidence items' section")
+
+        session_log_path = ROOT / "sessions/SESSION_LOG.md"
+        if not session_log_path.is_file():
+            errors.append("Learner instance mode requires sessions/SESSION_LOG.md")
+        else:
+            session_text = session_log_path.read_text(encoding="utf-8")
+            if "## Format" not in session_text and "## Sessions" not in session_text:
+                errors.append("sessions/SESSION_LOG.md missing expected structure")
+
+        review_queue_path = ROOT / "reviews/REVIEW_QUEUE.md"
+        if not review_queue_path.is_file():
+            errors.append("Learner instance mode requires reviews/REVIEW_QUEUE.md")
+        elif "## Due now" not in review_queue_path.read_text(encoding="utf-8"):
+            errors.append("reviews/REVIEW_QUEUE.md missing '## Due now' section")
 
     return errors
 
@@ -368,7 +417,7 @@ def check_active_target(yaml: object) -> list[str]:
 
     active_target_id = data.get("active_target_id")
     if not active_target_id:
-        # Public template is allowed to have no active target.
+        # Public template and bootstrap instances are allowed to have no active target.
         return errors
 
     target_dir = ROOT / "targets" / active_target_id
@@ -630,13 +679,15 @@ def main() -> int:
     errors.extend(check_session_log())
     errors.extend(check_option_position_randomization())
 
+    warnings: list[str] = []
+
     try:
         import yaml
     except ImportError:  # pragma: no cover
         yaml = None
 
     if yaml is not None:
-        errors.extend(check_mode(yaml))
+        errors.extend(check_mode(yaml, warnings))
         errors.extend(check_active_target(yaml))
         errors.extend(check_readiness_and_evidence(yaml))
         errors.extend(check_active_target_source(yaml))
@@ -645,6 +696,11 @@ def main() -> int:
     else:
         print("\nNote: PyYAML not installed. Skipping state-aware checks.")
         print("      Install with: pip install pyyaml")
+
+    if warnings:
+        print("\nWarnings:")
+        for warn in warnings:
+            print(f"  - {warn}")
 
     if errors:
         print("\nErrors:")
