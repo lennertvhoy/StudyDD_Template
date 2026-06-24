@@ -1,0 +1,36 @@
+---
+learner:
+  name: ""
+  target: ""
+  current_context: "Initial setup"
+  preferred_language: ""
+  preferred_tutoring_style: ""
+
+study_target:
+  title: ""
+  exam_or_goal: ""
+  deadline: ""
+  current_readiness_estimate: "Not assessed"
+  readiness_confidence: "Low"
+  risk_level: "Unknown"
+
+skills: []
+
+active_focus:
+  current_topic: ""
+  reason: "Initial state"
+  next_question: ""
+  blocking_confusions: []
+
+session_history: []
+
+rules:
+  no_readiness_inflation: true
+  one_question_at_a_time: true
+  evidence_required_for_mastery: true
+  corrections_must_update_state: true
+
+metadata:
+  template_version: "0.1.0"
+  last_updated: ""
+  updated_by: ""

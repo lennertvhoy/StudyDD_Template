@@ -1,0 +1,68 @@
+---
+skills:
+  - id: "ai103-search-rag"
+    label: "Azure AI Search and RAG"
+    status: "confirmed"
+    readiness: 80
+    confidence: "high"
+    evidence:
+      - "E-20260621-001"
+      - "E-20260623-002"
+    next_validation_question: "Design a RAG flow with vector + keyword + semantic ranking."
+
+  - id: "ai103-openai-deploy"
+    label: "Azure OpenAI model deployment"
+    status: "confirmed"
+    readiness: 75
+    confidence: "medium"
+    evidence:
+      - "E-20260620-001"
+    next_validation_question: "Configure content filtering on a deployed model endpoint."
+
+  - id: "ai103-foundry-eval"
+    label: "Azure AI Foundry evaluations"
+    status: "weak"
+    readiness: 35
+    confidence: "low"
+    evidence:
+      - "E-20260622-001"
+    next_validation_question: "Compare built-in safety evaluators to custom evaluation flows."
+
+  - id: "ai103-doc-intel"
+    label: "Document Intelligence"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Explain custom model training vs prebuilt model selection."
+
+  - id: "ai103-agents"
+    label: "AI agents and tool use"
+    status: "weak"
+    readiness: 30
+    confidence: "low"
+    evidence:
+      - "E-20260622-002"
+    next_validation_question: "Trace a multi-turn agent conversation with function calling."
+
+  - id: "ai103-content-safety"
+    label: "Content safety"
+    status: "practiced"
+    readiness: 55
+    confidence: "medium"
+    evidence:
+      - "E-20260621-002"
+    next_validation_question: "Apply blocklist + classifier policy in a real scenario."
+
+  - id: "ai103-monitoring"
+    label: "Monitoring and cost control"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Interpret Azure Monitor metrics for an OpenAI deployment."
+
+metadata:
+  template_version: "0.1.0"
+  last_updated: "2026-06-24"
+  updated_by: "coding-agent"
