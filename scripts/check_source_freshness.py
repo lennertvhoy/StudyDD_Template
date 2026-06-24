@@ -62,16 +62,18 @@ def parse_now(value: str | None) -> datetime:
     return dt
 
 
-def read_target_volatility(target_id: str) -> tuple[str, bool]:
-    """Return (volatility_class, declared_explicitly)."""
+def read_target_volatility(target_id: str) -> tuple[str, bool, str | None]:
+    """Return (volatility_class, declared_explicitly, warning_message)."""
     target_yaml = TARGETS_DIR / target_id / "TARGET.yaml"
     if not target_yaml.is_file():
-        return "moderate", False
+        return "moderate", False, "target does not declare volatility, defaulting to moderate"
     data = load_yaml(target_yaml)
     volatility = data.get("volatility")
-    if volatility and volatility in VOLATILITY_MAX_AGE_DAYS:
-        return volatility, True
-    return "moderate", False
+    if volatility is None:
+        return "moderate", False, "target does not declare volatility, defaulting to moderate"
+    if volatility in VOLATILITY_MAX_AGE_DAYS:
+        return volatility, True, None
+    return "moderate", False, f"target declares invalid volatility '{volatility}', defaulting to moderate"
 
 
 def target_id_from_question(question_id: str) -> str | None:
@@ -144,6 +146,7 @@ def build_report(
     target_id: str,
     volatility: str,
     volatility_declared: bool,
+    volatility_warning: str | None,
     sources: list[dict[str, Any]],
     now: datetime,
 ) -> tuple[list[str], int]:
@@ -168,16 +171,14 @@ def build_report(
     lines.append("")
     lines.append(f"Target: {target_id}")
     lines.append(f"Volatility: {volatility}")
-    if not volatility_declared:
-        lines.append(
-            "Warning: target does not declare volatility; defaulting to moderate."
-        )
+    if volatility_warning:
+        lines.append(f"Warning: {volatility_warning}")
     lines.append("")
 
     lines.append("Fresh usable sources:")
     if fresh_sources:
         for source in sorted(fresh_sources, key=lambda s: authority_rank(s.get("authority"))):
-            lines.append(f"- {source.get('source_id', '<unknown>')}")
+            lines.append(f"- {source.get('id', '<unknown>')}")
     else:
         lines.append("(none)")
     lines.append("")
@@ -186,17 +187,26 @@ def build_report(
     if stale_sources:
         for source, reason in stale_sources:
             reason_text = f" — {reason}" if reason else ""
-            lines.append(f"- {source.get('source_id', '<unknown>')}{reason_text}")
+            lines.append(f"- {source.get('id', '<unknown>')}{reason_text}")
     else:
         lines.append("(none)")
     lines.append("")
 
     all_unverified = unverified_sources + missing_timestamp_sources
     lines.append("Unverified sources:")
-    if all_unverified:
-        for source, reason in all_unverified:
+    if unverified_sources:
+        for source, reason in unverified_sources:
             reason_text = f" — {reason}" if reason else ""
-            lines.append(f"- {source.get('source_id', '<unknown>')}{reason_text}")
+            lines.append(f"- {source.get('id', '<unknown>')}{reason_text}")
+    else:
+        lines.append("(none)")
+    lines.append("")
+
+    lines.append("Missing timestamp sources:")
+    if missing_timestamp_sources:
+        for source, reason in missing_timestamp_sources:
+            reason_text = f" — {reason}" if reason else ""
+            lines.append(f"- {source.get('id', '<unknown>')}{reason_text}")
     else:
         lines.append("(none)")
     lines.append("")
@@ -207,12 +217,12 @@ def build_report(
     if fresh_official:
         best = min(fresh_official, key=lambda s: authority_rank(s.get("authority")))
         lines.append(
-            f"Use {best.get('authority', 'authoritative')} source {best.get('source_id')} for new authoritative questions."
+            f"Use {best.get('authority', 'authoritative')} source {best.get('id')} for new authoritative questions."
         )
     elif fresh_sources:
         best = min(fresh_sources, key=lambda s: authority_rank(s.get("authority")))
         lines.append(
-            f"Use {best.get('authority', 'available')} source {best.get('source_id')} for new questions, but verify authority."
+            f"Use {best.get('authority', 'available')} source {best.get('id')} for new questions, but verify authority."
         )
     else:
         lines.append("No fresh usable sources found.")
@@ -269,7 +279,11 @@ def main() -> int:
             return 1
     else:
         # Default: check every target referenced in SOURCE_STATE.yaml.
-        seen = {s.get("target_id") for s in all_sources if s.get("target_id")}
+        seen: set[str] = set()
+        for s in all_sources:
+            for tid in s.get("target_ids", []):
+                if tid:
+                    seen.add(tid)
         target_ids = sorted(seen)
 
     if not target_ids:
@@ -284,10 +298,10 @@ def main() -> int:
     output_blocks: list[list[str]] = []
 
     for target_id in target_ids:
-        volatility, declared = read_target_volatility(target_id)
-        target_sources = [s for s in all_sources if s.get("target_id") == target_id]
+        volatility, declared, vol_warning = read_target_volatility(target_id)
+        target_sources = [s for s in all_sources if target_id in s.get("target_ids", [])]
         report_lines, exit_code = build_report(
-            target_id, volatility, declared, target_sources, now
+            target_id, volatility, declared, vol_warning, target_sources, now
         )
         output_blocks.append(report_lines)
         if exit_code != 0:

@@ -77,8 +77,8 @@ def test_volatile_fresh_official_passes() -> None:
             tmp_root,
             [
                 {
-                    "source_id": "mslearn_ai_search_overview",
-                    "target_id": target_id,
+                    "id": "mslearn_ai_search_overview",
+                    "target_ids": [target_id],
                     "authority": "official",
                     "usable_for_questions": True,
                     "last_checked_at": "2026-06-24T10:00:00+00:00",
@@ -113,8 +113,8 @@ def test_volatile_stale_source_fails() -> None:
             tmp_root,
             [
                 {
-                    "source_id": "old_blog_ai_search_notes",
-                    "target_id": target_id,
+                    "id": "old_blog_ai_search_notes",
+                    "target_ids": [target_id],
                     "authority": "unverified",
                     "usable_for_questions": True,
                     "last_checked_at": "2026-05-01T10:00:00+00:00",
@@ -177,8 +177,8 @@ def test_allow_stale_practice_only() -> None:
             tmp_root,
             [
                 {
-                    "source_id": "old_blog_ai_search_notes",
-                    "target_id": target_id,
+                    "id": "old_blog_ai_search_notes",
+                    "target_ids": [target_id],
                     "authority": "unverified",
                     "usable_for_questions": True,
                     "last_checked_at": "2026-05-01T10:00:00+00:00",
@@ -212,8 +212,8 @@ def test_now_deterministic() -> None:
             tmp_root,
             [
                 {
-                    "source_id": "mslearn_ai_search_overview",
-                    "target_id": target_id,
+                    "id": "mslearn_ai_search_overview",
+                    "target_ids": [target_id],
                     "authority": "official",
                     "usable_for_questions": True,
                     "last_checked_at": "2026-06-24T10:00:00+00:00",
