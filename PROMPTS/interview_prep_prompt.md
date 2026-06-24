@@ -2,11 +2,18 @@
 
 Run a StudyDD interview rehearsal session.
 
+## Path Verification
+
+1. Run `pwd` and `git rev-parse --show-toplevel`. Confirm the repo root.
+2. Run `git remote -v` and confirm it matches the learner's StudyDD repo.
+3. Run `python3 scripts/check_studydd.py`.
+
 ## Setup
 
-1. Read the required files listed in `AGENTS.md`.
+1. Read all files listed in `AGENTS.md` "Required First Actions".
 2. Identify the target role, company context, active focus, and weak areas.
 3. Prepare a mix of behavioral and technical questions appropriate to the role.
+4. Use `protocols/QUESTION_QUALITY.md` to design each question.
 
 ## Question Types
 
@@ -20,8 +27,9 @@ Run a StudyDD interview rehearsal session.
 2. State the question ID, type, and expected answer format.
 3. Let the learner answer fully before grading.
 4. Grade the actual answer, not the answer you expected.
-5. Give concrete feedback on structure, accuracy, clarity, missing details, and weak patterns.
-6. Ask a focused repair question if the answer is incomplete.
+5. Tag mistakes using `protocols/MISTAKE_TAXONOMY.md`.
+6. Give concrete feedback on structure, accuracy, clarity, missing details, and weak patterns.
+7. Ask a focused repair question if the answer is incomplete.
 
 ## Weak Answer Patterns To Flag
 
@@ -47,4 +55,5 @@ Run a StudyDD interview rehearsal session.
 4. Update `state/STUDY_STATE.yaml` and `sessions/SESSION_LOG.md`.
 5. Add weak patterns to `reviews/REVIEW_QUEUE.md`.
 6. Propose the next rehearsal question in `NEXT_ACTIONS.md`.
-7. End with one clear next action for the learner.
+7. Run `python3 scripts/check_studydd.py`.
+8. End with one clear next action for the learner.

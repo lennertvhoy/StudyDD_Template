@@ -1,0 +1,48 @@
+# GRADE_ANSWER — Grade The Actual Answer
+
+> **Agent action.** Grade the learner's answer against the private answer key.
+
+## Verdicts
+
+- **correct** — fully meets the answer key.
+- **partial** — partly correct but missing something important.
+- **incorrect** — does not meet the answer key.
+- **unclear** — cannot be graded because the answer is ambiguous.
+- **override** — learner or human reviewer overrode the grade.
+
+## Grading Steps
+
+1. Re-read the actual answer.
+2. Compare each required element from the answer key.
+3. Note what is correct.
+4. Note what is missing, wrong, or vague.
+5. Choose a verdict.
+6. Tag the mistake type using `protocols/MISTAKE_TAXONOMY.md` when the answer is not fully correct.
+7. Decide whether a repair question is needed.
+
+## Explanation
+
+After grading, explain in plain language:
+
+- what was correct
+- what was missing or wrong
+- why it matters for the target
+- one concrete takeaway
+
+Keep it read-aloud friendly.
+
+## Repair Question
+
+If the answer is partial, incorrect, or unclear, ask one focused repair question before moving on.
+
+- Label it as a repair.
+- Target only the gap.
+- Do not mix repair questions with new numbered questions.
+- After the repair, close the original question.
+
+## Readiness Impact
+
+- A correct answer without repair can move a `pending` skill to `practiced`.
+- A partial or repaired answer stays conservative.
+- An incorrect answer marks the skill `weak` or `blocked`.
+- A single answer does not move any skill to `confirmed`.

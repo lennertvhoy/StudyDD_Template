@@ -5,25 +5,31 @@
 ## Before The Session
 
 1. Read the required files listed in `AGENTS.md`.
-2. Confirm whether the repo is still a public template or has been initialized for a learner.
-3. If no learner or target exists, initialize only after learner confirmation.
-4. Identify the active target, active focus, weakest skill, pending validation, or due review.
-5. Select the next best single question.
+2. Verify repo path and remote.
+3. Run `python3 scripts/check_studydd.py`.
+4. Confirm whether the repo is still a public template or has been initialized for a learner.
+5. If no learner or target exists, initialize only after learner confirmation.
+6. Choose session mode: deep, normal, low-energy, or recovery.
+7. Identify the active target, active focus, weakest skill, pending validation, or due review.
+8. Select the next best single question using `protocols/SELECT_NEXT_ACTION.md`.
 
 ## During The Session
 
 For each question:
 
-1. State the active question ID.
-2. State the expected answer format.
-3. Ask exactly one question.
-4. Wait for the learner's answer.
-5. Grade against the answer key.
-6. Explain the verdict.
-7. If needed, ask one repair question.
-8. Close the question before asking the next.
+1. State the active question ID and expected answer format.
+2. Ask exactly one question.
+3. Wait for the learner's answer.
+4. Grade against the answer key.
+5. Explain the verdict.
+6. If needed, ask one repair question.
+7. Close the question before asking the next.
 
 End the session after the planned question count or when the learner asks to stop.
+
+Default normal mode: 3–5 exam-style questions per session.
+Low-energy mode: 1–2 questions or one due review.
+Recovery mode: one concept explanation, optionally one gentle check question.
 
 ## After The Session
 
@@ -39,9 +45,6 @@ End the session after the planned question count or when the learner asks to sto
 10. Run or request `python3 scripts/check_studydd.py`.
 11. Wait for learner confirmation or apply authorized updates.
 12. End with one clear next action.
+13. Leave a truthful handoff.
 
-## Session Length
-
-Default: 3-5 exam-style questions per session.
-
-Adjust based on learner preference, available time, and topic difficulty. Even in a multi-question session, ask and grade one question at a time.
+See `protocols/CLOSE_SESSION.md` for the handoff format.

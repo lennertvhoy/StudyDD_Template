@@ -1,6 +1,6 @@
 # NEXT_ACTIONS — AI-103 Example
 
-> Example active queue for Alex's AI-103 study plan.
+> Example active queue for a learner studying Microsoft AI-103. Verify the current Microsoft Learn credential name before active study.
 
 ## Current next action
 

@@ -6,22 +6,23 @@
 
 Every question must have a unique active question ID.
 
-- Format: `Q-YYYYMMDD-NNN` or a sequential ID within the session.
+- Format: `Q-YYYYMMDD-NNN` or a session-local sequential ID.
 - The ID must be visible to the learner.
 - Only one question may be active at a time.
-- Before asking, define the active question ID, expected answer format, answer key, target ID, and skill ID.
+- Before asking, define the active question ID, expected answer format, answer key, target ID, skill ID, cognitive level, and difficulty.
 - Do not reveal the answer key until after the learner answers.
 
 ## Question Lifecycle
 
 1. **Select** the next question from `NEXT_ACTIONS.md`, weak areas, pending validation, or due reviews.
-2. **Introduce** the question with its ID and expected answer format.
-3. **Wait** for the learner's answer.
-4. **Grade** the actual answer against the answer key.
-5. **Explain** the verdict in plain language.
-6. **Repair** if the answer is wrong, incomplete, or unclear.
-7. **Close** the question before opening a new one.
-8. **Record** evidence and propose state updates.
+2. **Plan** the question using `protocols/QUESTION_QUALITY.md`.
+3. **Introduce** the question with its ID, target, skill, and expected answer format.
+4. **Wait** for the learner's answer.
+5. **Grade** the actual answer against the answer key.
+6. **Explain** the verdict in plain language.
+7. **Repair** if the answer is wrong, incomplete, or unclear.
+8. **Close** the question before opening a new one.
+9. **Record** evidence and propose state updates.
 
 ## Expected Answer Format
 
@@ -44,6 +45,7 @@ Before asking a question, define:
 - common misconceptions that should be flagged
 - source-trust assumptions, if relevant
 - minimum completeness threshold
+- cognitive level and difficulty
 
 ## Grading
 
@@ -56,6 +58,8 @@ Use one of these verdicts:
 - **override** — learner or human reviewer overrode the grade
 
 Grade what the learner actually wrote or said, not what you expected them to say.
+
+Tag the mistake type using `protocols/MISTAKE_TAXONOMY.md` when the answer is not fully correct.
 
 ## Explanation
 
@@ -100,6 +104,8 @@ Wait for learner confirmation before writing changes, unless the learner has exp
 - A repair-assisted answer should stay conservative.
 - Confirmed status requires strong or varied evidence.
 - Source coverage alone does not prove readiness.
+
+See `protocols/READINESS_POLICY.md` for the full evidence-gated readiness policy.
 
 ## Tutor-State Failure Prevention
 

@@ -1,11 +1,11 @@
 # STUDY_STATUS — AI-103 Example
 
-> Example state for a learner preparing for Microsoft AI-103.
+> Example state for a learner preparing for Microsoft AI-103. Verify the current Microsoft Learn credential name before active study.
 
 ## Learner
 
 - **Name:** Alex
-- **Target:** Microsoft Certified: Azure AI Engineer Associate (AI-103)
+- **Target:** Microsoft AI-103 certification target
 - **Current context:** Preparing for exam; 4 weeks out
 - **Preferred language:** English
 - **Preferred tutoring style:** Exam-style drills with short explanations
@@ -13,7 +13,7 @@
 ## Study target
 
 - **Title:** Microsoft AI-103
-- **Exam or goal:** Azure AI Engineer Associate certification
+- **Exam or goal:** Microsoft AI-103 certification target; verify the current Microsoft Learn credential name before active study.
 - **Deadline:** 2026-07-22
 - **Current readiness estimate:** 35%
 - **Readiness confidence:** Medium
@@ -29,7 +29,9 @@
 ## Quick summary
 
 - Confirmed strengths: 2
-- Weak areas: 3
+- Practiced skills: 1
+- Weak areas: 2
 - Pending validation: 2
+- Review items due: 2
 - Last session: 2026-06-23 — exam drill on Azure AI Search and RAG
 - Next action: Complete one evaluation-focused question, then review Azure AI agents and tool use.

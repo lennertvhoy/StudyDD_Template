@@ -1,7 +1,7 @@
 ---
 learner:
   name: "Alex"
-  target: "Microsoft AI-103 certification"
+  target: "Microsoft AI-103 certification target"
   current_context: "Preparing for exam; 4 weeks out"
   preferred_language: "English"
   preferred_tutoring_style: "Exam-style drills with short explanations"
@@ -16,7 +16,7 @@ targets:
 
 study_target:
   title: "Microsoft AI-103"
-  exam_or_goal: "Azure AI Engineer Associate certification"
+  exam_or_goal: "Microsoft AI-103 certification target; verify the current Microsoft Learn credential name before active study."
   deadline: "2026-07-22"
   current_readiness_estimate: "35%"
   readiness_confidence: "Medium"
@@ -29,8 +29,8 @@ skills:
     readiness: 80
     confidence: "high"
     evidence:
-      - "E-20260621-001: correctly explained hybrid search configuration"
-      - "E-20260623-002: correctly mapped indexer pipeline stages"
+      - "E-20260621-001"
+      - "E-20260623-002"
     next_validation_question: "Design a RAG flow with vector + keyword + semantic ranking."
 
   - id: "ai103-openai-deploy"
@@ -39,7 +39,7 @@ skills:
     readiness: 75
     confidence: "medium"
     evidence:
-      - "E-20260620-001: described PTU vs token-based deployment tradeoffs"
+      - "E-20260620-001"
     next_validation_question: "Configure content filtering on a deployed model endpoint."
 
   - id: "ai103-foundry-eval"
@@ -48,7 +48,7 @@ skills:
     readiness: 35
     confidence: "low"
     evidence:
-      - "E-20260622-001: partial answer on custom evaluation metrics; missed safety evaluator integration"
+      - "E-20260622-001"
     next_validation_question: "Compare built-in safety evaluators to custom evaluation flows."
 
   - id: "ai103-doc-intel"
@@ -65,7 +65,7 @@ skills:
     readiness: 30
     confidence: "low"
     evidence:
-      - "E-20260622-002: incorrect on tool-call orchestration pattern"
+      - "E-20260622-002"
     next_validation_question: "Trace a multi-turn agent conversation with function calling."
 
   - id: "ai103-content-safety"
@@ -74,7 +74,7 @@ skills:
     readiness: 55
     confidence: "medium"
     evidence:
-      - "E-20260621-002: correctly classified severity levels"
+      - "E-20260621-002"
     next_validation_question: "Apply blocklist + classifier policy in a real scenario."
 
   - id: "ai103-monitoring"
@@ -94,7 +94,7 @@ active_focus:
 
 review:
   queue: "reviews/REVIEW_QUEUE.md"
-  due_count: 3
+  due_count: 2
 
 sources:
   index: "sources/SOURCE_INDEX.md"
@@ -126,8 +126,9 @@ rules:
   one_question_at_a_time: true
   evidence_required_for_mastery: true
   corrections_must_update_state: true
+  public_template_must_stay_generic: true
 
 metadata:
-  template_version: "0.3.0"
+  template_version: "0.4.0"
   last_updated: "2026-06-24"
   updated_by: "coding-agent"
