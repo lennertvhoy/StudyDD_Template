@@ -138,6 +138,8 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/test_source_freshness.py",
     "scripts/lint_questions.py",
     "scripts/test_question_quality.py",
+    "scripts/suggest_study_adjustment.py",
+    "scripts/test_learner_adaptation.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
