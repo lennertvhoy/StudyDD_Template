@@ -595,6 +595,39 @@ def check_state_target_consistency(yaml: object) -> list[str]:
     return errors
 
 
+def check_option_position_randomization() -> list[str]:
+    """Lightweight warning when example session logs show obvious answer-position patterns.
+
+    This is a heuristic. It scans EXAMPLES/*/sessions/SESSION_LOG.md for lines that
+    record a final option order and a correct label. If every recorded example uses
+    the same correct label, it warns that the examples may teach answer-position habits.
+    """
+    errors: list[str] = []
+    label_pattern = re.compile(r"correct label\s+([A-D])", re.IGNORECASE)
+    labels: list[str] = []
+
+    examples_dir = ROOT / "EXAMPLES"
+    if not examples_dir.is_dir():
+        return errors
+
+    for session_log in examples_dir.rglob("sessions/SESSION_LOG.md"):
+        try:
+            text = session_log.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        for match in label_pattern.finditer(text):
+            labels.append(match.group(1).upper())
+
+    if len(labels) >= 3 and len(set(labels)) == 1:
+        errors.append(
+            f"All {len(labels)} recorded example option questions have the same correct label "
+            f"({labels[0]}). Randomize example correct labels so the template does not teach "
+            "answer-position habits."
+        )
+
+    return errors
+
+
 def main() -> int:
     print("StudyDD validation")
     print("==================")
@@ -606,6 +639,7 @@ def main() -> int:
     errors.extend(check_next_actions())
     errors.extend(check_review_queue())
     errors.extend(check_session_log())
+    errors.extend(check_option_position_randomization())
 
     try:
         import yaml

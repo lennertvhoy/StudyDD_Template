@@ -39,6 +39,19 @@ Before asking a question, define:
 - relevant source-trust assumptions
 - cognitive level and difficulty
 
+## Multiple-Choice / Choose-Many / Matching Randomization
+
+For fixed-option questions:
+
+1. Create the private answer key first.
+2. Shuffle the visible options randomly.
+3. Verify the answer key still points to the correct visible labels after shuffling.
+4. Do not let the correct answer repeatedly be A, first, longest, or most detailed.
+5. For choose-two/choose-three, randomize cluster positions; do not always use A+B or C+D.
+6. Keep distractors plausible after shuffling.
+7. Record the final visible option order, correct answer label(s), learner answer, and grading result in the session log.
+8. Track recent correct labels in a practice set and avoid repeating the same label too often.
+
 ## When The Learner Challenges You
 
 Pause. Audit the answer against the answer key. If you were wrong, admit it and update the state. If the learner is wrong, explain clearly and record the evidence.
