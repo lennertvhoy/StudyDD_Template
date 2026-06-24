@@ -57,26 +57,40 @@ There is no architecture menu in the core template. The default path is intentio
 - `PROMPTS/` — paste-ready prompts for coding agents
 - `EXAMPLES/` — reference states only, not defaults
 
-## Two Phases
+## Three Modes
 
-StudyDD has two phases:
+StudyDD has three modes:
 
-1. **Template phase** — maintain the reusable educational operating system in `StudyDD_Template`.
-2. **Instance phase** — clone/reinit into a personal study repo operated by coding agents.
+1. **Template mode** — maintain the reusable educational operating system in `StudyDD_Template`. Must stay generic and public-safe.
+2. **Bootstrap mode** — the repo has left the template remote and Git history has been reset, but the learner profile and first target are not initialized yet.
+3. **Learner instance mode** — the repo is a personal study brain with learner profile, targets, evidence, sessions, reviews, and next action.
 
-Do not personalize the template repo. Personalization happens only after reinitializing a learner instance.
+Do not personalize the template repo. Personalization happens only after reinitializing a learner instance and moving it through bootstrap mode.
 
 ## How To Create A New StudyDD Learner Instance
 
 Run these commands to cast the mold into a new learner repo:
 
 ```bash
+# Clone and detach from the template history
 git clone https://github.com/lennertvhoy/StudyDD_Template.git Study_Lenny
 cd Study_Lenny
 rm -rf .git
 git init
 git branch -M main
 git remote add origin https://github.com/lennertvhoy/Study_Lenny.git
+
+# Switch to bootstrap mode before running learner-instance validation
+# Edit state/STUDYDD_MODE.yaml:
+#   mode: bootstrap
+#   template_origin: "https://github.com/lennertvhoy/StudyDD_Template.git"
+#   personalized: false
+#   public_safe: false_or_review_required
+python3 scripts/check_studydd.py
+
+# Now initialize the learner profile and first target inside Study_Lenny.
+# Only then switch state/STUDYDD_MODE.yaml to mode: learner_instance.
+
 python3 scripts/check_studydd.py
 git add .
 git commit -m "chore: initialize StudyDD learner instance"
@@ -86,6 +100,8 @@ git push -u origin main
 Replace `Study_Lenny` and the remote URL with your own learner/project name.
 
 **Warning:** Do not personalize the template repo. The commands above remove the template Git history and reinitialize Git so the new directory becomes a separate learner instance.
+
+**Warning:** Do not run learner-instance validation until the learner profile and first target are initialized. Switch `state/STUDYDD_MODE.yaml` to `mode: learner_instance` only after that initialization is complete.
 
 ## After Creating An Instance
 

@@ -9,6 +9,7 @@
 - Do not personalize the template repo.
 - Do not put private learner state into the template repo.
 - Personalization happens only after the template has been cloned, its `.git/` removed, and Git reinitialized in a new learner directory.
+- The repo must pass through `bootstrap` mode before it becomes a `learner_instance`.
 
 ## Source Template Verification
 
@@ -50,15 +51,38 @@ git branch -M main
 # 6. Add the learner's remote if provided
 git remote add origin https://github.com/lennertvhoy/Study_Lenny.git
 
-# 7. Run the validator
-python3 scripts/check_studydd.py
+# 7. Verify where you are before editing state
+pwd
+git rev-parse --show-toplevel
+git remote -v
+cat state/STUDYDD_MODE.yaml
+
+# 8. Switch from template to bootstrap mode
 ```
 
-Replace `/home/ff/Study_Lenny` and the remote URL with the learner's actual paths.
+Edit `state/STUDYDD_MODE.yaml` to:
 
-## Replace Template Placeholders
+```yaml
+mode: bootstrap
+template_origin: "https://github.com/lennertvhoy/StudyDD_Template.git"
+personalized: false
+public_safe: false_or_review_required
+```
 
-1. Update `state/STUDYDD_MODE.yaml`:
+Then continue:
+
+```bash
+# 9. Run bootstrap-safe validation
+python3 scripts/check_studydd.py
+
+# 10. Initialize the learner profile and first target
+#     (Use protocols/START_SESSION.md and PROMPTS/coding_agent_start_prompt.md
+#      inside the new instance, not in the template repo.)
+
+# 11. Switch from bootstrap to learner_instance mode
+```
+
+Edit `state/STUDYDD_MODE.yaml` to:
 
 ```yaml
 mode: learner_instance
@@ -67,23 +91,33 @@ personalized: true
 public_safe: false_or_review_required
 ```
 
-2. Update `state/STUDY_STATE.yaml` to mark the repo as a learner instance.
-3. Keep template-version metadata so future template upgrades can be traced.
-
-## First Commit
+Then continue:
 
 ```bash
+# 12. Run full learner-instance validation
+python3 scripts/check_studydd.py
+
+# 13. First commit
 git add .
 git commit -m "chore: initialize StudyDD learner instance"
-```
 
-## Push If Remote Exists And User Requested
-
-```bash
+# 14. Push only if the learner explicitly requested it
 git push -u origin main
 ```
 
-Only push if the learner has provided a remote and explicitly asked to push.
+Replace `/home/ff/Study_Lenny` and the remote URL with the learner's actual paths.
+
+## Bootstrap Mode
+
+`bootstrap` means:
+
+- The repo has left the template remote.
+- Git history has been reset.
+- Required template files, protocols, scripts, prompts, and mode marker are present.
+- Learner profile and first target are **not** initialized yet.
+- Validation passes with a warning that personalization is incomplete.
+
+Do not switch to `learner_instance` until the learner profile, first target, skill map, sources, and next action are initialized.
 
 ## After Instantiation
 
@@ -91,9 +125,21 @@ Only push if the learner has provided a remote and explicitly asked to push.
 2. Initialize the learner profile and first target only inside the new instance.
 3. Never return to the template repo to make learner-specific edits.
 
+## Manual Instantiation Smoke Test
+
+If you want to verify the template can still be instantiated:
+
+```bash
+python3 scripts/test_instantiate_template.py
+```
+
+The smoke test creates a temporary copy, reinitializes Git, runs bootstrap validation, simulates minimal learner initialization, switches to `learner_instance`, runs full validation, and cleans up.
+
 ## What Not To Do
 
 - Do not edit the template repo during instantiation except to read it.
 - Do not leave the template `.git/` history in the new instance.
 - Do not initialize learner state before `.git/` is removed and Git is reinitialized.
 - Do not set the new instance remote to `StudyDD_Template`.
+- Do not run learner-instance validation until learner profile and first target are initialized.
+- Do not switch directly from `template` to `learner_instance`; always use `bootstrap` first.
