@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -52,6 +52,7 @@ REQUIRED_STATE_FILES = [
     "state/EVIDENCE_INDEX.yaml",
     "state/STATE_MANIFEST.yaml",
     "state/PERFORMANCE_BUDGET.yaml",
+    "state/LEARNER_PROFILE.yaml",
 ]
 
 REQUIRED_TARGET_FILES = [
@@ -74,6 +75,7 @@ REQUIRED_SESSION_FILES = [
 REQUIRED_SOURCE_FILES = [
     "sources/README.md",
     "sources/SOURCE_INDEX.md",
+    "sources/SOURCE_STATE.yaml",
 ]
 
 REQUIRED_PROTOCOL_FILES = [
@@ -100,6 +102,11 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/STATE_LOADING_POLICY.md",
     "protocols/PERFORMANCE_POLICY.md",
     "protocols/STATE_WRITE_POLICY.md",
+    "protocols/SOURCE_FRESHNESS_POLICY.md",
+    "protocols/SOURCE_REFRESH_POLICY.md",
+    "protocols/QUESTION_QUALITY_GOVERNOR.md",
+    "protocols/LEARNER_ADAPTATION_POLICY.md",
+    "protocols/LEARNER_FEEDBACK_POLICY.md",
 ]
 
 REQUIRED_PROMPT_FILES = [
@@ -203,6 +210,8 @@ YAML_FILES = [
     "state/STATE_MANIFEST.yaml",
     "state/EVIDENCE_INDEX.yaml",
     "state/PERFORMANCE_BUDGET.yaml",
+    "state/LEARNER_PROFILE.yaml",
+    "sources/SOURCE_STATE.yaml",
     "reviews/REVIEW_STATE.yaml",
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
@@ -236,6 +245,40 @@ REQUIRED_SKILL_MAP_KEYS = [
 
 # Constructed from parts so the literal forbidden string does not appear in source.
 FORBIDDEN_BRAND_RE = re.compile("Skill" + "Signal", re.IGNORECASE)
+
+SOURCE_AUTHORITY_VALUES = {
+    "official",
+    "high_authority",
+    "instructor",
+    "textbook",
+    "learner_notes",
+    "unverified",
+}
+
+SOURCE_VOLATILITY_VALUES = {
+    "stable",
+    "slow_changing",
+    "moderate",
+    "volatile",
+    "live",
+}
+
+QUESTION_MODES = {
+    "authoritative_current",
+    "conceptual_practice",
+    "stale_practice",
+    "exam_sim",
+    "remediation",
+}
+
+# Duplicated from scripts/check_source_freshness.py to keep this script self-contained.
+VOLATILITY_MAX_AGE_DAYS = {
+    "stable": 3650,
+    "slow_changing": 730,
+    "moderate": 90,
+    "volatile": 30,
+    "live": 1,
+}
 
 
 def check_files() -> list[str]:
@@ -1316,6 +1359,363 @@ def check_option_position_randomization() -> list[str]:
     return errors
 
 
+def _classify_source_freshness(
+    source: dict, now: datetime, target_volatility: str
+) -> tuple[str, str | None]:
+    """Return (freshness_status, reason) for a single source entry.
+
+    Mirrors the logic in scripts/check_source_freshness.py so the validator stays
+    self-contained. Statuses: fresh, stale, unverified, missing_timestamp.
+    """
+    if source.get("usable_for_questions") is False:
+        return "unverified", "usable_for_questions is false"
+
+    expires_at = source.get("expires_at")
+    if expires_at:
+        try:
+            expiry = datetime.fromisoformat(str(expires_at))
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+            if now <= expiry:
+                return "fresh", None
+            return "stale", f"expired at {expires_at}"
+        except Exception as exc:
+            return "missing_timestamp", f"invalid expires_at: {exc}"
+
+    last_checked_at = source.get("last_checked_at")
+    if last_checked_at:
+        try:
+            checked = datetime.fromisoformat(str(last_checked_at))
+            if checked.tzinfo is None:
+                checked = checked.replace(tzinfo=timezone.utc)
+        except Exception as exc:
+            return "missing_timestamp", f"invalid last_checked_at: {exc}"
+
+        volatility = source.get("volatility") or target_volatility
+        max_age_days = VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
+        expiry = checked + timedelta(days=max_age_days)
+        if now <= expiry:
+            return "fresh", None
+        return "stale", f"last checked {last_checked_at}; volatility {volatility} max age {max_age_days} days"
+
+    return "missing_timestamp", "no expires_at or last_checked_at"
+
+
+def _discover_question_files() -> list[Path]:
+    """Return all question YAML files under targets/ and EXAMPLES/."""
+    found: list[Path] = []
+    targets_dir = ROOT / "targets"
+    examples_dir = ROOT / "EXAMPLES"
+
+    if targets_dir.is_dir():
+        found.extend(targets_dir.rglob("questions/*.yaml"))
+    if examples_dir.is_dir():
+        for example_dir in examples_dir.iterdir():
+            if not example_dir.is_dir() or example_dir.name.startswith("."):
+                continue
+            example_targets = example_dir / "targets"
+            if example_targets.is_dir():
+                found.extend(example_targets.rglob("questions/*.yaml"))
+    return found
+
+
+def check_source_state(yaml: object) -> list[str]:
+    """Validate sources/SOURCE_STATE.yaml structure."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    source_state_path = ROOT / "sources" / "SOURCE_STATE.yaml"
+    if not source_state_path.is_file():
+        errors.append("Missing sources/SOURCE_STATE.yaml")
+        return errors
+
+    data = _load_yaml(source_state_path, yaml)
+    sources = data.get("sources") or []
+    if not isinstance(sources, list):
+        errors.append("sources/SOURCE_STATE.yaml 'sources' must be a list")
+        return errors
+
+    for source in sources:
+        if not isinstance(source, dict):
+            errors.append("sources/SOURCE_STATE.yaml contains a non-mapping source entry")
+            continue
+
+        sid = source.get("id")
+        if not isinstance(sid, str) or not sid:
+            errors.append("Source entry missing or invalid 'id'")
+            sid = "<unknown>"
+
+        authority = source.get("authority")
+        if authority not in SOURCE_AUTHORITY_VALUES:
+            errors.append(
+                f"Source '{sid}' has invalid authority {authority!r}; "
+                f"must be one of {sorted(SOURCE_AUTHORITY_VALUES)}"
+            )
+
+        target_ids = source.get("target_ids")
+        if not isinstance(target_ids, list) or not all(isinstance(t, str) for t in target_ids):
+            errors.append(f"Source '{sid}' target_ids must be a list of strings")
+
+        volatility = source.get("volatility")
+        if volatility not in SOURCE_VOLATILITY_VALUES:
+            errors.append(
+                f"Source '{sid}' has invalid volatility {volatility!r}; "
+                f"must be one of {sorted(SOURCE_VOLATILITY_VALUES)}"
+            )
+
+        for field in ("last_checked_at", "expires_at"):
+            value = source.get(field)
+            if value is not None and _parse_iso_timestamp(value) is None:
+                errors.append(
+                    f"Source '{sid}' field '{field}' is not a valid timezone-aware ISO 8601 timestamp"
+                )
+
+        usable = source.get("usable_for_questions", True)
+        if not isinstance(usable, bool):
+            errors.append(f"Source '{sid}' usable_for_questions must be a boolean")
+
+    return errors
+
+
+def check_learner_profile(yaml: object) -> list[str]:
+    """Validate state/LEARNER_PROFILE.yaml. In template mode it must stay generic."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    mode_data = _load_yaml(mode_path, yaml)
+    mode = mode_data.get("mode")
+
+    profile_path = ROOT / "state" / "LEARNER_PROFILE.yaml"
+    if not profile_path.is_file():
+        errors.append("Missing state/LEARNER_PROFILE.yaml")
+        return errors
+
+    data = _load_yaml(profile_path, yaml)
+    if mode != "template":
+        # Learner-instance and bootstrap modes may contain personalized values.
+        return errors
+
+    preferences = data.get("learner_preferences") or {}
+    if isinstance(preferences, dict):
+        for key, value in preferences.items():
+            if value not in (None, ""):
+                errors.append(
+                    f"Template mode: state/LEARNER_PROFILE.yaml learner_preferences.{key} "
+                    f"must be empty or null, got {value!r}"
+                )
+
+    adaptation = data.get("adaptation_state") or {}
+    if isinstance(adaptation, dict):
+        for key, value in adaptation.items():
+            if isinstance(value, list) and value:
+                errors.append(
+                    f"Template mode: state/LEARNER_PROFILE.yaml adaptation_state.{key} must be empty"
+                )
+
+    control = data.get("control") or {}
+    if isinstance(control, dict):
+        for key, value in control.items():
+            if isinstance(value, list) and value:
+                errors.append(
+                    f"Template mode: state/LEARNER_PROFILE.yaml control.{key} must be empty"
+                )
+
+    return errors
+
+
+def check_volatile_target_freshness(yaml: object, warnings: list[str]) -> list[str]:
+    """Ensure volatile/live targets have a fresh authoritative usable source.
+
+    Hard error in learner_instance mode; warning only in template/bootstrap modes.
+    """
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    mode_data = _load_yaml(mode_path, yaml)
+    mode = mode_data.get("mode")
+
+    source_state = _load_yaml(ROOT / "sources" / "SOURCE_STATE.yaml", yaml)
+    sources = source_state.get("sources") or []
+
+    targets_dir = ROOT / "targets"
+    if not targets_dir.is_dir():
+        return errors
+
+    now = datetime.now(timezone.utc)
+
+    for target_dir in targets_dir.iterdir():
+        if not target_dir.is_dir() or target_dir.name.startswith("."):
+            continue
+        target_data = _load_yaml(target_dir / "TARGET.yaml", yaml)
+        volatility = target_data.get("volatility")
+        if volatility not in ("volatile", "live"):
+            continue
+
+        target_id = target_dir.name
+        target_sources = [s for s in sources if target_id in (s.get("target_ids") or [])]
+        has_fresh_authoritative = False
+        for source in target_sources:
+            if source.get("authority") not in ("official", "high_authority"):
+                continue
+            if source.get("usable_for_questions") is False:
+                continue
+            status, _ = _classify_source_freshness(source, now, volatility)
+            if status == "fresh":
+                has_fresh_authoritative = True
+                break
+
+        if not has_fresh_authoritative:
+            msg = (
+                f"Target '{target_id}' has volatility '{volatility}' but no fresh "
+                "official/high_authority usable source in sources/SOURCE_STATE.yaml"
+            )
+            if mode == "learner_instance":
+                errors.append(msg)
+            else:
+                warnings.append(msg)
+
+    return errors
+
+
+def check_question_quality_records(yaml: object) -> list[str]:
+    """Validate question-quality metadata and source grounding for question banks."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    source_state = _load_yaml(ROOT / "sources" / "SOURCE_STATE.yaml", yaml)
+    sources = source_state.get("sources") or []
+    known_source_ids = {s.get("id") for s in sources if s.get("id")}
+
+    now = datetime.now(timezone.utc)
+
+    for path in _discover_question_files():
+        data = _load_yaml(path, yaml)
+        if not isinstance(data, dict):
+            continue
+
+        qid = data.get("id") or path.stem
+        rel = path.relative_to(ROOT)
+
+        target_id = data.get("target_id") or path.parent.parent.name
+        target_data = _load_yaml(path.parent.parent / "TARGET.yaml", yaml)
+        target_volatility = target_data.get("volatility") or "moderate"
+        volatility = data.get("volatility") or target_volatility
+        if volatility not in SOURCE_VOLATILITY_VALUES:
+            volatility = "moderate"
+
+        question_mode = data.get("question_mode")
+        if question_mode is not None and question_mode not in QUESTION_MODES:
+            errors.append(
+                f"Question {qid} ({rel}) has invalid question_mode {question_mode!r}"
+            )
+
+        quality = data.get("question_quality")
+        if isinstance(quality, dict):
+            gate = quality.get("quality_gate")
+            if gate is not None and gate not in ("pass", "warn", "fail"):
+                errors.append(
+                    f"Question {qid} ({rel}) has invalid question_quality.quality_gate {gate!r}"
+                )
+            if gate in ("warn", "fail"):
+                reason = quality.get("quality_gate_reason")
+                if not reason:
+                    errors.append(
+                        f"Question {qid} ({rel}) has quality_gate '{gate}' but missing "
+                        "question_quality.quality_gate_reason"
+                    )
+
+        has_source_ref = isinstance(data.get("source_ref"), str) and bool(data["source_ref"])
+        source_ids = data.get("source_ids")
+        has_source_ids = isinstance(source_ids, list) and bool(source_ids)
+
+        if volatility in ("moderate", "volatile", "live"):
+            if not (has_source_ref or has_source_ids):
+                errors.append(
+                    f"Question {qid} ({rel}) has volatility '{volatility}' but missing "
+                    "source_ref or source_ids"
+                )
+
+        if has_source_ids:
+            for sid in source_ids:
+                if sid not in known_source_ids:
+                    errors.append(
+                        f"Question {qid} ({rel}) references unknown source_id '{sid}'"
+                    )
+
+        if (
+            volatility in ("volatile", "live")
+            and question_mode == "authoritative_current"
+        ):
+            if not has_source_ids:
+                errors.append(
+                    f"Question {qid} ({rel}) is authoritative_current with volatility "
+                    f"'{volatility}' but has no source_ids"
+                )
+            else:
+                for sid in source_ids:
+                    source = next((s for s in sources if s.get("id") == sid), None)
+                    if source is None:
+                        # Unknown source_id is already reported above.
+                        continue
+                    status, reason = _classify_source_freshness(source, now, volatility)
+                    if status != "fresh":
+                        detail = f" ({reason})" if reason else ""
+                        errors.append(
+                            f"Question {qid} ({rel}) authoritative_current source '{sid}' "
+                            f"is {status}{detail}"
+                        )
+                    elif source.get("authority") not in ("official", "high_authority"):
+                        errors.append(
+                            f"Question {qid} ({rel}) authoritative_current source '{sid}' "
+                            f"has authority {source.get('authority')!r}"
+                        )
+                    elif source.get("usable_for_questions") is False:
+                        errors.append(
+                            f"Question {qid} ({rel}) authoritative_current source '{sid}' "
+                            "has usable_for_questions: false"
+                        )
+
+    return errors
+
+
+def check_stale_practice_overrides(yaml: object) -> list[str]:
+    """Heuristic check that stale_practice questions record an override rationale."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    overrides_path = ROOT / "reviews" / "REVIEW_OVERRIDES.md"
+    overrides_text = overrides_path.read_text(encoding="utf-8") if overrides_path.is_file() else ""
+
+    for path in _discover_question_files():
+        data = _load_yaml(path, yaml)
+        if not isinstance(data, dict):
+            continue
+        if data.get("question_mode") != "stale_practice":
+            continue
+
+        qid = data.get("id") or path.stem
+        rel = path.relative_to(ROOT)
+        quality = data.get("question_quality") or {}
+        notes = quality.get("notes") or ""
+
+        # Accept either per-question notes or any mention in the override log.
+        has_evidence = bool(notes) or qid in overrides_text or "stale_practice" in overrides_text
+        if not has_evidence:
+            errors.append(
+                f"Question {qid} ({rel}) has question_mode: stale_practice but no "
+                "override evidence in question_quality.notes or reviews/REVIEW_OVERRIDES.md"
+            )
+
+    return errors
+
+
 def main() -> int:
     print("StudyDD validation")
     print("==================")
@@ -1358,6 +1758,11 @@ def main() -> int:
         errors.extend(check_current_context())
         errors.extend(check_study_skills(yaml, warnings))
         errors.extend(check_generated_freshness(warnings))
+        errors.extend(check_source_state(yaml))
+        errors.extend(check_learner_profile(yaml))
+        errors.extend(check_volatile_target_freshness(yaml, warnings))
+        errors.extend(check_question_quality_records(yaml))
+        errors.extend(check_stale_practice_overrides(yaml))
     else:
         print("\nNote: PyYAML not installed. Skipping state-aware checks.")
         print("      Install with: pip install pyyaml")
