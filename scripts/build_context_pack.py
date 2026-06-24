@@ -13,8 +13,9 @@ if the configured performance budget is exceeded.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -101,6 +102,246 @@ def active_study_skill(target_path: Path | None) -> str | None:
         return None
     data = load_yaml(target_path)
     return data.get("study_skill") or None
+
+
+def import_check_source_freshness() -> object:
+    """Import helper functions from scripts/check_source_freshness.py."""
+    spec = importlib.util.spec_from_file_location(
+        "check_source_freshness", ROOT / "scripts" / "check_source_freshness.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["check_source_freshness"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def build_source_freshness_section(target_id: str, csf: object) -> tuple[list[str], str]:
+    """Return (lines, volatility_class) for the active target."""
+    volatility, declared, warning = csf.read_target_volatility(target_id)
+    source_state = load_yaml(ROOT / "sources" / "SOURCE_STATE.yaml")
+    all_sources = source_state.get("sources") or []
+    target_sources = [s for s in all_sources if target_id in s.get("target_ids", [])]
+
+    now = datetime.now(timezone.utc)
+    fresh: list[dict] = []
+    stale: list[tuple[dict, str | None]] = []
+    unverified: list[tuple[dict, str | None]] = []
+    missing_ts: list[tuple[dict, str | None]] = []
+
+    for source in target_sources:
+        status, reason = csf.classify_source(source, now, volatility)
+        if status == "fresh":
+            fresh.append(source)
+        elif status == "stale":
+            stale.append((source, reason))
+        elif status == "unverified":
+            unverified.append((source, reason))
+        else:
+            missing_ts.append((source, reason))
+
+    lines: list[str] = [
+        "## Source freshness status",
+        "",
+        f"- **Target volatility:** {volatility}"
+        + ("" if declared else " (defaulted)"),
+    ]
+    if warning:
+        lines.append(f"- **Warning:** {warning}")
+
+    lines.extend(["", "**Fresh usable sources:**"])
+    if fresh:
+        sorted_fresh = sorted(fresh, key=lambda s: csf.authority_rank(s.get("authority")))
+        for source in sorted_fresh[:3]:
+            lines.append(
+                f"- {source.get('id', '<unknown>')} ({source.get('authority', 'unknown')})"
+            )
+    else:
+        lines.append("- (none)")
+
+    problematic = stale + unverified + missing_ts
+    lines.extend(["", "**Stale / missing / unverified sources:**"])
+    if problematic:
+        for source, reason in problematic[:3]:
+            reason_text = f" — {reason}" if reason else ""
+            lines.append(f"- {source.get('id', '<unknown>')}{reason_text}")
+    else:
+        lines.append("- (none)")
+
+    fresh_official = [s for s in fresh if s.get("authority") in ("official", "high_authority")]
+    if fresh_official:
+        best = min(fresh_official, key=lambda s: csf.authority_rank(s.get("authority")))
+        rec = f"Use fresh authoritative source {best.get('id')} for new authoritative-current questions."
+    elif fresh:
+        best = min(fresh, key=lambda s: csf.authority_rank(s.get("authority")))
+        rec = f"Use fresh source {best.get('id')} for new questions, but verify authority."
+    else:
+        rec = "No fresh usable sources. Generate conceptual-practice questions only until sources are refreshed."
+    if volatility in ("volatile", "live"):
+        rec += " Do not generate product-current questions from memory."
+
+    lines.extend(["", f"**Recommendation:** {rec}", ""])
+    return lines, volatility
+
+
+def _adjustment_message(tag: str, count: int) -> str:
+    topic = tag.replace("-", " ")
+    if topic.endswith(" confusion"):
+        topic = topic[: -len(" confusion")]
+    strength = "strong" if count >= 3 else "moderate"
+    if tag == "service-boundary-confusion":
+        adjustment = "Do two short comparison drills before adding new material."
+    else:
+        adjustment = "Do a focused review drill before adding new material."
+    return (
+        f"You keep missing {topic} questions.\n"
+        f"Recommended adjustment: {adjustment}\n"
+        f"Why: The last {count} weak evidence items relate to {topic}.\n"
+        f"Strength: {strength}. You can accept, modify, or override this."
+    )
+
+
+def _overdue_review_message(count: int) -> str:
+    return (
+        f"You have {count} overdue review item{'s' if count != 1 else ''}.\n"
+        "Recommended adjustment: Do your due reviews before adding new material.\n"
+        "Why: Spaced repetition is most effective when reviews are on time.\n"
+        "Strength: moderate. You can accept, modify, or override this."
+    )
+
+
+def emulate_suggest_study_adjustment(evidence_index: dict, review_state: dict) -> str:
+    """Emulate scripts/suggest_study_adjustment.py using compact indexes only."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=30)
+    weak_verdicts = {"partial", "incorrect", "unclear", "wrong"}
+    tag_counts: dict[str, int] = {}
+
+    for item in evidence_index.get("items") or []:
+        verdict = str(item.get("verdict", "")).lower()
+        if verdict not in weak_verdicts:
+            continue
+        date_str = item.get("date", "")
+        if date_str:
+            try:
+                dt = datetime.fromisoformat(str(date_str))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                if dt < cutoff:
+                    continue
+            except Exception:
+                continue
+        tags = item.get("mistake_type") or []
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.replace(",", " ").split() if t.strip()]
+        for tag in tags:
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+    strong_tag: str | None = None
+    moderate_tag: str | None = None
+    # Deterministic ordering: highest count first, then alphabetical.
+    for tag, count in sorted(tag_counts.items(), key=lambda x: (-x[1], x[0])):
+        if count >= 3:
+            strong_tag = tag
+            break
+        if count == 2 and moderate_tag is None:
+            moderate_tag = tag
+
+    if strong_tag:
+        return _adjustment_message(strong_tag, tag_counts[strong_tag])
+
+    overdue_count = 0
+    for item in review_state.get("review_items") or []:
+        status = item.get("status")
+        if status in ("completed", "suspended"):
+            continue
+        due_at_str = item.get("due_at")
+        if not due_at_str:
+            continue
+        try:
+            due_at = datetime.fromisoformat(str(due_at_str))
+            if due_at.tzinfo is None:
+                due_at = due_at.replace(tzinfo=timezone.utc)
+            if due_at <= now:
+                overdue_count += 1
+        except Exception:
+            continue
+
+    if overdue_count > 0:
+        return _overdue_review_message(overdue_count)
+
+    if moderate_tag:
+        return _adjustment_message(moderate_tag, tag_counts[moderate_tag])
+
+    return "No recommendation: insufficient evidence."
+
+
+def build_learner_adaptation_section(evidence_index: dict, review_state: dict) -> list[str]:
+    """Build learner adaptation summary from compact state."""
+    profile = load_yaml(ROOT / "state" / "LEARNER_PROFILE.yaml")
+    prefs = profile.get("learner_preferences") or {}
+    adaptation = profile.get("adaptation_state") or {}
+
+    source_refresh_pref = prefs.get("source_refresh_preference") or "not set"
+    recurring_friction = adaptation.get("recurring_friction") or []
+
+    suggestion = emulate_suggest_study_adjustment(evidence_index, review_state)
+
+    lines: list[str] = [
+        "## Learner adaptation summary",
+        "",
+        f"- **Source refresh preference:** {source_refresh_pref}",
+        "",
+        "**Current study adjustment recommendation:**",
+        "",
+    ]
+    lines.extend(suggestion.splitlines())
+    lines.extend([
+        "",
+        "**Recent recurring friction:**",
+    ])
+    if recurring_friction:
+        for item in recurring_friction[:3]:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- None recorded.")
+    lines.append("")
+    return lines
+
+
+def build_question_quality_section(volatility: str) -> list[str]:
+    """Build question quality requirements for the active target."""
+    if volatility in ("volatile", "live"):
+        freshness_req = (
+            "A fresh official or high-authority source is required for authoritative-current questions."
+        )
+        mode_guidance = (
+            "Authoritative-current questions are gated; fall back to conceptual-practice "
+            "or source-grounded recall if no fresh source exists."
+        )
+    elif volatility == "moderate":
+        freshness_req = (
+            "A fresh source (within the moderate volatility window) is required for authoritative-current questions."
+        )
+        mode_guidance = (
+            "Prefer source-grounded questions; mark memory-generated product-current questions as practice-only."
+        )
+    else:
+        freshness_req = (
+            "Stale sources are acceptable for stable topics, but prefer fresh authoritative sources."
+        )
+        mode_guidance = (
+            "Authoritative-current questions are generally safe; still verify against trusted sources."
+        )
+
+    return [
+        "## Question quality requirements",
+        "",
+        f"- **Target volatility:** {volatility}",
+        f"- **Required source freshness for authoritative_current:** {freshness_req}",
+        f"- **Question mode guidance:** {mode_guidance}",
+        "- **Quality gate reminder:** Use `protocols/QUESTION_QUALITY_GOVERNOR.md` for every generated question. Keep the answer key private until grading.",
+        "",
+    ]
 
 
 def load_performance_budget() -> dict:
@@ -249,6 +490,7 @@ def build_context_pack(
     skill_map = load_yaml(ROOT / "state" / "SKILL_MAP.yaml")
     review_state = load_yaml(ROOT / "reviews" / "REVIEW_STATE.yaml")
     mode_data = load_yaml(ROOT / "state" / "STUDYDD_MODE.yaml")
+    evidence_index = load_yaml(ROOT / "state" / "EVIDENCE_INDEX.yaml")
 
     target_path = active_target_path(study_state)
     study_skill = active_study_skill(target_path)
@@ -321,7 +563,6 @@ def build_context_pack(
     body_lines.append("")
 
     # Evidence excerpts for non-audit tasks.
-    evidence_index = load_yaml(ROOT / "state" / "EVIDENCE_INDEX.yaml")
     if task in ("audit",):
         included.append(("state/EVIDENCE_LOG.md", "full audit log required for audit task"))
         included.append(("sessions/SESSION_LOG.md", "full audit log required for audit task"))
@@ -389,6 +630,24 @@ def build_context_pack(
     else:
         body_lines.append(f"No specific guidance for task '{task}'. Use the smallest context that contains the needed truth.")
     body_lines.append("")
+
+    # Source freshness, learner adaptation, and question quality for the active target.
+    if target_path:
+        target_id = active_target_id(study_state)
+        try:
+            csf = import_check_source_freshness()
+            freshness_lines, volatility = build_source_freshness_section(target_id, csf)
+            body_lines.extend(freshness_lines)
+        except Exception as exc:
+            body_lines.extend([
+                "## Source freshness status",
+                "",
+                f"- **Error:** could not build freshness section: {exc}",
+                "",
+            ])
+            volatility = "moderate"
+        body_lines.extend(build_learner_adaptation_section(evidence_index, review_state))
+        body_lines.extend(build_question_quality_section(volatility))
 
     # File contents.
     body_lines.extend([
