@@ -25,13 +25,14 @@ Use this prompt for mixed-review or exam-style checkpoint sessions.
 1. Ask one question at a time.
 2. Do not reveal the answer until the learner has responded.
 3. For multiple-choice, choose-two, choose-three, and matching questions:
-   - create the private answer key first
+   - create stable internal option IDs first
+   - create the private answer key in your working context only; do not write it to repo files before the learner answers
    - shuffle visible options randomly
    - verify the answer key still points to the correct visible labels
    - avoid repeating the same correct label too often
 4. Grade strictly against the answer key.
 5. Record every result as evidence.
-6. Record the final visible option order, correct answer label(s), learner answer, and grading result in the session log.
+6. After grading, record the final visible option order, correct answer label(s), learner answer, grading result, and optionally the internal option-ID mapping in the session log.
 7. Tag mistakes using `protocols/MISTAKE_TAXONOMY.md`.
 
 ## Grading

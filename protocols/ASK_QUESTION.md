@@ -42,16 +42,17 @@ The learner must not see the answer key before answering.
 
 For any fixed-option question:
 
-1. **Create the private answer key first.** Decide which option content is correct before assigning labels.
-2. **Shuffle the visible options.** Use a random order for the final question.
-3. **Verify the answer key maps to the new labels.** After shuffling, confirm the correct answer label(s) in the final order.
-4. **Check for obvious position patterns.** Ensure the correct answer is not always A, first, longest, or most detailed.
-5. **For choose-two/choose-three, randomize cluster positions.** Avoid correct answers always appearing as A+B or C+D.
-6. **Present the question.** Show only the final shuffled options to the learner.
-7. **Track recent labels.** In a practice set, avoid repeating the same correct label too often.
+1. **Create stable internal option IDs first.** Assign IDs like `opt_1`, `opt_2`, `opt_3`, `opt_4` to option content before any visible label exists. Mark which IDs are correct in the private answer key.
+2. **Keep the private answer key in the agent context only before the learner answers.** Do not write it to repo files, active question files, session logs, or evidence logs before grading.
+3. **Shuffle the visible options.** Use a random order for the final question.
+4. **Verify the answer key maps to the new labels.** After shuffling, confirm the correct answer label(s) in the final order.
+5. **Check for obvious position patterns.** Ensure the correct answer is not always A, first, longest, or most detailed.
+6. **For choose-two/choose-three, randomize cluster positions.** Avoid correct answers always appearing as A+B or C+D.
+7. **Present the question.** Show only the final shuffled options to the learner.
+8. **Track recent labels.** In a practice set, avoid repeating the same correct label too often.
 
 ## After The Answer
 
 1. Grade immediately using `protocols/GRADE_ANSWER.md`.
-2. Record the final visible option order, correct answer label(s), learner answer, and grading result in the session log.
+2. After grading, the session/evidence log may record the final visible option order, correct answer label(s), learner answer, grading result, and optionally the internal option-ID mapping.
 3. Do not ask a second question until the first is closed.

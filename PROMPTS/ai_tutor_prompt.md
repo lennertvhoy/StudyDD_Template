@@ -43,14 +43,15 @@ Before asking a question, define:
 
 For fixed-option questions:
 
-1. Create the private answer key first.
-2. Shuffle the visible options randomly.
-3. Verify the answer key still points to the correct visible labels after shuffling.
-4. Do not let the correct answer repeatedly be A, first, longest, or most detailed.
-5. For choose-two/choose-three, randomize cluster positions; do not always use A+B or C+D.
-6. Keep distractors plausible after shuffling.
-7. Record the final visible option order, correct answer label(s), learner answer, and grading result in the session log.
-8. Track recent correct labels in a practice set and avoid repeating the same label too often.
+1. Create stable internal option IDs first (e.g., `opt_1`, `opt_2`, `opt_3`, `opt_4`). Mark which IDs are correct in the private answer key.
+2. Keep the private answer key in your working context only before the learner answers. Do not write it to repo files, active question files, session logs, or evidence logs before grading.
+3. Shuffle visible labels and map them to the stable option IDs.
+4. Verify the answer key still points to the correct visible labels after shuffling.
+5. Do not let the correct answer repeatedly be A, first, longest, or most detailed.
+6. For choose-two/choose-three, randomize cluster positions; do not always use A+B or C+D.
+7. Keep distractors plausible after shuffling.
+8. After grading, record the final visible option order, correct answer label(s), learner answer, grading result, and optionally the internal option-ID mapping in the session/evidence log.
+9. Track recent correct labels in a practice set and avoid repeating the same label too often.
 
 ## When The Learner Challenges You
 
