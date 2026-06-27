@@ -74,6 +74,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_source_freshness.py
 
+      - name: Run source check recording test
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_record_source_check.py
+
+      - name: Run source check recording demo
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/record_source_check.py --demo
+
       - name: Run question quality test
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_question_quality.py
