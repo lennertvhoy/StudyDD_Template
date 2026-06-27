@@ -27,6 +27,20 @@ Choose the first item that applies:
 
 Apply the active study skill when choosing question style, mode, and difficulty.
 
+## Activity-type routing
+
+After applying the selection priority above, use `scripts/plan_learning_activity.py` to choose one of the five canonical activity categories. The script prints the rule that triggered the choice so the recommendation is auditable.
+
+1. **Spaced-repetition review** (`spaced_review`) — due or overdue reviews first.
+2. **Recent-info check** (`recent_info_check`) — if the active target is `moderate`/`volatile`/`live` and no recent source check is recorded.
+3. **Lab / practical exercise** (`practical_lab`) — if the active target/study skill is hands-on (e.g., `practical_lab`, `sysadmin`, `cloud`, `networking`) or matching templates mark it as best for this domain.
+4. **Diagram / visual explanation** (`diagram_or_whiteboard`) — if the active target/study skill is conceptual (e.g., `philosophy`, `conceptual_understanding`) or matching templates mark it as best for this domain.
+5. **Exam-style question** (`retrieval_question`) — if the target `type` is `certification` or `exam` and the skill is at least practiced (`readiness >= 40`).
+
+**Fallback** — when none of the five categories clearly apply, use a focused retrieval question, paper exercise, or explain-back based on skill status.
+
+The learner can accept, modify, or override the recommendation. Strong overrides are recorded in `state/EVIDENCE_LOG.md` and `activities/ACTIVITY_LOG.md`.
+
 ## Override Handling
 
 If the learner wants to skip a due review, make the tradeoff explicit:

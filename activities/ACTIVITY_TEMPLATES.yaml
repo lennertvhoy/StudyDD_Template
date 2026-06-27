@@ -37,6 +37,8 @@ activity_types:
     description: "Learner submits a written answer, essay, reflection, explanation, or draft for feedback."
   upload_and_review:
     description: "Generic evidence intake for screenshots, PDFs, photos, notes, logs, transcripts, or external work."
+  recent_info_check:
+    description: "Verify current facts, sources, or exam objectives for a volatile topic before authoritative study."
 
 templates:
   - id: paper_drill_basic
@@ -137,3 +139,14 @@ templates:
     expected_evidence:
       - essay
       - written_answer
+
+  - id: source_freshness_check
+    activity_type: recent_info_check
+    best_for:
+      - volatile_topic
+      - it_certification
+      - live_topic
+    expected_evidence:
+      - source_metadata
+      - short_summary
+      - answer_to_check_question
