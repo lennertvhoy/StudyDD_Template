@@ -5,7 +5,7 @@
 - **Implementation commit SHA:** `765c4b9b513eb25c25ca08b0d5e42f7bb1f5c45c`
 - **Evidence commit SHA:** `e94d6f89026afd086b0672785b844439bfe55edc`
 - **PR URL:** https://github.com/lennertvhoy/StudyDD_Template/pull/3
-- **CI status:** passed on GitHub Actions run `28291826174`
+- **CI status:** passed on GitHub Actions run `28291874766`
 
 CI jobs passed:
 
