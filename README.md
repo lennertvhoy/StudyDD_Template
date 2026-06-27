@@ -289,6 +289,18 @@ state remains honest.
 See `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, and
 `scripts/select_next_study_action.py`.
 
+### How the agent chooses the next activity
+
+StudyDD recommends one activity at a time using protocol-driven rules:
+
+1. **Due reviews first** — spaced retrieval is the highest-retention move.
+2. **Recent-info check** — for `moderate`, `volatile`, or `live` topics without a recent source check.
+3. **Lab or diagram** — when the study skill is hands-on (`practical_lab`, `cloud`, `sysadmin`, `networking`) or conceptual (`philosophy`, `conceptual_understanding`).
+4. **Exam-style question** — when the target is a certification or exam and the skill is practiced.
+5. **Fallback question** — a focused retrieval question, paper exercise, or explain-back.
+
+The agent explains which rule triggered the recommendation. The learner can accept, modify, or override it.
+
 ## Five-minute demo
 
 Run the public demo replay to see the full StudyDD learning loop in under a
