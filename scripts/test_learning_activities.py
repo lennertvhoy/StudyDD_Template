@@ -34,6 +34,7 @@ REQUIRED_ACTIVITY_TYPES = [
     "voice_note_review",
     "writing_or_essay_review",
     "upload_and_review",
+    "recent_info_check",
 ]
 REQUIRED_TEMPLATE_IDS = [
     "paper_drill_basic",
@@ -66,6 +67,28 @@ def save_yaml(path: Path, data: dict) -> None:
     import yaml
 
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+
+def create_temp_instance(tmp: str, name: str, target_id: str, target_yaml: str) -> Path:
+    target = Path(tmp) / f"StudyDD_{name}"
+    remote = f"https://github.com/example/StudyDD_{name}.git"
+    run([sys.executable, "scripts/create_instance.py", "--target", str(target), "--remote", remote])
+
+    mode_path = target / "state" / "STUDYDD_MODE.yaml"
+    mode_data = load_yaml(mode_path)
+    mode_data["mode"] = "learner_instance"
+    mode_data["personalized"] = True
+    save_yaml(mode_path, mode_data)
+
+    study_state = load_yaml(target / "state" / "STUDY_STATE.yaml")
+    study_state["learner"]["name"] = f"{name} Test Learner"
+    study_state["active_target_id"] = target_id
+    save_yaml(target / "state" / "STUDY_STATE.yaml", study_state)
+
+    (target / "targets" / target_id).mkdir(parents=True, exist_ok=True)
+    (target / "targets" / target_id / "TARGET.yaml").write_text(target_yaml, encoding="utf-8")
+
+    return target
 
 
 def test_required_files_exist() -> None:
@@ -110,6 +133,71 @@ def test_activity_templates_parse() -> None:
         assert template.get("expected_evidence"), (
             f"Template {template.get('id')} missing expected_evidence"
         )
+
+
+def test_recent_info_check_activity_type_exists() -> None:
+    data = load_yaml(ROOT / "activities" / "ACTIVITY_TEMPLATES.yaml")
+    activity_types = data.get("activity_types") or {}
+    assert "recent_info_check" in activity_types, "recent_info_check activity type must exist"
+    templates = data.get("templates") or []
+    assert any(
+        t.get("id") == "source_freshness_check" and t.get("activity_type") == "recent_info_check"
+        for t in templates
+    ), "source_freshness_check template must exist"
+
+
+def test_plan_recommends_recent_info_check_for_volatile_target() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-volatile-test-") as tmp:
+        target_yaml = "---\nid: volatile-target\ntype: certification\ntitle: Volatile Cert\nvolatility: volatile\nstudy_skill: it_certification\n"
+        target = create_temp_instance(tmp, "VolatileTest", "volatile-target", target_yaml)
+
+        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
+        assert "recent_info_check" in result.stdout, "Volatile target should route to recent_info_check"
+        assert "Rule: volatile target" in result.stdout, "Reason should reference the volatility rule"
+
+
+def test_plan_recommends_lab_for_practical_skill() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lab-test-") as tmp:
+        target_yaml = "---\nid: lab-target\ntype: skill\ntitle: Lab Target\nvolatility: stable\nstudy_skill: practical_lab\n"
+        target = create_temp_instance(tmp, "LabTest", "lab-target", target_yaml)
+
+        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
+        assert "practical_lab" in result.stdout, "practical_lab study skill should route to practical_lab"
+        assert "hands-on" in result.stdout, "Reason should mention hands-on study skill"
+
+
+def test_plan_recommends_diagram_for_conceptual_skill() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-diagram-test-") as tmp:
+        target_yaml = "---\nid: diagram-target\ntype: skill\ntitle: Diagram Target\nvolatility: stable\nstudy_skill: philosophy\n"
+        target = create_temp_instance(tmp, "DiagramTest", "diagram-target", target_yaml)
+
+        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
+        assert "diagram_or_whiteboard" in result.stdout, "philosophy study skill should route to diagram_or_whiteboard"
+        assert "visual explanation" in result.stdout, "Reason should mention visual explanation"
+
+
+def test_plan_recommends_exam_question_for_certification_target() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-exam-test-") as tmp:
+        target_yaml = "---\nid: exam-target\ntype: certification\ntitle: Exam Target\nvolatility: stable\nstudy_skill: it_certification\n"
+        target = create_temp_instance(tmp, "ExamTest", "exam-target", target_yaml)
+
+        # Add a practiced skill so the exam-style branch fires.
+        skill_map = load_yaml(target / "state" / "SKILL_MAP.yaml")
+        skill_map["skills"] = [
+            {
+                "id": "exam-skill",
+                "label": "Exam skill",
+                "status": "practiced",
+                "readiness": 55,
+                "confidence": "medium",
+                "evidence": [],
+            }
+        ]
+        save_yaml(target / "state" / "SKILL_MAP.yaml", skill_map)
+
+        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
+        assert "retrieval_question" in result.stdout, "Certification target should route to exam-style retrieval question"
+        assert "certification target" in result.stdout, "Reason should mention certification target"
 
 
 def test_plan_learning_activity_demo() -> None:
@@ -273,6 +361,11 @@ def main() -> int:
         test_required_files_exist,
         test_activity_state_is_generic_in_template_mode,
         test_activity_templates_parse,
+        test_recent_info_check_activity_type_exists,
+        test_plan_recommends_recent_info_check_for_volatile_target,
+        test_plan_recommends_lab_for_practical_skill,
+        test_plan_recommends_diagram_for_conceptual_skill,
+        test_plan_recommends_exam_question_for_certification_target,
         test_plan_learning_activity_demo,
         test_voice_note_analyzer,
         test_presentation_analyzer,
