@@ -288,10 +288,11 @@ import yaml
 VOLATILITY_MAX_AGE_DAYS = {
     "stable": 3650,
     "slow_changing": 730,
-    "moderate": 90,
-    "volatile": 30,
+    "moderate": 30,
+    "volatile": 7,
     "live": 1,
 }
+# Canonical constants live in scripts/check_source_freshness.py.
 
 AUTHORITY_ORDER = ["official", "high_authority", "instructor", "textbook", "learner_notes", "unverified"]
 

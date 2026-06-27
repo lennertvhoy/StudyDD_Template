@@ -10,7 +10,7 @@ Your progress is never hidden inside an app database or chat history.
 
 ### Source-grounded question quality
 
-StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source freshness is tracked in `sources/SOURCE_STATE.yaml`. When freshness is missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the next-activity router chooses a `recent_info_check` instead of an authoritative question; fresh source state suppresses repeated source-check recommendations. Due reviews still take priority.
+StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source freshness is tracked in `sources/SOURCE_STATE.yaml`. When freshness is missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the next-activity router chooses a `recent_info_check` instead of an authoritative question; fresh source state suppresses repeated source-check recommendations. When a check is completed, `scripts/record_source_check.py` writes the fresh metadata back to `sources/SOURCE_STATE.yaml`. Due reviews still take priority.
 
 ### Learning activities and evidence intake
 
@@ -250,6 +250,7 @@ python3 scripts/test_validate_touched_state.py
 python3 scripts/test_learning_activities.py
 python3 scripts/test_next_activity_decision.py
 python3 scripts/test_source_freshness.py
+python3 scripts/test_record_source_check.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke

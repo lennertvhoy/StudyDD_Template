@@ -158,6 +158,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/select_next_study_action.py` = time-aware review-first recommendation
 - `scripts/plan_learning_activity.py` = recommends the next learning activity
 - `scripts/record_activity_result.py` = records evidence from completed activities
+- `scripts/record_source_check.py` = canonical writer for completed source-check metadata
 - `scripts/analyze_voice_note.py` = dependency-free transcript analysis
 - `scripts/analyze_presentation_rehearsal.py` = dependency-free rehearsal analysis
 - `scripts/compact_state.py` = compacts append-only logs into derived summaries/indexes
@@ -265,7 +266,7 @@ Do not expose raw tool outputs, internal reasoning, or meta-commentary to the le
 
 ### 12. Do not generate authoritative volatile questions from memory
 
-Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`. The next-activity router keys `recent_info_check` off verified source freshness state, not only the recent activity type; fresh source state suppresses repeated source-check recommendations.
+Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`. The next-activity router keys `recent_info_check` off verified source freshness state, not only the recent activity type; fresh source state suppresses repeated source-check recommendations. When a completed source check produces fresh metadata, record it via `scripts/record_source_check.py` so the freshness signal persists.
 
 ## Cross-Platform and Dependency Consent Rules
 
@@ -424,7 +425,7 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
 7. Plan the next learning activity with `scripts/plan_learning_activity.py` or its logic. A question is the default, but the best move may be a review, paper exercise, lab, interview rehearsal, presentation rehearsal, voice note, external resource, or upload-and-review task. Explain why and end with `You can accept, modify, or override this.`
 8. Confirm the active focus and next activity with the learner.
-9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item.
+9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item. When a source check is completed, record the result with `scripts/record_source_check.py`.
 10. If the activity is a question, ask it; otherwise assign the activity and state expected evidence.
 11. Receive the answer or submitted evidence.
 12. Grade against the answer key or rubric, guided by the active study skill. Stay on the fast path.

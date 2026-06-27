@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from check_source_freshness import classify_source
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -122,6 +124,7 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/VOICE_NOTE_REVIEW_POLICY.md",
     "protocols/INTERVIEW_PREP_POLICY.md",
     "protocols/PRESENTATION_PREP_POLICY.md",
+    "protocols/RECORD_SOURCE_CHECK.md",
 ]
 
 REQUIRED_PROMPT_FILES = [
@@ -164,6 +167,7 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/test_learner_adaptation.py",
     "scripts/plan_learning_activity.py",
     "scripts/record_activity_result.py",
+    "scripts/record_source_check.py",
     "scripts/analyze_voice_note.py",
     "scripts/analyze_presentation_rehearsal.py",
     "scripts/test_learning_activities.py",
@@ -289,6 +293,14 @@ SOURCE_VOLATILITY_VALUES = {
     "live",
 }
 
+SOURCE_OUTCOMES = {
+    "fresh",
+    "stale",
+    "missing",
+    "unverified",
+    "unknown",
+}
+
 QUESTION_MODES = {
     "authoritative_current",
     "conceptual_practice",
@@ -297,14 +309,6 @@ QUESTION_MODES = {
     "remediation",
 }
 
-# Duplicated from scripts/check_source_freshness.py to keep this script self-contained.
-VOLATILITY_MAX_AGE_DAYS = {
-    "stable": 3650,
-    "slow_changing": 730,
-    "moderate": 90,
-    "volatile": 30,
-    "live": 1,
-}
 
 
 def check_files() -> list[str]:
@@ -1529,48 +1533,6 @@ def check_option_position_randomization() -> list[str]:
     return errors
 
 
-def _classify_source_freshness(
-    source: dict, now: datetime, target_volatility: str
-) -> tuple[str, str | None]:
-    """Return (freshness_status, reason) for a single source entry.
-
-    Mirrors the logic in scripts/check_source_freshness.py so the validator stays
-    self-contained. Statuses: fresh, stale, unverified, missing_timestamp.
-    """
-    if source.get("usable_for_questions") is False:
-        return "unverified", "usable_for_questions is false"
-
-    expires_at = source.get("expires_at")
-    if expires_at:
-        try:
-            expiry = datetime.fromisoformat(str(expires_at))
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-            if now <= expiry:
-                return "fresh", None
-            return "stale", f"expired at {expires_at}"
-        except Exception as exc:
-            return "missing_timestamp", f"invalid expires_at: {exc}"
-
-    last_checked_at = source.get("last_checked_at")
-    if last_checked_at:
-        try:
-            checked = datetime.fromisoformat(str(last_checked_at))
-            if checked.tzinfo is None:
-                checked = checked.replace(tzinfo=timezone.utc)
-        except Exception as exc:
-            return "missing_timestamp", f"invalid last_checked_at: {exc}"
-
-        volatility = source.get("volatility") or target_volatility
-        max_age_days = VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
-        expiry = checked + timedelta(days=max_age_days)
-        if now <= expiry:
-            return "fresh", None
-        return "stale", f"last checked {last_checked_at}; volatility {volatility} max age {max_age_days} days"
-
-    return "missing_timestamp", "no expires_at or last_checked_at"
-
-
 def _discover_question_files() -> list[Path]:
     """Return all question YAML files under targets/ and EXAMPLES/."""
     found: list[Path] = []
@@ -1644,6 +1606,28 @@ def check_source_state(yaml: object) -> list[str]:
         usable = source.get("usable_for_questions", True)
         if not isinstance(usable, bool):
             errors.append(f"Source '{sid}' usable_for_questions must be a boolean")
+
+        last_check = source.get("last_check")
+        if last_check is not None:
+            if not isinstance(last_check, dict):
+                errors.append(f"Source '{sid}' last_check must be a mapping")
+            else:
+                outcome = last_check.get("outcome")
+                if outcome is not None and outcome not in SOURCE_OUTCOMES:
+                    errors.append(
+                        f"Source '{sid}' last_check.outcome {outcome!r} is invalid; "
+                        f"must be one of {sorted(SOURCE_OUTCOMES)}"
+                    )
+                checked_at = last_check.get("checked_at")
+                if checked_at is not None and _parse_iso_timestamp(checked_at) is None:
+                    errors.append(
+                        f"Source '{sid}' last_check.checked_at is not a valid timezone-aware ISO 8601 timestamp"
+                    )
+                checked_by = last_check.get("checked_by")
+                if checked_by is not None and checked_by not in ("agent", "learner"):
+                    errors.append(
+                        f"Source '{sid}' last_check.checked_by must be 'agent' or 'learner'"
+                    )
 
     return errors
 
@@ -1734,7 +1718,7 @@ def check_volatile_target_freshness(yaml: object, warnings: list[str]) -> list[s
                 continue
             if source.get("usable_for_questions") is False:
                 continue
-            status, _ = _classify_source_freshness(source, now, volatility)
+            status, _ = classify_source(source, now, volatility)
             if status == "fresh":
                 has_fresh_authoritative = True
                 break
@@ -1848,7 +1832,7 @@ def check_question_quality_records(yaml: object) -> list[str]:
                     if source is None:
                         # Unknown source_id is already reported above.
                         continue
-                    status, reason = _classify_source_freshness(source, now, volatility)
+                    status, reason = classify_source(source, now, volatility)
                     if status != "fresh":
                         detail = f" ({reason})" if reason else ""
                         errors.append(
