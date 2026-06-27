@@ -11,10 +11,19 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+from check_source_freshness import (
+    VOLATILITY_MAX_AGE_DAYS,
+    classify_source,
+    target_freshness_summary,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT_SRC = ROOT / "scripts" / "check_source_freshness.py"
+
+NOW = datetime(2026, 6, 27, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def run_script(tmp_root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -244,6 +253,210 @@ def test_now_deterministic() -> None:
         assert result1.stdout == result2.stdout
 
 
+# ---------------------------------------------------------------------------
+# target_freshness_summary unit tests (no subprocess, deterministic datetimes)
+# ---------------------------------------------------------------------------
+
+
+def _src(
+    target_id: str = "target",
+    checked_offset_days: float | None = None,
+    usable_for_questions: bool = True,
+    expires_at: str | None = None,
+    freshness_window_days: int | None = None,
+    authority: str = "official",
+    volatility: str | None = None,
+    source_id: str = "src1",
+    last_checked_at: str | None = None,
+) -> dict:
+    source: dict = {
+        "id": source_id,
+        "target_ids": [target_id],
+        "authority": authority,
+        "usable_for_questions": usable_for_questions,
+    }
+    if checked_offset_days is not None:
+        source["last_checked_at"] = (NOW - timedelta(days=checked_offset_days)).isoformat()
+    if last_checked_at is not None:
+        source["last_checked_at"] = last_checked_at
+    if expires_at is not None:
+        source["expires_at"] = expires_at
+    if freshness_window_days is not None:
+        source["freshness_window_days"] = freshness_window_days
+    if volatility is not None:
+        source["volatility"] = volatility
+    return source
+
+
+def _state(*sources: dict) -> dict:
+    return {"sources": list(sources)}
+
+
+def test_target_freshness_summary_missing_state() -> None:
+    summary = target_freshness_summary("target", "volatile", None, NOW)
+    assert summary.status == "missing"
+    assert not summary.has_fresh_usable
+    assert summary.fresh_count == 0
+    assert "No source freshness state" in summary.reason
+
+    summary_empty = target_freshness_summary("target", "volatile", _state(), NOW)
+    assert summary_empty.status == "missing"
+
+
+def test_target_freshness_summary_fresh_inside_window() -> None:
+    summary = target_freshness_summary(
+        "target", "volatile", _state(_src(checked_offset_days=3.0)), NOW
+    )
+    assert summary.status == "fresh"
+    assert summary.has_fresh_usable
+    assert summary.fresh_count == 1
+    assert summary.best_authority == "official"
+
+
+def test_target_freshness_summary_stale_outside_window() -> None:
+    summary = target_freshness_summary(
+        "target", "volatile", _state(_src(checked_offset_days=10.0)), NOW
+    )
+    assert summary.status == "stale"
+    assert not summary.has_fresh_usable
+    assert summary.stale_count == 1
+
+
+def test_target_freshness_summary_malformed_timestamp() -> None:
+    summary = target_freshness_summary(
+        "target",
+        "volatile",
+        _state(_src(checked_offset_days=None, last_checked_at="not-a-timestamp")),  # type: ignore[arg-type]
+        NOW,
+    )
+    assert summary.status == "unknown"
+    assert summary.unknown_count == 1
+
+
+def test_target_freshness_summary_stable_no_sources() -> None:
+    summary = target_freshness_summary("target", "stable", _state(), NOW)
+    assert summary.status == "missing"
+    assert not summary.has_fresh_usable
+    # Consumers (context pack / planner) map this stable+missing case to not_required.
+
+
+def test_target_freshness_summary_stable_with_valid_source() -> None:
+    summary = target_freshness_summary(
+        "target", "stable", _state(_src(checked_offset_days=365.0)), NOW
+    )
+    assert summary.status == "fresh"
+    assert summary.has_fresh_usable
+
+
+def test_live_target_window_one_day() -> None:
+    assert VOLATILITY_MAX_AGE_DAYS["live"] == 1
+    fresh = target_freshness_summary(
+        "target", "live", _state(_src(checked_offset_days=0.5)), NOW
+    )
+    assert fresh.status == "fresh"
+    stale = target_freshness_summary(
+        "target", "live", _state(_src(checked_offset_days=2.0)), NOW
+    )
+    assert stale.status == "stale"
+
+
+def test_volatile_target_window_seven_days() -> None:
+    assert VOLATILITY_MAX_AGE_DAYS["volatile"] == 7
+    fresh = target_freshness_summary(
+        "target", "volatile", _state(_src(checked_offset_days=3.0)), NOW
+    )
+    assert fresh.status == "fresh"
+    stale = target_freshness_summary(
+        "target", "volatile", _state(_src(checked_offset_days=10.0)), NOW
+    )
+    assert stale.status == "stale"
+
+
+def test_moderate_target_window_thirty_days() -> None:
+    assert VOLATILITY_MAX_AGE_DAYS["moderate"] == 30
+    fresh = target_freshness_summary(
+        "target", "moderate", _state(_src(checked_offset_days=15.0)), NOW
+    )
+    assert fresh.status == "fresh"
+    stale = target_freshness_summary(
+        "target", "moderate", _state(_src(checked_offset_days=35.0)), NOW
+    )
+    assert stale.status == "stale"
+
+
+def test_freshness_window_days_override() -> None:
+    source = _src(
+        checked_offset_days=5.0,
+        freshness_window_days=3,
+        volatility="volatile",
+    )
+    status, reason = classify_source(source, NOW, "volatile")
+    assert status == "stale"
+    assert reason is not None
+
+    summary = target_freshness_summary("target", "volatile", _state(source), NOW)
+    assert summary.status == "stale"
+    assert summary.stale_count == 1
+
+
+def test_target_freshness_summary_multiple_sources_aggregate() -> None:
+    summary = target_freshness_summary(
+        "target",
+        "volatile",
+        _state(
+            _src(source_id="fresh-official", checked_offset_days=1.0, authority="official"),
+            _src(source_id="stale-blog", checked_offset_days=14.0, authority="unverified"),
+            _src(source_id="not-usable", checked_offset_days=1.0, usable_for_questions=False),
+            {"id": "no-ts", "target_ids": ["target"]},
+            {"id": "bad-ts", "target_ids": ["target"], "last_checked_at": "oops"},
+        ),
+        NOW,
+    )
+    # unknown_count takes precedence over fresh/stale, but fresh usable still exists.
+    assert summary.status == "unknown"
+    assert summary.has_fresh_usable
+    assert summary.fresh_count == 1
+    assert summary.stale_count == 1
+    assert summary.unverified_count == 1
+    assert summary.missing_count == 1
+    assert summary.unknown_count == 1
+    assert summary.best_authority == "official"
+
+
+def test_usable_for_questions_false_counts_unverified() -> None:
+    summary = target_freshness_summary(
+        "target",
+        "volatile",
+        _state(_src(checked_offset_days=0.5, usable_for_questions=False)),
+        NOW,
+    )
+    assert summary.status == "unverified"
+    assert summary.unverified_count == 1
+    assert summary.fresh_count == 0
+    assert not summary.has_fresh_usable
+
+
+def test_expires_at_overrides_window() -> None:
+    fresh = target_freshness_summary(
+        "target",
+        "volatile",
+        _state(_src(expires_at=(NOW + timedelta(days=1)).isoformat())),
+        NOW,
+    )
+    assert fresh.status == "fresh"
+    assert fresh.has_fresh_usable
+
+    stale = target_freshness_summary(
+        "target",
+        "volatile",
+        _state(_src(expires_at=(NOW - timedelta(days=1)).isoformat())),
+        NOW,
+    )
+    assert stale.status == "stale"
+    assert stale.stale_count == 1
+    assert not stale.has_fresh_usable
+
+
 def main() -> int:
     tests = [
         test_volatile_fresh_official_passes,
@@ -252,6 +465,19 @@ def main() -> int:
         test_no_web_search,
         test_allow_stale_practice_only,
         test_now_deterministic,
+        test_target_freshness_summary_missing_state,
+        test_target_freshness_summary_fresh_inside_window,
+        test_target_freshness_summary_stale_outside_window,
+        test_target_freshness_summary_malformed_timestamp,
+        test_target_freshness_summary_stable_no_sources,
+        test_target_freshness_summary_stable_with_valid_source,
+        test_live_target_window_one_day,
+        test_volatile_target_window_seven_days,
+        test_moderate_target_window_thirty_days,
+        test_freshness_window_days_override,
+        test_target_freshness_summary_multiple_sources_aggregate,
+        test_usable_for_questions_false_counts_unverified,
+        test_expires_at_overrides_window,
     ]
 
     failures = 0
