@@ -153,7 +153,35 @@ def test_plan_recommends_recent_info_check_for_volatile_target() -> None:
 
         result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
         assert "recent_info_check" in result.stdout, "Volatile target should route to recent_info_check"
-        assert "Rule: volatile target" in result.stdout, "Reason should reference the volatility rule"
+        assert "source freshness" in result.stdout, "Reason should reference source freshness"
+        assert "Rule:" in result.stdout, "Reason should start with Rule:"
+        assert "Source freshness:" in result.stdout, "Output should surface source freshness status"
+        assert "source_freshness_unavailable_recent_activity_fallback" in result.stdout, "Empty source state should use the fallback rule"
+
+
+def test_plan_recommends_recent_info_check_for_stale_source() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-stale-source-test-") as tmp:
+        target_yaml = "---\nid: stale-source-target\ntype: certification\ntitle: Stale Source Cert\nvolatility: volatile\nstudy_skill: it_certification\n"
+        target = create_temp_instance(tmp, "StaleSourceTest", "stale-source-target", target_yaml)
+
+        source_state = {
+            "metadata": {"template_version": "0.9.0", "last_updated": "2026-06-27"},
+            "sources": [
+                {
+                    "id": "stale-docs",
+                    "authority": "official",
+                    "target_ids": ["stale-source-target"],
+                    "last_checked_at": "2026-01-01T00:00:00+00:00",
+                    "volatility": "volatile",
+                }
+            ],
+        }
+        save_yaml(target / "sources" / "SOURCE_STATE.yaml", source_state)
+
+        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
+        assert "recent_info_check" in result.stdout, "Stale source should route to recent_info_check"
+        assert "Source freshness: stale" in result.stdout, "Output should report stale freshness"
+        assert "source_freshness_stale" in result.stdout, "Rule ID should be source_freshness_stale"
 
 
 def test_plan_recommends_lab_for_practical_skill() -> None:
@@ -198,6 +226,31 @@ def test_plan_recommends_exam_question_for_certification_target() -> None:
         result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
         assert "retrieval_question" in result.stdout, "Certification target should route to exam-style retrieval question"
         assert "certification target" in result.stdout, "Reason should mention certification target"
+
+
+def test_plan_includes_source_freshness_for_fresh_volatile_target() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-fresh-source-test-") as tmp:
+        target_yaml = "---\nid: fresh-source-target\ntype: certification\ntitle: Fresh Source Cert\nvolatility: volatile\nstudy_skill: it_certification\n"
+        target = create_temp_instance(tmp, "FreshSourceTest", "fresh-source-target", target_yaml)
+
+        source_state = {
+            "metadata": {"template_version": "0.9.0", "last_updated": "2026-06-27"},
+            "sources": [
+                {
+                    "id": "fresh-docs",
+                    "authority": "official",
+                    "target_ids": ["fresh-source-target"],
+                    "last_checked_at": "2026-06-27T10:00:00+00:00",
+                    "volatility": "volatile",
+                }
+            ],
+        }
+        save_yaml(target / "sources" / "SOURCE_STATE.yaml", source_state)
+
+        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
+        assert "retrieval_question" in result.stdout, "Fresh volatile source should allow retrieval question"
+        assert "Source freshness: fresh" in result.stdout, "Output should report fresh freshness"
+        assert "source_freshness_satisfied" in result.stdout, "Rule ID should be source_freshness_satisfied"
 
 
 def test_plan_learning_activity_demo() -> None:
@@ -363,9 +416,11 @@ def main() -> int:
         test_activity_templates_parse,
         test_recent_info_check_activity_type_exists,
         test_plan_recommends_recent_info_check_for_volatile_target,
+        test_plan_recommends_recent_info_check_for_stale_source,
         test_plan_recommends_lab_for_practical_skill,
         test_plan_recommends_diagram_for_conceptual_skill,
         test_plan_recommends_exam_question_for_certification_target,
+        test_plan_includes_source_freshness_for_fresh_volatile_target,
         test_plan_learning_activity_demo,
         test_voice_note_analyzer,
         test_presentation_analyzer,
