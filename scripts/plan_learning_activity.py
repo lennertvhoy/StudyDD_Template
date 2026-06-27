@@ -104,7 +104,7 @@ def activity_types_for_study_skill(
     matched: set[str] = set()
     for template in templates:
         best_for = template.get("best_for") or []
-        if study_skill in best_for or "conceptual_understanding" in best_for:
+        if study_skill in best_for:
             activity_type = template.get("activity_type")
             if activity_type:
                 matched.add(activity_type)
@@ -319,7 +319,7 @@ def plan_activity(
     }.get(activity_type, "Complete the suggested learning activity.")
 
     output = (
-        f"StudyDD recommendation: {activity_type.replace('_', ' ')}.\n\n"
+        f"StudyDD recommendation: {activity_type}.\n\n"
         f"Reason:\n{reason}\n\n"
         f"Task:\n{task_description}\n\n"
         f"Expected evidence:\n{format_evidence(expected_evidence)}\n\n"
