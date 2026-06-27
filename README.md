@@ -248,6 +248,7 @@ python3 scripts/test_study_skills.py
 python3 scripts/test_performance_policy.py
 python3 scripts/test_validate_touched_state.py
 python3 scripts/test_learning_activities.py
+python3 scripts/test_next_activity_decision.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
@@ -256,7 +257,7 @@ test, and `git diff --check` on every push and pull request. See
 
 ### Intelligent state loading
 
-StudyDD keeps long audit logs, but agents do not load everything by default. Before a session, the repo builds a compact context pack from canonical state, indexes, summaries, due reviews, and relevant evidence. Raw logs stay available for audit and repair.
+StudyDD keeps long audit logs, but agents do not load everything by default. Before a session, the repo builds a compact context pack from canonical state, indexes, summaries, due reviews, relevant evidence, and the next activity recommendation with its auditable `Rule: ...` reason. Raw logs stay available for audit and repair.
 
 See `protocols/STATE_LOADING_POLICY.md`, `scripts/compact_state.py`, and `scripts/build_context_pack.py`.
 
@@ -298,7 +299,7 @@ StudyDD recommends one activity at a time using protocol-driven rules:
 4. **Exam-style question** — when the target is a certification or exam and the skill is practiced.
 5. **Fallback question** — a focused retrieval question, paper exercise, or explain-back.
 
-The agent explains which rule triggered the recommendation. The learner can accept, modify, or override it.
+The same shared decision logic powers `scripts/plan_learning_activity.py` and the context pack, so the tutor sees the same activity type, expected evidence, and `Rule: ...` reason. The learner can accept, modify, or override it.
 
 ## Five-minute demo
 

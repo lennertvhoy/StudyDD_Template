@@ -98,6 +98,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_learning_activities.py
 
+      - name: Run next activity decision test
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_next_activity_decision.py
+
       - name: Run activity planner demo
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/plan_learning_activity.py --demo
