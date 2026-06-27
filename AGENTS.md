@@ -265,7 +265,7 @@ Do not expose raw tool outputs, internal reasoning, or meta-commentary to the le
 
 ### 12. Do not generate authoritative volatile questions from memory
 
-Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`.
+Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`. The next-activity router keys `recent_info_check` off verified source freshness state, not only the recent activity type; fresh source state suppresses repeated source-check recommendations.
 
 ## Cross-Platform and Dependency Consent Rules
 
