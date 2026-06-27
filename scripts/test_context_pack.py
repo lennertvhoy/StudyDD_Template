@@ -138,6 +138,72 @@ def build_instance() -> Path:
     return target
 
 
+def build_stale_source_instance() -> Path:
+    try:
+        import yaml
+    except ImportError:  # pragma: no cover
+        print("Error: PyYAML is required.")
+        sys.exit(1)
+
+    tmp = tempfile.mkdtemp(prefix="studydd-stale-source-")
+    target = Path(tmp) / "Study_StaleSource"
+    remote = "https://github.com/example/Study_StaleSource.git"
+
+    result = run(
+        [sys.executable, "scripts/create_instance.py", "--target", str(target), "--remote", remote],
+        ROOT,
+        check=False,
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(result.stderr)
+        sys.exit(1)
+
+    mode_path = target / "state" / "STUDYDD_MODE.yaml"
+    mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
+    mode_data["mode"] = "learner_instance"
+    mode_data["personalized"] = True
+    mode_data["public_safe"] = "false_or_review_required"
+    mode_path.write_text(yaml.safe_dump(mode_data, sort_keys=False), encoding="utf-8")
+
+    study_state_path = target / "state" / "STUDY_STATE.yaml"
+    study_state = yaml.safe_load(study_state_path.read_text(encoding="utf-8")) or {}
+    study_state["learner"]["name"] = "Stale Source Test Learner"
+    study_state["active_target_id"] = "stale-source-target"
+    study_state_path.write_text(yaml.safe_dump(study_state, sort_keys=False), encoding="utf-8")
+
+    target_dir = target / "targets" / "stale-source-target"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    (target_dir / "TARGET.yaml").write_text(
+        "---\n"
+        "id: stale-source-target\n"
+        "type: certification\n"
+        "title: Stale source test target\n"
+        "description: Temporary volatile target for stale source freshness test.\n"
+        "volatility: volatile\n"
+        "study_skill: it_certification\n",
+        encoding="utf-8",
+    )
+
+    source_state = {
+        "metadata": {"template_version": "0.9.0", "last_updated": "2026-06-27"},
+        "sources": [
+            {
+                "id": "stale-docs",
+                "authority": "official",
+                "target_ids": ["stale-source-target"],
+                "last_checked_at": "2026-01-01T00:00:00+00:00",
+                "volatility": "volatile",
+            }
+        ],
+    }
+    (target / "sources" / "SOURCE_STATE.yaml").write_text(
+        yaml.safe_dump(source_state, sort_keys=False), encoding="utf-8"
+    )
+
+    return target
+
+
 def context_pack_text(target: Path, task: str) -> str:
     run([sys.executable, "scripts/compact_state.py"], target)
     result = run(
@@ -150,6 +216,39 @@ def context_pack_text(target: Path, task: str) -> str:
         print(result.stderr)
         raise subprocess.CalledProcessError(result.returncode, ["scripts/build_context_pack.py"])
     return (target / ".studydd" / "context_pack.md").read_text(encoding="utf-8")
+
+
+def test_context_pack_includes_source_freshness_status() -> None:
+    print("\nTest: start_session includes source freshness status")
+    target = build_instance()
+    text = context_pack_text(target, "start_session")
+    assert "Source freshness:" in text
+    assert "Status: not_required" in text
+
+
+def test_context_pack_stays_generic_in_template_mode_no_active_target() -> None:
+    print("\nTest: template mode context pack stays generic with no active target")
+    run([sys.executable, "scripts/build_context_pack.py", "--task", "start_session"], ROOT)
+    text = (ROOT / ".studydd" / "context_pack.md").read_text(encoding="utf-8")
+    assert "- **Mode:** template" in text
+    assert "- **Target ID:** none" in text
+    assert "Source freshness:" in text
+    assert "- Status: not_required" in text
+    assert "**Recommended activity:** retrieval_question" in text
+    assert "generic template fallback" in text
+    assert "Study_Context" not in text, "Template pack must not leak temp instance learner name"
+    assert "Context Test Learner" not in text, "Template pack must not leak learner name"
+
+
+def test_context_pack_shows_stale_source_freshness_when_relevant() -> None:
+    print("\nTest: context pack surfaces stale source freshness")
+    stale_target = build_stale_source_instance()
+    stale_text = context_pack_text(stale_target, "start_session")
+    assert "**Recommended activity:** recent_info_check" in stale_text
+    assert "Source freshness:" in stale_text
+    assert "Status: stale" in stale_text
+    assert "source_freshness_stale" in stale_text
+    assert "source_metadata" in stale_text
 
 
 def main() -> int:
@@ -184,6 +283,10 @@ def main() -> int:
     assert "**Recommended activity:** spaced_review" in text
     assert "Rule: review-first doctrine" in text
     assert "**Expected evidence:** typed_answer, transcript, screenshot" in text
+
+    test_context_pack_includes_source_freshness_status()
+    test_context_pack_stays_generic_in_template_mode_no_active_target()
+    test_context_pack_shows_stale_source_freshness_when_relevant()
 
     print("\nTest: audit includes raw log references")
     text = context_pack_text(target, "audit")
