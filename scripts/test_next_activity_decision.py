@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timedelta, timezone
 
 from next_activity_decision import choose_activity_decision
+from check_source_freshness import classify_source, target_freshness_summary
 
 
 TEMPLATES = [
@@ -26,6 +28,8 @@ TEMPLATES = [
     },
 ]
 
+NOW = datetime(2026, 6, 27, 12, 0, 0, tzinfo=timezone.utc)
+
 
 def decide(**overrides):
     base = {
@@ -37,16 +41,46 @@ def decide(**overrides):
         "study_skill": "generic",
         "recent_types": [],
         "templates": TEMPLATES,
+        "source_state": None,
+        "now": NOW,
     }
     base.update(overrides)
     return choose_activity_decision(**base)
+
+
+def _source(
+    checked_offset_days: int | None = None,
+    target_id: str = "target",
+    **kwargs,
+) -> dict:
+    """Build a source dict for the requested target."""
+    source = {
+        "id": kwargs.get("id", "src1"),
+        "target_ids": [target_id],
+        "authority": kwargs.get("authority", "official"),
+        "usable_for_questions": kwargs.get("usable_for_questions", True),
+    }
+    if checked_offset_days is not None:
+        checked = NOW - timedelta(days=checked_offset_days)
+        source["last_checked_at"] = checked.isoformat()
+    if "expires_at" in kwargs:
+        source["expires_at"] = kwargs["expires_at"]
+    if "freshness_window_days" in kwargs:
+        source["freshness_window_days"] = kwargs["freshness_window_days"]
+    if "volatility" in kwargs:
+        source["volatility"] = kwargs["volatility"]
+    return source
+
+
+def _source_state(*sources) -> dict:
+    return {"sources": list(sources)}
 
 
 def test_due_review_beats_everything() -> None:
     decision = decide(
         due_reviews=2,
         low_energy=True,
-        target={"type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
         study_skill="practical_lab",
         weakest_skill={"id": "weak", "label": "Weak Skill", "status": "weak", "readiness": 10},
     )
@@ -55,25 +89,232 @@ def test_due_review_beats_everything() -> None:
     assert "Rule: review-first doctrine" in decision.reason
 
 
+def test_due_review_beats_source_freshness() -> None:
+    decision = decide(
+        due_reviews=1,
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state=_source_state(_source(checked_offset_days=30, target_id="cert")),
+    )
+    assert decision.activity_type == "spaced_review"
+    assert decision.rule_id == "review_first_due"
+
+
 def test_volatile_target_routes_to_recent_info_check() -> None:
     decision = decide(
-        target={"type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
         study_skill="it_certification",
     )
     assert decision.activity_type == "recent_info_check"
-    assert decision.rule_id == "volatile_target_needs_recent_info_check"
-    assert "Rule: volatile target" in decision.reason
+    assert decision.rule_id == "source_freshness_unavailable_recent_activity_fallback"
+    assert decision.reason.startswith("Rule:")
+    assert "source freshness state unavailable" in decision.reason
 
 
 def test_recent_info_check_prevents_immediate_repeat() -> None:
     decision = decide(
-        target={"type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
         study_skill="it_certification",
         recent_types=["recent_info_check"],
     )
     assert decision.activity_type == "retrieval_question"
     assert decision.rule_id == "certification_exam_retrieval"
     assert "Rule: certification target" in decision.reason
+
+
+def test_fresh_source_allows_retrieval_question_for_volatile_target() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        weakest_skill={"id": "exam", "label": "Exam Skill", "status": "pending", "readiness": 45},
+        source_state=_source_state(_source(checked_offset_days=1, target_id="cert")),
+    )
+    assert decision.activity_type == "retrieval_question"
+    assert decision.rule_id == "certification_exam_retrieval"
+
+
+def test_stale_source_triggers_recent_info_check() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state=_source_state(_source(checked_offset_days=10, target_id="cert")),
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_stale"
+    assert decision.reason.startswith("Rule:")
+    assert "source freshness stale" in decision.reason
+
+
+def test_missing_source_state_triggers_recent_info_check_when_no_recent_check() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state=None,
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_unavailable_recent_activity_fallback"
+
+
+def test_missing_source_state_obeys_recent_activity_fallback() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        weakest_skill={"id": "exam", "label": "Exam Skill", "status": "pending", "readiness": 45},
+        recent_types=["recent_info_check"],
+        source_state=None,
+    )
+    assert decision.activity_type == "retrieval_question"
+    assert decision.signals.get("source_freshness_recent_activity_fallback") is True
+
+
+def test_malformed_timestamp_triggers_recent_info_check() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state=_source_state({
+            "id": "src1",
+            "target_ids": ["cert"],
+            "authority": "official",
+            "last_checked_at": "not-a-timestamp",
+            "usable_for_questions": True,
+        }),
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_missing"
+    assert decision.reason.startswith("Rule:")
+
+
+def test_unverified_source_triggers_recent_info_check() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state=_source_state(_source(checked_offset_days=1, target_id="cert", usable_for_questions=False)),
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_unverified"
+    assert decision.reason.startswith("Rule:")
+
+
+def test_moderate_target_missing_source_triggers_recent_info_check() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Moderate Cert", "volatility": "moderate"},
+        study_skill="it_certification",
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_unavailable_recent_activity_fallback"
+
+
+def test_live_target_stale_source_triggers_recent_info_check() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Live Cert", "volatility": "live"},
+        study_skill="it_certification",
+        source_state=_source_state(_source(checked_offset_days=2, target_id="cert")),
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_stale"
+
+
+def test_stable_target_ignores_missing_source_state() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Stable Cert", "volatility": "stable"},
+        study_skill="it_certification",
+        weakest_skill={"id": "exam", "label": "Exam Skill", "status": "pending", "readiness": 45},
+        source_state=None,
+    )
+    assert decision.activity_type == "retrieval_question"
+    assert decision.signals.get("source_freshness_checked") is False
+
+
+def test_stable_explicit_requirement_triggers_recent_info_check() -> None:
+    decision = decide(
+        target={
+            "id": "cert",
+            "type": "certification",
+            "title": "Stable Cert",
+            "volatility": "stable",
+            "requires_recent_info_check": True,
+        },
+        study_skill="it_certification",
+        source_state=None,
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_unavailable_recent_activity_fallback"
+
+
+def test_stable_with_requires_recent_info_and_stale_source_triggers_recent_info_check() -> None:
+    decision = decide(
+        target={
+            "id": "cert",
+            "type": "certification",
+            "title": "Stable Cert",
+            "volatility": "stable",
+            "requires_recent_info_check": True,
+        },
+        study_skill="it_certification",
+        source_state=_source_state(_source(checked_offset_days=35, target_id="cert")),
+    )
+    assert decision.activity_type == "recent_info_check"
+    assert decision.rule_id == "source_freshness_stale"
+    assert "source freshness stale" in decision.reason
+
+
+def test_empty_source_state_recent_activity_fallback() -> None:
+    """An empty (rather than None) source_state still counts as unavailable."""
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state={"sources": []},
+        weakest_skill={"id": "exam", "label": "Exam Skill", "status": "pending", "readiness": 45},
+        recent_types=["recent_info_check"],
+    )
+    assert decision.activity_type == "retrieval_question"
+    assert decision.signals.get("source_freshness_recent_activity_fallback") is True
+
+
+def test_freshness_window_days_override_shortens_window() -> None:
+    source = {
+        "id": "src1",
+        "target_ids": ["target"],
+        "authority": "official",
+        "last_checked_at": (NOW - timedelta(days=5)).isoformat(),
+        "usable_for_questions": True,
+        "freshness_window_days": 3,
+        "volatility": "volatile",
+    }
+    status, reason = classify_source(source, NOW, "volatile")
+    assert status == "stale"
+    assert reason is not None
+
+
+def test_source_freshness_signals_populated() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state=_source_state(
+            _source(checked_offset_days=1, target_id="cert"),
+            _source(checked_offset_days=10, target_id="cert", id="src2"),
+        ),
+    )
+    assert decision.signals.get("source_freshness_checked") is True
+    assert decision.signals.get("source_freshness_status") == "fresh"
+    assert decision.signals.get("source_freshness_fresh_count") == 1
+    assert decision.signals.get("source_freshness_stale_count") == 1
+    assert decision.signals.get("source_freshness_best_authority") == "official"
+
+
+def test_reason_starts_with_rule() -> None:
+    decision = decide(
+        target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
+        study_skill="it_certification",
+        source_state=_source_state(_source(checked_offset_days=10, target_id="cert")),
+    )
+    assert decision.reason.startswith("Rule:")
+
+
+def test_template_mode_no_target_skips_source_freshness() -> None:
+    decision = decide(target=None)
+    assert decision.activity_type == "retrieval_question"
+    assert decision.signals.get("source_freshness_checked") is False
 
 
 def test_practical_skill_routes_to_practical_lab() -> None:
@@ -92,7 +333,7 @@ def test_conceptual_skill_routes_to_diagram() -> None:
 
 def test_certification_practiced_routes_to_retrieval_question() -> None:
     decision = decide(
-        target={"type": "certification", "title": "Exam Target", "volatility": "stable"},
+        target={"id": "cert", "type": "certification", "title": "Exam Target", "volatility": "stable"},
         study_skill="it_certification",
         weakest_skill={"id": "exam", "label": "Exam Skill", "status": "pending", "readiness": 45},
     )
@@ -128,8 +369,25 @@ def test_low_energy_fallback_routes_to_explain_back() -> None:
 def main() -> int:
     tests = [
         test_due_review_beats_everything,
+        test_due_review_beats_source_freshness,
         test_volatile_target_routes_to_recent_info_check,
         test_recent_info_check_prevents_immediate_repeat,
+        test_fresh_source_allows_retrieval_question_for_volatile_target,
+        test_stale_source_triggers_recent_info_check,
+        test_missing_source_state_triggers_recent_info_check_when_no_recent_check,
+        test_missing_source_state_obeys_recent_activity_fallback,
+        test_malformed_timestamp_triggers_recent_info_check,
+        test_unverified_source_triggers_recent_info_check,
+        test_moderate_target_missing_source_triggers_recent_info_check,
+        test_live_target_stale_source_triggers_recent_info_check,
+        test_stable_target_ignores_missing_source_state,
+        test_stable_explicit_requirement_triggers_recent_info_check,
+        test_stable_with_requires_recent_info_and_stale_source_triggers_recent_info_check,
+        test_empty_source_state_recent_activity_fallback,
+        test_freshness_window_days_override_shortens_window,
+        test_source_freshness_signals_populated,
+        test_reason_starts_with_rule,
+        test_template_mode_no_target_skips_source_freshness,
         test_practical_skill_routes_to_practical_lab,
         test_conceptual_skill_routes_to_diagram,
         test_certification_practiced_routes_to_retrieval_question,
