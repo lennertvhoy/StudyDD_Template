@@ -11,6 +11,8 @@ lets the learner accept/modify/override, and records evidence from the result.
 
 Questions are useful, but they are not always the best next move. Sometimes the learner needs a paper exercise, a video, a lab, a diagram, an interview rehearsal, a presentation rehearsal, a voice note, or an external-platform drill. The agent's job is to choose the activity that is most likely to produce evidence of competence given the current state.
 
+When a target is volatile or the active source is stale, the agent may recommend a `recent_info_check` activity. The learner verifies current facts, sources, or exam objectives and submits source metadata or a short summary before the agent builds authoritative questions.
+
 ## Inputs the agent must consider
 
 When planning the next activity, inspect:
@@ -36,6 +38,8 @@ Choose the activity that:
 4. produces evidence the learner can actually submit,
 5. respects source freshness for volatile topics,
 6. varies the activity type when the learner has repeatedly missed the same skill in chat questions.
+
+`recent_info_check` is the right choice when the target is `moderate`, `volatile`, or `live` and no fresh source has been verified recently.
 
 A chat question is the default when nothing else is clearly better. It is not the only choice.
 
