@@ -1,10 +1,10 @@
 # Evidence 011 — PR and CI
 
 **PR title:** Record completed source checks into source freshness state  
-**PR URL:** *to be inserted after PR creation*  
+**PR URL:** https://github.com/lennertvhoy/StudyDD_Template/pull/4  
 **Base branch:** `main`  
 **Head branch:** `feat/source-check-completion-flow`  
-**CI status:** *to be inserted after CI run*  
+**CI status:** GitHub Actions `Validate StudyDD` workflow queued/running on the PR head.  
 
 ## Known limitations / next slices
 - `scripts/record_activity_result.py` is not yet wired to call `record_source_check.py` automatically; agents/learners must run the script explicitly after a `recent_info_check`.
