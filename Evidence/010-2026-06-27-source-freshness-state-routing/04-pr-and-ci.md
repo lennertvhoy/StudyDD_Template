@@ -5,7 +5,15 @@
 - **Implementation commit SHA:** `765c4b9b513eb25c25ca08b0d5e42f7bb1f5c45c`
 - **Evidence commit SHA:** `f708e42d78951cf49491f0d48fbc0969ac74828b`
 - **PR URL:** https://github.com/lennertvhoy/StudyDD_Template/pull/3
-- **CI status:** pending
+- **CI status:** passed on GitHub Actions run `28291826174`
+
+CI jobs passed:
+
+```text
+validate (macos-latest)    pass
+validate (ubuntu-latest)   pass
+validate (windows-latest)  pass
+```
 
 ## Known limitation / next slice
 
