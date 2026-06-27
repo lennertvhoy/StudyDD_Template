@@ -179,6 +179,12 @@ def main() -> int:
     assert "rev_context_001" in text
     assert "context-search-basics" in text
 
+    print("\nTest: start_session includes next activity recommendation reason")
+    assert "## Next activity recommendation" in text
+    assert "**Recommended activity:** spaced_review" in text
+    assert "Rule: review-first doctrine" in text
+    assert "**Expected evidence:** typed_answer, transcript, screenshot" in text
+
     print("\nTest: audit includes raw log references")
     text = context_pack_text(target, "audit")
     assert "state/EVIDENCE_LOG.md" in text
