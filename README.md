@@ -10,7 +10,7 @@ Your progress is never hidden inside an app database or chat history.
 
 ### Source-grounded question quality
 
-StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source refresh is cached and deliberate, not performed on every question.
+StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source freshness is tracked in `sources/SOURCE_STATE.yaml`. When freshness is missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the next-activity router chooses a `recent_info_check` instead of an authoritative question; fresh source state suppresses repeated source-check recommendations. Due reviews still take priority.
 
 ### Learning activities and evidence intake
 
@@ -249,6 +249,7 @@ python3 scripts/test_performance_policy.py
 python3 scripts/test_validate_touched_state.py
 python3 scripts/test_learning_activities.py
 python3 scripts/test_next_activity_decision.py
+python3 scripts/test_source_freshness.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
@@ -294,7 +295,7 @@ See `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, and
 StudyDD recommends one activity at a time using protocol-driven rules:
 
 1. **Due reviews first** — spaced retrieval is the highest-retention move.
-2. **Recent-info check** — for `moderate`, `volatile`, or `live` topics without a recent source check.
+2. **Recent-info check** — for `moderate`, `volatile`, or `live` topics whose `sources/SOURCE_STATE.yaml` freshness is missing, stale, or unknown.
 3. **Lab or diagram** — when the study skill is hands-on (`practical_lab`, `cloud`, `sysadmin`, `networking`) or conceptual (`philosophy`, `conceptual_understanding`).
 4. **Exam-style question** — when the target is a certification or exam and the skill is practiced.
 5. **Fallback question** — a focused retrieval question, paper exercise, or explain-back.
