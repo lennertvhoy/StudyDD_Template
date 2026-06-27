@@ -3,7 +3,7 @@
 - **Branch:** `feat/source-freshness-state-routing`
 - **Base SHA:** `0585231785de32625df650683b0de847c16f217b`
 - **Implementation commit SHA:** `765c4b9b513eb25c25ca08b0d5e42f7bb1f5c45c`
-- **Evidence commit SHA:** `39a5001f6f367c067b607e0ff6fc05e4fba67720`
+- **Evidence commit SHA:** `f708e42d78951cf49491f0d48fbc0969ac74828b`
 - **PR URL:** `TBD`
 - **CI status:** `TBD`
 
