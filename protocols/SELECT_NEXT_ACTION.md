@@ -12,7 +12,7 @@ Before choosing any new material, check the current time and `reviews/REVIEW_STA
 
 ## Context loading
 
-Build the context pack with `--task start_session` or `--task schedule_review`. Include `state/CURRENT_CONTEXT.md`, `state/SKILL_MAP.yaml`, `reviews/REVIEW_STATE.yaml`, and the active study skill. Do not load full raw logs.
+Build the context pack with `--task start_session` or `--task schedule_review`. Include `state/CURRENT_CONTEXT.md`, `state/SKILL_MAP.yaml`, `reviews/REVIEW_STATE.yaml`, the active study skill, and the next activity recommendation with its auditable `Rule: ...` reason. Do not load full raw logs.
 
 ## Selection Priority
 
@@ -29,7 +29,7 @@ Apply the active study skill when choosing question style, mode, and difficulty.
 
 ## Activity-type routing
 
-After applying the selection priority above, use `scripts/plan_learning_activity.py` to choose one of the five canonical activity categories. The script prints the rule that triggered the choice so the recommendation is auditable.
+After applying the selection priority above, use the shared decision logic surfaced by `scripts/plan_learning_activity.py` and `scripts/build_context_pack.py` to choose among the primary routing rules. The planner prints the rule that triggered the choice, and the context pack carries the same rule reason for tutor agents.
 
 1. **Spaced-repetition review** (`spaced_review`) — due or overdue reviews first.
 2. **Recent-info check** (`recent_info_check`) — if the active target is `moderate`/`volatile`/`live` and no recent source check is recorded.

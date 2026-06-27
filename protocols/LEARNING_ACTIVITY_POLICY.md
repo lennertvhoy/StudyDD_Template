@@ -49,9 +49,12 @@ Every activity recommendation must include:
 
 - **Type:** one of the supported activity types from `activities/ACTIVITY_TEMPLATES.yaml`.
 - **Reason:** why this activity is better than alternatives.
+- **Rule ID:** the stable decision identifier when produced by `scripts/next_activity_decision.py`.
 - **Task:** a concise description of what the learner should do.
 - **Expected evidence:** what the learner will submit for review.
 - **Learner control:** the exact phrase: `You can accept, modify, or override this.`
+
+`scripts/plan_learning_activity.py` and `scripts/build_context_pack.py` must use the same shared decision logic so the tutor context pack shows the same activity type, expected evidence, and auditable `Rule: ...` reason that the planner prints.
 
 ## Learner control
 
