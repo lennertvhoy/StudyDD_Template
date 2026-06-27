@@ -34,6 +34,7 @@ STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
 SKILL_MAP_PATH = ROOT / "state" / "SKILL_MAP.yaml"
 REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 MODE_PATH = ROOT / "state" / "STUDYDD_MODE.yaml"
+SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
 TARGETS_DIR = ROOT / "targets"
 
 DEMO_OUTPUT = """StudyDD recommendation: paper exercise.
@@ -109,6 +110,8 @@ def plan_activity(
     study_state = load_yaml(STUDY_STATE_PATH)
     mode_data = load_yaml(MODE_PATH)
     templates_data = load_yaml(ACTIVITY_TEMPLATES_PATH)
+    source_state = load_yaml(SOURCE_STATE_PATH)
+    now = datetime.now(timezone.utc)
 
     active_target_id = study_state.get("active_target_id")
     due_reviews = count_due_reviews(review_state)
@@ -128,10 +131,20 @@ def plan_activity(
         study_skill,
         recent_types,
         templates,
+        source_state=source_state,
+        now=now,
     )
     activity_type = decision.activity_type
     reason = decision.reason
     expected_evidence = decision.expected_evidence
+
+    signals = decision.signals
+    if signals.get("source_freshness_checked"):
+        freshness_status = signals.get("source_freshness_status") or "unknown"
+        freshness_rule_id = signals.get("source_freshness_rule_id") or decision.rule_id
+    else:
+        freshness_status = "not_required"
+        freshness_rule_id = decision.rule_id
 
     target_id = active_target_id or ""
     skill_for_activity = skill_id or (weakest_skill.get("id") if weakest_skill else "")
@@ -156,6 +169,8 @@ def plan_activity(
     output = (
         f"StudyDD recommendation: {activity_type}.\n\n"
         f"Reason:\n{reason}\n\n"
+        f"Source freshness: {freshness_status}\n"
+        f"Rule ID: {freshness_rule_id}\n\n"
         f"Task:\n{task_description}\n\n"
         f"Expected evidence:\n{format_evidence(expected_evidence)}\n\n"
         "Learner control:\n"

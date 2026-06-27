@@ -11,8 +11,13 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
+from check_source_freshness import (
+    TargetFreshnessSummary,
+    target_freshness_summary,
+)
 
-VOLATILE_CLASSES = {"moderate", "volatile", "live"}
+CERTIFICATION_READINESS_THRESHOLD = 40
+RECENT_INFO_CHECK_EVIDENCE = ["source_metadata", "short_summary", "answer_to_check_question"]
 
 
 @dataclass(frozen=True)
@@ -25,8 +30,7 @@ class ActivityDecision:
 
 
 def target_is_volatile(target: dict[str, Any]) -> bool:
-    volatility = target.get("volatility") or "moderate"
-    return volatility in VOLATILE_CLASSES
+    return target.get("volatility") in {"moderate", "volatile", "live"} or target.get("requires_recent_info_check") is True
 
 
 def recent_activity_types(activity_state: dict[str, Any], limit: int = 5) -> list[str]:
@@ -106,23 +110,47 @@ def choose_activity_decision(
     study_skill: str | None,
     recent_types: list[str],
     templates: list[dict[str, Any]],
+    source_state: dict[str, Any] | None = None,
+    now: datetime | None = None,
 ) -> ActivityDecision:
     """Choose one learning activity and return its auditable decision record."""
+    if now is None:
+        now = datetime.now(timezone.utc)
     target = target or {}
     target_type = target.get("type") or ""
+    target_id = target.get("id")
     target_volatile = target_is_volatile(target)
     recent_set = set(recent_types)
     matched_types = activity_types_for_study_skill(study_skill, templates)
-    signals = {
+    declared_volatility = target.get("volatility") or "stable"
+    # A stable target that explicitly requires recent-info checks should use a
+    # sensible freshness window instead of treating every source as perpetually fresh.
+    effective_volatility = declared_volatility
+    if target.get("requires_recent_info_check") and declared_volatility == "stable":
+        effective_volatility = "moderate"
+    signals: dict[str, Any] = {
         "due_reviews": due_reviews,
         "weakest_skill_id": weakest_skill.get("id") if weakest_skill else "",
         "weakest_skill_status": weakest_skill.get("status") if weakest_skill else "",
         "low_energy": low_energy,
         "target_type": target_type,
-        "target_volatility": target.get("volatility") or "moderate",
+        "target_volatility": effective_volatility,
         "study_skill": study_skill or "",
         "recent_activity_types": recent_types,
         "matched_activity_types": matched_types,
+        "source_freshness_checked": False,
+        "source_freshness_status": "",
+        "source_freshness_fresh_count": 0,
+        "source_freshness_stale_count": 0,
+        "source_freshness_missing_count": 0,
+        "source_freshness_unverified_count": 0,
+        "source_freshness_unknown_count": 0,
+        "source_freshness_best_authority": "",
+        "source_freshness_has_fresh_usable": False,
+        "source_freshness_rule_id": "",
+        "source_freshness_target_volatility": effective_volatility,
+        "recent_info_check_in_recent_types": "recent_info_check" in recent_types,
+        "source_freshness_recent_activity_fallback": False,
     }
 
     decision: ActivityDecision
@@ -139,15 +167,59 @@ def choose_activity_decision(
         return _with_template_evidence(decision, templates)
 
     # 2. Recent-info check for volatile topics before authoritative questions.
-    if target_type and target_volatile and "recent_info_check" not in recent_set:
-        decision = ActivityDecision(
-            activity_type="recent_info_check",
-            reason="Rule: volatile target with no recent source check — verify freshness before an authoritative question.",
-            expected_evidence=["source_metadata", "short_summary", "answer_to_check_question"],
-            rule_id="volatile_target_needs_recent_info_check",
-            signals=signals,
+    if target_id and target_volatile:
+        summary = target_freshness_summary(
+            target_id,
+            effective_volatility,
+            source_state,
+            now,
         )
-        return _with_template_evidence(decision, templates)
+        rule_id = "source_freshness_satisfied"
+        if not summary.has_fresh_usable:
+            if source_state is None or not source_state.get("sources"):
+                rule_id = "source_freshness_unavailable_recent_activity_fallback"
+            elif summary.status == "stale":
+                rule_id = "source_freshness_stale"
+            elif summary.status in ("missing", "unknown"):
+                rule_id = "source_freshness_missing"
+            elif summary.status == "unverified":
+                rule_id = "source_freshness_unverified"
+
+        signals.update({
+            "source_freshness_checked": True,
+            "source_freshness_status": summary.status,
+            "source_freshness_fresh_count": summary.fresh_count,
+            "source_freshness_stale_count": summary.stale_count,
+            "source_freshness_missing_count": summary.missing_count,
+            "source_freshness_unverified_count": summary.unverified_count,
+            "source_freshness_unknown_count": summary.unknown_count,
+            "source_freshness_best_authority": summary.best_authority or "",
+            "source_freshness_has_fresh_usable": summary.has_fresh_usable,
+            "source_freshness_rule_id": rule_id,
+            "source_freshness_target_volatility": effective_volatility,
+            "recent_info_check_in_recent_types": "recent_info_check" in recent_types,
+            "source_freshness_recent_activity_fallback": source_state is None or not source_state.get("sources"),
+        })
+
+        if not summary.has_fresh_usable and "recent_info_check" not in recent_set:
+            if source_state is None or not source_state.get("sources"):
+                reason = f"Rule: source freshness state unavailable for volatile target '{target_id}' — falling back to recent activity; no recent_info_check found, so verify freshness before an authoritative question."
+            elif summary.status == "stale":
+                reason = f"Rule: source freshness stale for volatile target '{target_id}' — {summary.stale_count} source(s) stale ({summary.reason}); verify freshness before an authoritative question."
+            elif summary.status in ("missing", "unknown"):
+                reason = f"Rule: source freshness missing for volatile target '{target_id}' — {summary.reason}; verify freshness before an authoritative question."
+            elif summary.status == "unverified":
+                reason = f"Rule: source freshness unverified for volatile target '{target_id}' — registered sources are marked unusable for questions; verify freshness before an authoritative question."
+            else:
+                reason = f"Rule: source freshness not satisfied for volatile target '{target_id}' — verify freshness before an authoritative question."
+            decision = ActivityDecision(
+                activity_type="recent_info_check",
+                reason=reason,
+                expected_evidence=RECENT_INFO_CHECK_EVIDENCE,
+                rule_id=rule_id,
+                signals=signals,
+            )
+            return _with_template_evidence(decision, templates)
 
     # 3. Lab / practical exercise when the domain fits.
     if "practical_lab" in matched_types or study_skill in {"practical_lab", "sysadmin", "cloud", "networking"}:
@@ -175,7 +247,7 @@ def choose_activity_decision(
 
     # 5. Exam-style question for certification/exam targets with practiced+ skills.
     if target_type in {"certification", "exam"}:
-        skill_ready = weakest_skill is None or int(weakest_skill.get("readiness") or 0) >= 40
+        skill_ready = weakest_skill is None or int(weakest_skill.get("readiness") or 0) >= CERTIFICATION_READINESS_THRESHOLD
         if skill_ready and "retrieval_question" not in recent_set:
             decision = ActivityDecision(
                 activity_type="retrieval_question",
