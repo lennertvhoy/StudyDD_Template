@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import argparse
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
@@ -21,10 +22,9 @@ TARGETS_DIR = ROOT / "targets"
 EXAMPLES_DIR = ROOT / "EXAMPLES"
 
 VOLATILITY_MAX_AGE_DAYS = {
-    "stable": 3650,
     "slow_changing": 730,
-    "moderate": 90,
-    "volatile": 30,
+    "moderate": 30,
+    "volatile": 7,
     "live": 1,
 }
 
@@ -38,20 +38,33 @@ AUTHORITY_ORDER = [
 ]
 
 
+@dataclass(frozen=True)
+class TargetFreshnessSummary:
+    target_id: str
+    volatility: str
+    status: Literal["fresh", "stale", "missing", "unverified", "unknown"]
+    has_fresh_usable: bool
+    fresh_count: int
+    stale_count: int
+    missing_count: int
+    unverified_count: int
+    unknown_count: int
+    best_authority: str | None
+    reason: str
+
+
 def load_yaml(path: Path) -> dict[str, Any]:
     try:
         import yaml
-    except ImportError:  # pragma: no cover
-        print("Error: PyYAML is required.")
-        sys.exit(1)
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("PyYAML is required.") from exc
 
     if not path.is_file():
         return {}
     try:
         return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except Exception as exc:
-        print(f"Error reading {path}: {exc}")
-        sys.exit(1)
+        raise RuntimeError(f"Error reading {path}: {exc}") from exc
 
 
 def parse_now(value: str | None) -> datetime:
@@ -109,7 +122,7 @@ def read_target_volatility(target_id: str) -> tuple[str, bool, str | None]:
     volatility = data.get("volatility")
     if volatility is None:
         return "moderate", False, "target does not declare volatility, defaulting to moderate"
-    if volatility in VOLATILITY_MAX_AGE_DAYS:
+    if volatility in VOLATILITY_MAX_AGE_DAYS or volatility == "stable":
         return volatility, True, None
     return "moderate", False, f"target declares invalid volatility '{volatility}', defaulting to moderate"
 
@@ -130,10 +143,11 @@ def classify_source(
     """Return (freshness_status, reason).
 
     Statuses:
-        fresh              — usable and within freshness window.
-        stale              — usable but expired or beyond max age.
-        unverified         — explicitly marked unusable for questions.
-        missing_timestamp  — no expiry or check timestamp available.
+        fresh      — usable and within freshness window.
+        stale      — usable but expired or beyond max age.
+        unverified — explicitly marked unusable for questions.
+        missing    — no expiry or check timestamp available.
+        unknown    — malformed timestamps or classification error.
     """
     if source.get("usable_for_questions") is False:
         return "unverified", "usable_for_questions is false"
@@ -148,7 +162,7 @@ def classify_source(
                 return "fresh", None
             return "stale", f"expired at {expires_at}"
         except Exception as exc:
-            return "missing_timestamp", f"invalid expires_at: {exc}"
+            return "unknown", f"invalid expires_at: {exc}"
 
     last_checked_at = source.get("last_checked_at")
     if last_checked_at:
@@ -157,16 +171,22 @@ def classify_source(
             if checked.tzinfo is None:
                 checked = checked.replace(tzinfo=timezone.utc)
         except Exception as exc:
-            return "missing_timestamp", f"invalid last_checked_at: {exc}"
+            return "unknown", f"invalid last_checked_at: {exc}"
 
         volatility = source.get("volatility") or target_volatility
-        max_age_days = VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
+        window_days = source.get("freshness_window_days")
+        if window_days and window_days > 0:
+            max_age_days = window_days
+        elif volatility == "stable":
+            return "fresh", None
+        else:
+            max_age_days = VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
         expiry = checked + timedelta(days=max_age_days)
         if now <= expiry:
             return "fresh", None
         return "stale", f"last checked {last_checked_at}; volatility {volatility} max age {max_age_days} days"
 
-    return "missing_timestamp", "no expires_at or last_checked_at"
+    return "missing", "no expires_at or last_checked_at"
 
 
 def authority_rank(authority: str | None) -> int:
@@ -174,6 +194,92 @@ def authority_rank(authority: str | None) -> int:
         return AUTHORITY_ORDER.index(str(authority).lower())
     except ValueError:
         return len(AUTHORITY_ORDER)
+
+
+def target_freshness_summary(
+    target_id: str,
+    target_volatility: str,
+    source_state: dict[str, Any] | None,
+    now: datetime,
+) -> TargetFreshnessSummary:
+    """Aggregate source freshness for a single target into a compact summary."""
+    if not source_state or not source_state.get("sources"):
+        return TargetFreshnessSummary(
+            target_id=target_id,
+            volatility=target_volatility,
+            status="missing",
+            has_fresh_usable=False,
+            fresh_count=0,
+            stale_count=0,
+            missing_count=0,
+            unverified_count=0,
+            unknown_count=0,
+            best_authority=None,
+            reason="No source freshness state is available for this target.",
+        )
+
+    sources = source_state.get("sources") or []
+    matching = [s for s in sources if target_id in s.get("target_ids", [])]
+
+    fresh_count = 0
+    stale_count = 0
+    missing_count = 0
+    unverified_count = 0
+    unknown_count = 0
+    fresh_sources: list[dict[str, Any]] = []
+
+    for source in matching:
+        status, _reason = classify_source(source, now, target_volatility)
+        if status == "fresh":
+            fresh_count += 1
+            fresh_sources.append(source)
+        elif status == "stale":
+            stale_count += 1
+        elif status == "missing":
+            missing_count += 1
+        elif status == "unverified":
+            unverified_count += 1
+        elif status == "unknown":
+            unknown_count += 1
+
+    has_fresh_usable = fresh_count > 0
+    best_authority: str | None = None
+    if fresh_sources:
+        best_source = min(fresh_sources, key=lambda s: authority_rank(s.get("authority")))
+        best_authority = best_source.get("authority")
+
+    if unknown_count > 0:
+        status: Literal["fresh", "stale", "missing", "unverified", "unknown"] = "unknown"
+        reason = f"{unknown_count} source(s) have malformed timestamps or classification errors."
+    elif stale_count > 0 and not has_fresh_usable:
+        status = "stale"
+        reason = f"{stale_count} source(s) are stale."
+    elif not matching:
+        status = "missing"
+        reason = "No sources are registered for this target."
+    elif unverified_count > 0 and not has_fresh_usable:
+        status = "unverified"
+        reason = f"{unverified_count} source(s) are marked unusable for questions."
+    elif has_fresh_usable:
+        status = "fresh"
+        reason = f"{fresh_count} source(s) are fresh and usable for questions."
+    else:
+        status = "missing"
+        reason = f"{missing_count} source(s) are missing freshness timestamps."
+
+    return TargetFreshnessSummary(
+        target_id=target_id,
+        volatility=target_volatility,
+        status=status,
+        has_fresh_usable=has_fresh_usable,
+        fresh_count=fresh_count,
+        stale_count=stale_count,
+        missing_count=missing_count,
+        unverified_count=unverified_count,
+        unknown_count=unknown_count,
+        best_authority=best_authority,
+        reason=reason,
+    )
 
 
 def build_report(
@@ -226,7 +332,6 @@ def build_report(
         lines.append("(none)")
     lines.append("")
 
-    all_unverified = unverified_sources + missing_timestamp_sources
     lines.append("Unverified sources:")
     if unverified_sources:
         for source, reason in unverified_sources:
@@ -236,7 +341,7 @@ def build_report(
         lines.append("(none)")
     lines.append("")
 
-    lines.append("Missing timestamp sources:")
+    lines.append("Missing or malformed timestamp sources:")
     if missing_timestamp_sources:
         for source, reason in missing_timestamp_sources:
             reason_text = f" — {reason}" if reason else ""
@@ -264,9 +369,9 @@ def build_report(
     if volatility in ("volatile", "live"):
         lines.append("Do not generate product-current questions from memory.")
 
-    # Exit code: volatile/live targets need at least one fresh usable source.
+    # Exit code: volatile/live/moderate targets need at least one fresh usable source.
     exit_code = 0
-    if volatility in ("volatile", "live") and not fresh_sources:
+    if volatility in ("volatile", "live", "moderate") and not fresh_sources:
         exit_code = 1
 
     return lines, exit_code
@@ -290,67 +395,71 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    now = parse_now(args.now)
+    try:
+        now = parse_now(args.now)
 
-    if args.allow_stale:
-        print("Source freshness check")
-        print("")
-        print("Stale source allowed by override.")
-        print("Question mode: practice-only, not authoritative-current.")
-        return 0
-
-    target_ids: list[str] = []
-    if args.target_id:
-        target_ids.append(args.target_id)
-    elif args.question_id:
-        inferred = target_id_from_question(args.question_id)
-        if inferred:
-            target_ids.append(inferred)
-        else:
-            print(f"Could not find target for question {args.question_id}")
-            return 1
-    else:
-        # Default: check every target in targets/ and EXAMPLES/*/targets/.
-        seen: set[str] = set()
-        for target_id, _target_dir in _iter_target_dirs():
-            seen.add(target_id)
-        target_ids = sorted(seen)
-
-    if not target_ids:
-        # No targets found; nothing to fail.
-        print("Source freshness check")
-        print("")
-        print("No targets found.")
-        print("Nothing to check.")
-        return 0
-
-    overall_exit = 0
-    output_blocks: list[list[str]] = []
-
-    for target_id in target_ids:
-        target_yaml = _find_target_yaml(target_id)
-        if target_yaml is None:
-            continue
-        source_state_path = _source_state_path_for_target(target_yaml)
-        source_state = load_yaml(source_state_path)
-        all_sources: list[dict[str, Any]] = source_state.get("sources") or []
-        volatility, declared, vol_warning = read_target_volatility(target_id)
-        target_sources = [s for s in all_sources if target_id in s.get("target_ids", [])]
-        report_lines, exit_code = build_report(
-            target_id, volatility, declared, vol_warning, target_sources, now
-        )
-        output_blocks.append(report_lines)
-        if exit_code != 0:
-            overall_exit = exit_code
-
-    # Print a blank line between multiple targets.
-    for idx, block in enumerate(output_blocks):
-        if idx > 0:
+        if args.allow_stale:
+            print("Source freshness check")
             print("")
-        for line in block:
-            print(line)
+            print("Stale source allowed by override.")
+            print("Question mode: practice-only, not authoritative-current.")
+            return 0
 
-    return overall_exit
+        target_ids: list[str] = []
+        if args.target_id:
+            target_ids.append(args.target_id)
+        elif args.question_id:
+            inferred = target_id_from_question(args.question_id)
+            if inferred:
+                target_ids.append(inferred)
+            else:
+                print(f"Could not find target for question {args.question_id}")
+                return 1
+        else:
+            # Default: check every target in targets/ and EXAMPLES/*/targets/.
+            seen: set[str] = set()
+            for target_id, _target_dir in _iter_target_dirs():
+                seen.add(target_id)
+            target_ids = sorted(seen)
+
+        if not target_ids:
+            # No targets found; nothing to fail.
+            print("Source freshness check")
+            print("")
+            print("No targets found.")
+            print("Nothing to check.")
+            return 0
+
+        overall_exit = 0
+        output_blocks: list[list[str]] = []
+
+        for target_id in target_ids:
+            target_yaml = _find_target_yaml(target_id)
+            if target_yaml is None:
+                continue
+            source_state_path = _source_state_path_for_target(target_yaml)
+            source_state = load_yaml(source_state_path)
+            all_sources: list[dict[str, Any]] = source_state.get("sources") or []
+            volatility, declared, vol_warning = read_target_volatility(target_id)
+            target_sources = [s for s in all_sources if target_id in s.get("target_ids", [])]
+            report_lines, exit_code = build_report(
+                target_id, volatility, declared, vol_warning, target_sources, now
+            )
+            output_blocks.append(report_lines)
+            if exit_code != 0:
+                overall_exit = exit_code
+
+        # Print a blank line between multiple targets.
+        for idx, block in enumerate(output_blocks):
+            if idx > 0:
+                print("")
+            for line in block:
+                print(line)
+
+        return overall_exit
+    except RuntimeError as exc:
+        print(f"Error: {exc}")
+        return 1
 
 
 if __name__ == "__main__":
