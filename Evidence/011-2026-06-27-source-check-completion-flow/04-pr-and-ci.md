@@ -4,7 +4,7 @@
 **PR URL:** https://github.com/lennertvhoy/StudyDD_Template/pull/4  
 **Base branch:** `main`  
 **Head branch:** `feat/source-check-completion-flow`  
-**CI status:** GitHub Actions `Validate StudyDD` workflow queued/running on the PR head.  
+**CI status:** ✅ GitHub Actions `Validate StudyDD` run `28296443705` passed on ubuntu-latest, windows-latest, and macos-latest.  
 
 ## Known limitations / next slices
 - `scripts/record_activity_result.py` is not yet wired to call `record_source_check.py` automatically; agents/learners must run the script explicitly after a `recent_info_check`.
