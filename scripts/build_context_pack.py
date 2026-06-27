@@ -18,6 +18,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from check_source_freshness import VOLATILITY_MAX_AGE_DAYS
 from next_activity_decision import (
     choose_activity_decision,
     count_due_reviews,
@@ -189,6 +190,69 @@ def build_source_freshness_section(target_id: str, csf: object) -> tuple[list[st
 
     lines.extend(["", f"**Recommendation:** {rec}", ""])
     return lines, volatility
+
+
+def _last_checked_for_target(source_state: dict, target_id: str | None) -> str:
+    if not target_id:
+        return "none"
+    sources = (source_state or {}).get("sources") or []
+    checked: list[str] = []
+    for source in sources:
+        if target_id in source.get("target_ids", []):
+            ts = source.get("last_checked_at")
+            if ts:
+                checked.append(str(ts))
+    return max(checked) if checked else "none"
+
+
+def build_next_activity_source_freshness_section(
+    decision: Any,
+    target_data: dict,
+    target_id: str | None,
+    source_state: dict,
+) -> list[str]:
+    signals = decision.signals
+    if not signals.get("source_freshness_checked"):
+        return [
+            "Source freshness:",
+            "- Status: not_required",
+            f"- Rule ID: {decision.rule_id}",
+            "- Why: No active target/source freshness decision required.",
+        ]
+
+    status = signals.get("source_freshness_status") or "unknown"
+    rule_id = signals.get("source_freshness_rule_id") or decision.rule_id
+    volatility = (
+        signals.get("source_freshness_target_volatility")
+        or target_data.get("volatility")
+        or "stable"
+    )
+    window = 365 if volatility == "stable" else VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
+    last_checked = _last_checked_for_target(source_state, target_id)
+
+    if decision.activity_type == "recent_info_check":
+        why = decision.reason
+    elif status == "fresh" and signals.get("source_freshness_has_fresh_usable"):
+        why = (
+            f"Source freshness satisfied for target '{target_id}' — "
+            f"{signals.get('source_freshness_fresh_count', 0)} fresh source(s); moved to next rule."
+        )
+    elif signals.get("source_freshness_recent_activity_fallback") and signals.get(
+        "recent_info_check_in_recent_types"
+    ):
+        why = "recent_info_check already appears in recent activities; skipping to next rule."
+    else:
+        why = f"Source freshness status is {status}, but a higher-priority rule applied first."
+
+    return [
+        "Source freshness:",
+        f"- Status: {status}",
+        f"- Rule ID: {rule_id}",
+        f"- Volatility: {volatility}",
+        f"- Freshness window: {window} days",
+        f"- Last checked: {last_checked}",
+        f"- Why: {why}",
+    ]
 
 
 def _adjustment_message(tag: str, count: int) -> str:
@@ -464,14 +528,14 @@ def build_context_pack(
         "cache_used": cache_used(),
     }
 
-    now = datetime.now(timezone.utc).isoformat()
+    generated_at = datetime.now(timezone.utc).isoformat()
 
     body_lines.extend([
         "# StudyDD Context Pack",
         "",
         f"- **Task:** {task}",
         f"- **Mode:** {metadata['mode']}",
-        f"- **Generated at:** {now}",
+        f"- **Generated at:** {generated_at}",
         f"- **Repo root:** {ROOT}",
         "",
         "## Loading policy",
@@ -547,6 +611,8 @@ def build_context_pack(
     templates_data = load_yaml(ROOT / "activities" / "ACTIVITY_TEMPLATES.yaml")
     templates = templates_data.get("templates") or []
     target_data = load_yaml(target_path) if target_path else {}
+    source_state = load_yaml(ROOT / "sources" / "SOURCE_STATE.yaml")
+    now = datetime.now(timezone.utc)
     weakest_skill = find_weakest_skill(skill_map)
     decision = choose_activity_decision(
         skill_id=skill_id or active_skill,
@@ -557,6 +623,8 @@ def build_context_pack(
         study_skill=study_skill,
         recent_types=recent_activity_types(activity_state),
         templates=templates,
+        source_state=source_state,
+        now=now,
     )
     body_lines.extend([
         "## Active activity",
@@ -584,6 +652,13 @@ def build_context_pack(
     if not target_path:
         body_lines.append("- **Scope:** generic template fallback; no learner target is active.")
     body_lines.append("- **Learner control:** You can accept, modify, or override this.")
+
+    target_id = active_target_id(study_state)
+    freshness_lines = build_next_activity_source_freshness_section(
+        decision, target_data, target_id, source_state
+    )
+    body_lines.append("")
+    body_lines.extend(freshness_lines)
 
     body_lines.extend([
         "",
