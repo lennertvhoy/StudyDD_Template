@@ -4,7 +4,7 @@
 
 ## Current next action
 
-1. Continue lowering adoption friction: begin StudyDD Containerized Setup v1 (Docker / Podman / devcontainer) so learners can run StudyDD without manually managing a local Python environment, or add a lightweight CLI entry point that wraps `check_environment`, `setup_studydd`, and `run_demo_replay`.
+1. Wire the active activity recommendation reason into `scripts/build_context_pack.py` and add a focused `scripts/test_next_activity_decision.py` for the decision rules.
 
 ## Pending actions
 
@@ -13,4 +13,4 @@
 
 ## Recently completed
 
-- None. This public template has not been initialized for a learner yet.
+- 2026-06-27: Improved next-activity selection to recommend among exam-style question, spaced-repetition review, lab/practical exercise, diagram/visual explanation, and recent-info check.
