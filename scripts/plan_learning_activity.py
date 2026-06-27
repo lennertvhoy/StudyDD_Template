@@ -176,7 +176,7 @@ def choose_activity_type(
         )
 
     # 2. Recent-info check for volatile topics before authoritative questions.
-    if target_volatile and "recent_info_check" not in recent_set:
+    if target_type and target_volatile and "recent_info_check" not in recent_set:
         return (
             "recent_info_check",
             "Rule: volatile target with no recent source check — verify freshness before an authoritative question.",
