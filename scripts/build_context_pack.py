@@ -18,6 +18,13 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from next_activity_decision import (
+    choose_activity_decision,
+    count_due_reviews,
+    find_weakest_skill,
+    recent_activity_types,
+)
+
 ROOT = Path(__file__).resolve().parent.parent
 CONTEXT_PACK_DIR = ROOT / ".studydd"
 CONTEXT_PACK_PATH = CONTEXT_PACK_DIR / "context_pack.md"
@@ -537,6 +544,20 @@ def build_context_pack(
 
     # Active activity and recent effectiveness.
     activity_state = load_yaml(ROOT / "state" / "ACTIVITY_STATE.yaml")
+    templates_data = load_yaml(ROOT / "activities" / "ACTIVITY_TEMPLATES.yaml")
+    templates = templates_data.get("templates") or []
+    target_data = load_yaml(target_path) if target_path else {}
+    weakest_skill = find_weakest_skill(skill_map)
+    decision = choose_activity_decision(
+        skill_id=skill_id or active_skill,
+        due_reviews=count_due_reviews(review_state),
+        weakest_skill=weakest_skill,
+        low_energy=False,
+        target=target_data,
+        study_skill=study_skill,
+        recent_types=recent_activity_types(activity_state),
+        templates=templates,
+    )
     body_lines.extend([
         "## Active activity",
         "",
@@ -550,6 +571,19 @@ def build_context_pack(
         body_lines.append(f"- **Expected evidence:** {', '.join(active_activity.get('expected_evidence') or [])}")
     else:
         body_lines.append("- No active activity assigned.")
+    body_lines.append("")
+
+    body_lines.extend([
+        "## Next activity recommendation",
+        "",
+        f"- **Recommended activity:** {decision.activity_type}",
+        f"- **Rule ID:** {decision.rule_id}",
+        f"- **Reason:** {decision.reason}",
+        f"- **Expected evidence:** {', '.join(decision.expected_evidence) if decision.expected_evidence else 'typed answer or transcript'}",
+    ])
+    if not target_path:
+        body_lines.append("- **Scope:** generic template fallback; no learner target is active.")
+    body_lines.append("- **Learner control:** You can accept, modify, or override this.")
 
     body_lines.extend([
         "",
