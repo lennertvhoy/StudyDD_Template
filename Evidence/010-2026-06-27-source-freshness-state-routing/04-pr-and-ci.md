@@ -3,9 +3,9 @@
 - **Branch:** `feat/source-freshness-state-routing`
 - **Base SHA:** `0585231785de32625df650683b0de847c16f217b`
 - **Implementation commit SHA:** `765c4b9b513eb25c25ca08b0d5e42f7bb1f5c45c`
-- **Evidence commit SHA:** `e94d6f89026afd086b0672785b844439bfe55edc`
+- **Evidence commit SHA:** `22256da29d917b6232c85745a91b97447d0cf141`
 - **PR URL:** https://github.com/lennertvhoy/StudyDD_Template/pull/3
-- **CI status:** passed on GitHub Actions run `28291874766`
+- **CI status:** passed on GitHub Actions run `28291904325`
 
 CI jobs passed:
 
