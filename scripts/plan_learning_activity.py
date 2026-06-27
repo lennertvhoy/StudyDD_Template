@@ -26,8 +26,8 @@ ACTIVITY_TEMPLATES_PATH = ROOT / "activities" / "ACTIVITY_TEMPLATES.yaml"
 STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
 SKILL_MAP_PATH = ROOT / "state" / "SKILL_MAP.yaml"
 REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
-LEARNER_PROFILE_PATH = ROOT / "state" / "LEARNER_PROFILE.yaml"
 MODE_PATH = ROOT / "state" / "STUDYDD_MODE.yaml"
+TARGETS_DIR = ROOT / "targets"
 
 DEMO_OUTPUT = """StudyDD recommendation: paper exercise.
 
@@ -69,6 +69,46 @@ def save_yaml(path: Path, data: dict[str, Any]) -> None:
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def load_active_target(active_target_id: str | None) -> dict[str, Any]:
+    """Load TARGET.yaml for the active target, if any."""
+    if not active_target_id:
+        return {}
+    target_path = TARGETS_DIR / active_target_id / "TARGET.yaml"
+    if not target_path.is_file():
+        return {}
+    return load_yaml(target_path)
+
+
+VOLATILE_CLASSES = {"moderate", "volatile", "live"}
+
+
+def target_is_volatile(target: dict[str, Any]) -> bool:
+    volatility = target.get("volatility") or "moderate"
+    return volatility in VOLATILE_CLASSES
+
+
+def recent_activity_types(activity_state: dict[str, Any], limit: int = 5) -> list[str]:
+    recent = activity_state.get("recent_activities") or []
+    return [a.get("type") for a in recent[:limit] if a.get("type")]
+
+
+def activity_types_for_study_skill(
+    study_skill: str | None,
+    templates: list[dict[str, Any]],
+) -> list[str]:
+    """Return activity types whose templates list this study skill in best_for."""
+    if not study_skill:
+        return []
+    matched: set[str] = set()
+    for template in templates:
+        best_for = template.get("best_for") or []
+        if study_skill in best_for or "conceptual_understanding" in best_for:
+            activity_type = template.get("activity_type")
+            if activity_type:
+                matched.add(activity_type)
+    return list(matched)
 
 
 def count_due_reviews(review_state: dict[str, Any]) -> int:
