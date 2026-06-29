@@ -4,6 +4,8 @@
 - `scripts/record_source_check.py` — canonical writer for completed source-check metadata into `sources/SOURCE_STATE.yaml`; refactored to expose a reusable `record_source_check(...)` function.
 - `scripts/test_record_source_check.py` — deterministic tests for the new script and the end-to-end freshness loop.
 - `protocols/RECORD_SOURCE_CHECK.md` — usage, privacy, and learner-override guidance.
+- `protocols/TEMPLATE_INSTANCE_BOUNDARY.md` — concise protocol defining template/instance/generated boundaries and recovery steps.
+- `scripts/test_template_instance_boundary.py` — deterministic tests validating the `boundary` field, template-mode generic state, and instance-mode population.
 
 ## Modified
 - `sources/SOURCE_STATE.yaml` — documented the new `last_check` schema extension in a comment block.
@@ -18,5 +20,9 @@
 - `NEXT_ACTIONS.md` — marked the source-check completion flow complete and points to the next slice.
 - `scripts/record_activity_result.py` — added optional `--source-*` flags and automatic handoff to `record_source_check(...)` when a `recent_info_check` activity is completed.
 - `scripts/test_learning_activities.py` — added `test_record_recent_info_check_updates_source_state()` covering the automatic handoff.
-- `.github/workflows/validate.yml` — added `test_record_source_check.py` and the `--demo` smoke check.
+- `.github/workflows/validate.yml` — added `test_record_source_check.py` and the `--demo` smoke check, plus the new `test_template_instance_boundary.py` step.
 - `docs/superpowers/plans/2026-06-24-source-grounded-question-quality-plan.md` — updated stale `VOLATILITY_MAX_AGE_DAYS` literal to match canonical values.
+- `state/STATE_MANIFEST.yaml` — added a `boundary` field (`template`/`instance`/`generated`) to every tracked file and documented the boundary semantics in the header.
+- `scripts/check_studydd.py` — added `check_template_boundary()` to warn when `boundary: instance` files contain learner data in template mode; added boundary validation to `check_state_manifest()`; added `test_template_instance_boundary.py` to required script files.
+- `AGENTS.md` — added `protocols/TEMPLATE_INSTANCE_BOUNDARY.md` to the required-read list, added the boundary-check agent rule, referenced the protocol near Template vs Instance Law, and updated the Core Architecture description of `state/STATE_MANIFEST.yaml`.
+- `README.md` — added a "Template vs Instance" section explaining that this repo is the public template, personalization happens via `create_instance.py`, and `state/STATE_MANIFEST.yaml` shows which files are instance-specific.

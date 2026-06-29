@@ -82,6 +82,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/record_source_check.py --demo
 
+      - name: Run template/instance boundary test
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_template_instance_boundary.py
+
       - name: Run question quality test
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_question_quality.py
