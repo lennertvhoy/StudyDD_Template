@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -70,6 +71,25 @@ This was a demo; no file was written.
 """
 
 
+@dataclass
+class SourceCheckArgs:
+    """Container for source-check parameters used by the reusable function."""
+
+    source_id: str
+    target_id: str | None = None
+    outcome: str = "fresh"
+    summary: str = ""
+    evidence_id: str = ""
+    activity_id: str = ""
+    checked_by: str = "agent"
+    checked_at: str = ""
+    expires_at: str | None = None
+    authority: str = "official"
+    volatility: str | None = None
+    freshness_window_days: int | None = None
+    usable_for_questions: bool | None = None
+
+
 def load_yaml(path: Path) -> dict[str, Any]:
     try:
         import yaml
@@ -96,21 +116,6 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def load_mode() -> dict[str, Any]:
-    return load_yaml(MODE_PATH)
-
-
-def load_source_state() -> dict[str, Any]:
-    data = load_yaml(SOURCE_STATE_PATH)
-    if not isinstance(data, dict):
-        return {"metadata": {}, "sources": []}
-    if "sources" not in data:
-        data["sources"] = []
-    if "metadata" not in data:
-        data["metadata"] = {}
-    return data
-
-
 def parse_iso_timestamp(value: str) -> datetime:
     dt = datetime.fromisoformat(value)
     if dt.tzinfo is None:
@@ -127,7 +132,7 @@ def validate_source_id(source_id: str) -> None:
         )
 
 
-def validate_args(args: argparse.Namespace) -> None:
+def validate_args(args: SourceCheckArgs) -> None:
     validate_source_id(args.source_id)
 
     if args.outcome not in OUTCOMES:
@@ -200,7 +205,7 @@ def resolve_target_id(
 def build_source_entry(
     source_id: str,
     target_id: str,
-    args: argparse.Namespace,
+    args: SourceCheckArgs,
     existing: dict[str, Any] | None,
 ) -> dict[str, Any]:
     checked_at = args.checked_at
@@ -261,6 +266,16 @@ def build_source_entry(
     return source
 
 
+def normalize_source_state(data: Any) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        return {"metadata": {}, "sources": []}
+    if "sources" not in data:
+        data["sources"] = []
+    if "metadata" not in data:
+        data["metadata"] = {}
+    return data
+
+
 def print_dry_run(source_id: str, target_id: str | None, source: dict[str, Any]) -> None:
     import yaml
 
@@ -273,6 +288,118 @@ def print_dry_run(source_id: str, target_id: str | None, source: dict[str, Any])
         print(f"Source ID: {source_id} (existing source)")
     print("")
     print(yaml.safe_dump(source, sort_keys=False))
+
+
+def record_source_check(
+    source_id: str,
+    *,
+    target_id: str | None = None,
+    outcome: str = "fresh",
+    summary: str = "",
+    evidence_id: str = "",
+    activity_id: str = "",
+    checked_by: str = "agent",
+    checked_at: str | None = None,
+    expires_at: str | None = None,
+    authority: str = "official",
+    volatility: str | None = None,
+    freshness_window_days: int | None = None,
+    usable_for_questions: bool | None = None,
+    dry_run: bool = False,
+    repo_root: str | Path | None = None,
+) -> int:
+    """Record a completed source freshness check.
+
+    This is the reusable entry point. The CLI main() is a thin wrapper around
+    this function.
+
+    Parameters match the command-line flags. Returns an integer exit/status
+    code (0 success, 1 validation/runtime error, 2 write refused, 3 missing
+    source without target-id).
+    """
+    if checked_at is None:
+        checked_at = now_iso()
+
+    root = Path(repo_root).resolve() if repo_root else ROOT
+    source_state_path = root / "sources" / "SOURCE_STATE.yaml"
+    mode_path = root / "state" / "STUDYDD_MODE.yaml"
+
+    args = SourceCheckArgs(
+        source_id=source_id,
+        target_id=target_id,
+        outcome=outcome,
+        summary=summary,
+        evidence_id=evidence_id,
+        activity_id=activity_id,
+        checked_by=checked_by,
+        checked_at=checked_at,
+        expires_at=expires_at,
+        authority=authority,
+        volatility=volatility,
+        freshness_window_days=freshness_window_days,
+        usable_for_questions=usable_for_questions,
+    )
+
+    try:
+        validate_args(args)
+    except ValueError as exc:
+        print(f"Validation error: {exc}")
+        return 1
+
+    mode = load_yaml(mode_path).get("mode", "unknown")
+
+    if dry_run:
+        state = normalize_source_state(load_yaml(source_state_path))
+        existing = find_source(state, source_id)
+        resolved_target_id, error = resolve_target_id(existing, target_id)
+        if error:
+            print(f"Dry-run error: {error}.")
+            return 3
+        source = build_source_entry(source_id, resolved_target_id, args, existing)
+        print_dry_run(source_id, resolved_target_id, source)
+        return 0
+
+    if mode != "learner_instance":
+        print(
+            f"Error: write refused — repo mode is '{mode}', "
+            "but source checks may only be recorded in learner_instance mode. "
+            "Use --dry-run or --demo for read-only output."
+        )
+        return 2
+
+    state = normalize_source_state(load_yaml(source_state_path))
+    existing = find_source(state, source_id)
+
+    resolved_target_id, error = resolve_target_id(existing, target_id)
+    if error:
+        print(f"Error: {error}.")
+        if existing is not None:
+            return 1
+        return 3
+
+    source = build_source_entry(source_id, resolved_target_id, args, existing)
+
+    if existing is None:
+        state["sources"].append(source)
+    else:
+        for idx, s in enumerate(state["sources"]):
+            if isinstance(s, dict) and s.get("id") == source_id:
+                state["sources"][idx] = source
+                break
+
+    metadata = state.setdefault("metadata", {})
+    metadata["last_updated"] = now_iso()
+    metadata["updated_by"] = "record_source_check.py"
+
+    save_yaml(source_state_path, state)
+
+    print(f"Recorded source check for {source_id}")
+    print(f"  outcome: {outcome}")
+    print(f"  checked_at: {checked_at}")
+    if outcome == "fresh":
+        print(f"  last_checked_at: {source.get('last_checked_at')}")
+    print(f"  source_state: {source_state_path.relative_to(root)}")
+    return 0
 
 
 def main() -> int:
@@ -367,76 +494,27 @@ def main() -> int:
     if args.source_id is None and not args.demo:
         parser.error("source_id is required unless --demo is used")
 
-    global ROOT, SOURCE_STATE_PATH, MODE_PATH
-    if args.repo_root is not None:
-        ROOT = Path(args.repo_root).resolve()
-        SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
-        MODE_PATH = ROOT / "state" / "STUDYDD_MODE.yaml"
-
     if args.demo:
         print(DEMO_OUTPUT, end="")
         return 0
 
-    try:
-        validate_args(args)
-    except ValueError as exc:
-        print(f"Validation error: {exc}")
-        return 1
-
-    mode = load_mode().get("mode", "unknown")
-
-    if args.dry_run:
-        state = load_source_state()
-        existing = find_source(state, args.source_id)
-        target_id, error = resolve_target_id(existing, args.target_id)
-        if error:
-            print(f"Dry-run error: {error}.")
-            return 3
-        source = build_source_entry(args.source_id, target_id, args, existing)
-        print_dry_run(args.source_id, target_id, source)
-        return 0
-
-    if mode != "learner_instance":
-        print(
-            f"Error: write refused — repo mode is '{mode}', "
-            "but source checks may only be recorded in learner_instance mode. "
-            "Use --dry-run or --demo for read-only output."
-        )
-        return 2
-
-    state = load_source_state()
-    existing = find_source(state, args.source_id)
-
-    target_id, error = resolve_target_id(existing, args.target_id)
-    if error:
-        print(f"Error: {error}.")
-        if existing is not None:
-            return 1
-        return 3
-
-    source = build_source_entry(args.source_id, target_id, args, existing)
-
-    if existing is None:
-        state["sources"].append(source)
-    else:
-        for idx, s in enumerate(state["sources"]):
-            if isinstance(s, dict) and s.get("id") == args.source_id:
-                state["sources"][idx] = source
-                break
-
-    metadata = state.setdefault("metadata", {})
-    metadata["last_updated"] = now_iso()
-    metadata["updated_by"] = "record_source_check.py"
-
-    save_yaml(SOURCE_STATE_PATH, state)
-
-    print(f"Recorded source check for {args.source_id}")
-    print(f"  outcome: {args.outcome}")
-    print(f"  checked_at: {args.checked_at}")
-    if args.outcome == "fresh":
-        print(f"  last_checked_at: {source.get('last_checked_at')}")
-    print(f"  source_state: {SOURCE_STATE_PATH.relative_to(ROOT)}")
-    return 0
+    return record_source_check(
+        source_id=args.source_id,
+        target_id=args.target_id,
+        outcome=args.outcome,
+        summary=args.summary,
+        evidence_id=args.evidence_id,
+        activity_id=args.activity_id,
+        checked_by=args.checked_by,
+        checked_at=args.checked_at,
+        expires_at=args.expires_at,
+        authority=args.authority,
+        volatility=args.volatility,
+        freshness_window_days=args.freshness_window_days,
+        usable_for_questions=args.usable_for_questions,
+        dry_run=args.dry_run,
+        repo_root=args.repo_root,
+    )
 
 
 if __name__ == "__main__":
