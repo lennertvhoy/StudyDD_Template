@@ -37,6 +37,9 @@ This public template must stay generic. Do not seed a real learner, target, exam
 5. If the user asks to study, initialize a learner, answer a question, update readiness, or record evidence, first confirm the repo is a learner instance. If it is the template, stop and explain the instantiation workflow from `protocols/INSTANTIATE_TEMPLATE.md`.
 6. If the user asks to create a new StudyDD repo, use `protocols/INSTANTIATE_TEMPLATE.md` to clone/copy → remove `.git` → `git init` → new remote → first commit → then initialize learner state.
 7. Never apply learner-state changes to the template repo.
+8. Check `state/STATE_MANIFEST.yaml` for a file's `boundary` before writing state. If `boundary: instance` and mode is `template`, stop and use `scripts/create_instance.py`.
+
+See `protocols/TEMPLATE_INSTANCE_BOUNDARY.md` for the full boundary protocol.
 
 ## What the Agent Does
 
@@ -102,40 +105,41 @@ Before every StudyDD session, read:
 22. `protocols/GIT_PROVENANCE.md`
 23. `protocols/PRIVACY_REVIEW.md`
 24. `protocols/WRONG_REPO_RECOVERY.md`
-25. `protocols/SPACED_REPETITION_POLICY.md`
-26. `protocols/TUTOR_PROTOCOL.md`
-27. `protocols/SESSION_TEMPLATE.md`
-28. `protocols/START_SESSION.md`
-29. `protocols/SELECT_NEXT_ACTION.md`
-30. `protocols/ASK_QUESTION.md`
-31. `protocols/GRADE_ANSWER.md`
-32. `protocols/UPDATE_STATE.md`
-33. `protocols/SCHEDULE_REVIEW.md`
-34. `protocols/CLOSE_SESSION.md`
-35. `protocols/STATE_LOADING_POLICY.md`
-36. `protocols/PERFORMANCE_POLICY.md`
-37. `protocols/STATE_WRITE_POLICY.md`
-38. `protocols/SOURCE_TRUST.md`
-39. `protocols/READINESS_POLICY.md`
-40. `protocols/QUESTION_QUALITY.md`
-41. `protocols/MISTAKE_TAXONOMY.md`
-42. `protocols/LOW_ENERGY_MODE.md`
-43. `protocols/SOURCE_FRESHNESS_POLICY.md`
-44. `protocols/SOURCE_REFRESH_POLICY.md`
-45. `protocols/QUESTION_QUALITY_GOVERNOR.md`
-46. `protocols/LEARNER_ADAPTATION_POLICY.md`
-47. `protocols/LEARNER_FEEDBACK_POLICY.md`
-48. `state/LEARNER_PROFILE.yaml`
-49. `state/ACTIVITY_STATE.yaml`
-50. `activities/ACTIVITY_TEMPLATES.yaml`
-51. `activities/ACTIVITY_LOG.md`
-52. `protocols/LEARNING_ACTIVITY_POLICY.md`
-53. `protocols/EVIDENCE_INTAKE_POLICY.md`
-54. `protocols/EXTERNAL_RESOURCE_POLICY.md`
-55. `protocols/VOICE_NOTE_REVIEW_POLICY.md`
-56. `protocols/INTERVIEW_PREP_POLICY.md`
-57. `protocols/PRESENTATION_PREP_POLICY.md`
-58. `sources/SOURCE_STATE.yaml`
+25. `protocols/TEMPLATE_INSTANCE_BOUNDARY.md`
+26. `protocols/SPACED_REPETITION_POLICY.md`
+27. `protocols/TUTOR_PROTOCOL.md`
+28. `protocols/SESSION_TEMPLATE.md`
+29. `protocols/START_SESSION.md`
+30. `protocols/SELECT_NEXT_ACTION.md`
+31. `protocols/ASK_QUESTION.md`
+32. `protocols/GRADE_ANSWER.md`
+33. `protocols/UPDATE_STATE.md`
+34. `protocols/SCHEDULE_REVIEW.md`
+35. `protocols/CLOSE_SESSION.md`
+36. `protocols/STATE_LOADING_POLICY.md`
+37. `protocols/PERFORMANCE_POLICY.md`
+38. `protocols/STATE_WRITE_POLICY.md`
+39. `protocols/SOURCE_TRUST.md`
+40. `protocols/READINESS_POLICY.md`
+41. `protocols/QUESTION_QUALITY.md`
+42. `protocols/MISTAKE_TAXONOMY.md`
+43. `protocols/LOW_ENERGY_MODE.md`
+44. `protocols/SOURCE_FRESHNESS_POLICY.md`
+45. `protocols/SOURCE_REFRESH_POLICY.md`
+46. `protocols/QUESTION_QUALITY_GOVERNOR.md`
+47. `protocols/LEARNER_ADAPTATION_POLICY.md`
+48. `protocols/LEARNER_FEEDBACK_POLICY.md`
+49. `state/LEARNER_PROFILE.yaml`
+50. `state/ACTIVITY_STATE.yaml`
+51. `activities/ACTIVITY_TEMPLATES.yaml`
+52. `activities/ACTIVITY_LOG.md`
+53. `protocols/LEARNING_ACTIVITY_POLICY.md`
+54. `protocols/EVIDENCE_INTAKE_POLICY.md`
+55. `protocols/EXTERNAL_RESOURCE_POLICY.md`
+56. `protocols/VOICE_NOTE_REVIEW_POLICY.md`
+57. `protocols/INTERVIEW_PREP_POLICY.md`
+58. `protocols/PRESENTATION_PREP_POLICY.md`
+59. `sources/SOURCE_STATE.yaml`
 
 Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
@@ -168,7 +172,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/run_demo_replay.py` = deterministic public demo of one full learning loop
 - `scripts/test_demo_replay.py` = asserts the demo replay produces expected artifacts
 - `state/STUDYDD_TEMPLATE_VERSION.yaml` = template version and upgrade origin
-- `state/STATE_MANIFEST.yaml` = declares file roles (canonical, audit, derived, protected)
+- `state/STATE_MANIFEST.yaml` = declares file roles (canonical, audit, derived, protected) and the template/instance/generated boundary for every tracked file
 - `state/PERFORMANCE_BUDGET.yaml` = numeric loading/writing limits per execution mode
 - `state/CURRENT_CONTEXT.md` = compact human/agent-readable learner summary
 - `state/EVIDENCE_INDEX.yaml` = machine-readable evidence lookup
