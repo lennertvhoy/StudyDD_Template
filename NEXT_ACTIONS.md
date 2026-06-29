@@ -4,7 +4,7 @@
 
 ## Current next action
 
-1. Open a pull request for `feat/fast-drill-mode` after confirming with the user, then merge it into `main` and continue with the agent-driven study loop slice.
+1. Wait for CI on PR #5 (`feat/fast-drill-mode`), merge it into `main`, then continue with the agent-driven study loop slice (`feat/agent-session-study-loop`).
 
 ## Pending actions
 
