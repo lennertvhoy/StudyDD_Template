@@ -4,7 +4,7 @@
 **PR URL:** https://github.com/lennertvhoy/StudyDD_Template/pull/4  
 **Base branch:** `main`  
 **Head branch:** `feat/source-check-completion-flow`  
-**CI status:** ✅ GitHub Actions `Validate StudyDD` run `28296443705` passed on ubuntu-latest, windows-latest, and macos-latest.  
+**CI status:** ✅ GitHub Actions `Validate StudyDD` run `28357794376` passed on ubuntu-latest, windows-latest, and macos-latest.  
 
 ## Known limitations / next slices
 - `record_source_check.py` updates only `sources/SOURCE_STATE.yaml`. Activity-state handoff (`state/ACTIVITY_STATE.yaml`, `activities/ACTIVITY_LOG.md`) remains the responsibility of `record_activity_result.py`.
