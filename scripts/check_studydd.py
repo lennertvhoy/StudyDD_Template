@@ -168,9 +168,11 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/plan_learning_activity.py",
     "scripts/record_activity_result.py",
     "scripts/record_source_check.py",
+    "scripts/fast_drill_mode.py",
     "scripts/analyze_voice_note.py",
     "scripts/analyze_presentation_rehearsal.py",
     "scripts/test_learning_activities.py",
+    "scripts/test_fast_drill_mode.py",
     "scripts/check_environment.py",
     "scripts/setup_studydd.py",
     "scripts/test_cross_platform_paths.py",
@@ -1743,9 +1745,19 @@ def check_learner_profile(yaml: object) -> list[str]:
         # Learner-instance and bootstrap modes may contain personalized values.
         return errors
 
+    # These generic operating-mode flags are allowed as template defaults.
+    generic_preference_keys = {"fast_drill_mode", "auto_state_update_during_drills"}
+
     preferences = data.get("learner_preferences") or {}
     if isinstance(preferences, dict):
         for key, value in preferences.items():
+            if key in generic_preference_keys:
+                if not isinstance(value, bool):
+                    errors.append(
+                        f"Template mode: state/LEARNER_PROFILE.yaml learner_preferences.{key} "
+                        f"must be a boolean, got {value!r}"
+                    )
+                continue
             if value not in (None, ""):
                 errors.append(
                     f"Template mode: state/LEARNER_PROFILE.yaml learner_preferences.{key} "

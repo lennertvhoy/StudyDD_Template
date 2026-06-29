@@ -4,6 +4,8 @@
 
 This is a **fast-path** operation. Load only the active question, rubric, learner answer, and relevant skill evidence.
 
+In **fast drill mode**, append one compact checkpoint line with `scripts/fast_drill_mode.py append` instead of rewriting canonical state after every answer. Reconcile immediately if a major state transition occurs (e.g., a weak skill answers correctly, readiness crosses a certification threshold, or a source is promoted/demoted).
+
 ## Verdicts
 
 - **correct** — fully meets the answer key.

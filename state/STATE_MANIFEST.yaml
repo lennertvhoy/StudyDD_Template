@@ -118,3 +118,9 @@ files:
     load_default: false
     generated_by: scripts/build_context_pack.py
     gitignore: true
+  state/ACTIVE_DRILL_SESSION.md:
+    role: runtime_checkpoint
+    boundary: instance
+    load_default: false
+    generated_by: scripts/fast_drill_mode.py
+    gitignore: true
