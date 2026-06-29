@@ -4,6 +4,8 @@
 
 This is a **fast-path** operation. Do not load full raw logs or run full validation.
 
+In **fast drill mode**, do not rebuild the context pack between questions. Use the active checkpoint (`state/ACTIVE_DRILL_SESSION.md`) and the agent's existing context.
+
 ## Before Asking
 
 Build a minimal context pack:

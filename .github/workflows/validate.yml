@@ -86,6 +86,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_template_instance_boundary.py
 
+      - name: Run fast drill mode test
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_fast_drill_mode.py
+
       - name: Run question quality test
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_question_quality.py

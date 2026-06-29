@@ -767,8 +767,12 @@ def build_context_pack(
         body_lines.append("Load the active target, due reviews, weak skills, last session summary, and current next action. Do not open full raw logs unless the validator reports a conflict.")
     elif task == "ask_question":
         body_lines.append(f"Include active target, weak skills, due reviews, and question bank metadata. Do not load unrelated target history or full evidence log. Active question: {active_question or 'not specified'}")
+    elif task == "fast_drill_ask_question":
+        body_lines.append(f"Fast-drill mode. Use the active checkpoint and existing context only. Do not rebuild the context pack or run validation. Active question: {active_question or 'not specified'}")
     elif task == "grade_answer":
         body_lines.append(f"Include active question, rubric, learner answer, and relevant skill evidence only. Skip unrelated skill history. Active question: {active_question or 'not specified'}")
+    elif task == "fast_drill_grade_answer":
+        body_lines.append(f"Fast-drill mode. Grade the answer, then append one compact checkpoint line. Do not rewrite canonical state unless a major transition occurred. Active question: {active_question or 'not specified'}")
     elif task == "schedule_review":
         body_lines.append(f"Include review state, confidence, grade, previous interval, and lapses for the relevant skill. Review: {review_id or 'not specified'}")
     elif task == "close_session":
@@ -882,6 +886,8 @@ def main() -> int:
             "start_session",
             "ask_question",
             "grade_answer",
+            "fast_drill_ask_question",
+            "fast_drill_grade_answer",
             "schedule_review",
             "close_session",
             "upgrade_instance",

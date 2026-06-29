@@ -98,48 +98,49 @@ Before every StudyDD session, read:
 15. `sessions/SESSION_SUMMARIES.md`
 16. `sources/SOURCE_INDEX.md`
 17. `.studydd/context_pack.md` (built by `scripts/build_context_pack.py`)
-18. The active target's `TARGET.yaml`
-19. The active target's `study_skills/<id>/SKILL.md`
-20. `protocols/INSTANTIATE_TEMPLATE.md`
-21. `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`
-22. `protocols/GIT_PROVENANCE.md`
-23. `protocols/PRIVACY_REVIEW.md`
-24. `protocols/WRONG_REPO_RECOVERY.md`
-25. `protocols/TEMPLATE_INSTANCE_BOUNDARY.md`
-26. `protocols/SPACED_REPETITION_POLICY.md`
-27. `protocols/TUTOR_PROTOCOL.md`
-28. `protocols/SESSION_TEMPLATE.md`
-29. `protocols/START_SESSION.md`
-30. `protocols/SELECT_NEXT_ACTION.md`
-31. `protocols/ASK_QUESTION.md`
-32. `protocols/GRADE_ANSWER.md`
-33. `protocols/UPDATE_STATE.md`
-34. `protocols/SCHEDULE_REVIEW.md`
-35. `protocols/CLOSE_SESSION.md`
-36. `protocols/STATE_LOADING_POLICY.md`
-37. `protocols/PERFORMANCE_POLICY.md`
-38. `protocols/STATE_WRITE_POLICY.md`
-39. `protocols/SOURCE_TRUST.md`
-40. `protocols/READINESS_POLICY.md`
-41. `protocols/QUESTION_QUALITY.md`
-42. `protocols/MISTAKE_TAXONOMY.md`
-43. `protocols/LOW_ENERGY_MODE.md`
-44. `protocols/SOURCE_FRESHNESS_POLICY.md`
-45. `protocols/SOURCE_REFRESH_POLICY.md`
-46. `protocols/QUESTION_QUALITY_GOVERNOR.md`
-47. `protocols/LEARNER_ADAPTATION_POLICY.md`
-48. `protocols/LEARNER_FEEDBACK_POLICY.md`
-49. `state/LEARNER_PROFILE.yaml`
-50. `state/ACTIVITY_STATE.yaml`
-51. `activities/ACTIVITY_TEMPLATES.yaml`
-52. `activities/ACTIVITY_LOG.md`
-53. `protocols/LEARNING_ACTIVITY_POLICY.md`
-54. `protocols/EVIDENCE_INTAKE_POLICY.md`
-55. `protocols/EXTERNAL_RESOURCE_POLICY.md`
-56. `protocols/VOICE_NOTE_REVIEW_POLICY.md`
-57. `protocols/INTERVIEW_PREP_POLICY.md`
-58. `protocols/PRESENTATION_PREP_POLICY.md`
-59. `sources/SOURCE_STATE.yaml`
+18. `docs/superpowers/specs/FAST_DRILL_MODE.md` (when running question drills)
+19. The active target's `TARGET.yaml`
+20. The active target's `study_skills/<id>/SKILL.md`
+21. `protocols/INSTANTIATE_TEMPLATE.md`
+22. `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`
+23. `protocols/GIT_PROVENANCE.md`
+24. `protocols/PRIVACY_REVIEW.md`
+25. `protocols/WRONG_REPO_RECOVERY.md`
+26. `protocols/TEMPLATE_INSTANCE_BOUNDARY.md`
+27. `protocols/SPACED_REPETITION_POLICY.md`
+28. `protocols/TUTOR_PROTOCOL.md`
+29. `protocols/SESSION_TEMPLATE.md`
+30. `protocols/START_SESSION.md`
+31. `protocols/SELECT_NEXT_ACTION.md`
+32. `protocols/ASK_QUESTION.md`
+33. `protocols/GRADE_ANSWER.md`
+34. `protocols/UPDATE_STATE.md`
+35. `protocols/SCHEDULE_REVIEW.md`
+36. `protocols/CLOSE_SESSION.md`
+37. `protocols/STATE_LOADING_POLICY.md`
+38. `protocols/PERFORMANCE_POLICY.md`
+39. `protocols/STATE_WRITE_POLICY.md`
+40. `protocols/SOURCE_TRUST.md`
+41. `protocols/READINESS_POLICY.md`
+42. `protocols/QUESTION_QUALITY.md`
+43. `protocols/MISTAKE_TAXONOMY.md`
+44. `protocols/LOW_ENERGY_MODE.md`
+45. `protocols/SOURCE_FRESHNESS_POLICY.md`
+46. `protocols/SOURCE_REFRESH_POLICY.md`
+47. `protocols/QUESTION_QUALITY_GOVERNOR.md`
+48. `protocols/LEARNER_ADAPTATION_POLICY.md`
+49. `protocols/LEARNER_FEEDBACK_POLICY.md`
+50. `state/LEARNER_PROFILE.yaml`
+51. `state/ACTIVITY_STATE.yaml`
+52. `activities/ACTIVITY_TEMPLATES.yaml`
+53. `activities/ACTIVITY_LOG.md`
+54. `protocols/LEARNING_ACTIVITY_POLICY.md`
+55. `protocols/EVIDENCE_INTAKE_POLICY.md`
+56. `protocols/EXTERNAL_RESOURCE_POLICY.md`
+57. `protocols/VOICE_NOTE_REVIEW_POLICY.md`
+58. `protocols/INTERVIEW_PREP_POLICY.md`
+59. `protocols/PRESENTATION_PREP_POLICY.md`
+60. `sources/SOURCE_STATE.yaml`
 
 Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
@@ -425,24 +426,28 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 2. Verify repo path and remote.
 3. Run `python3 scripts/check_studydd.py`.
 4. Run `python3 scripts/compact_state.py --check-stale` and `python3 scripts/build_context_pack.py --task start_session`.
-5. Read `.studydd/context_pack.md` and the active study skill.
-6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
-7. Plan the next learning activity with `scripts/plan_learning_activity.py` or its logic. A question is the default, but the best move may be a review, paper exercise, lab, interview rehearsal, presentation rehearsal, voice note, external resource, or upload-and-review task. Explain why and end with `You can accept, modify, or override this.`
-8. Confirm the active focus and next activity with the learner.
-9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item. When a `recent_info_check` activity is completed, pass the source metadata to `scripts/record_activity_result.py` via `--source-id` and the related flags; it records the source check automatically. Only invoke `scripts/record_source_check.py` directly when you are not also recording an activity result.
-10. If the activity is a question, ask it; otherwise assign the activity and state expected evidence.
-11. Receive the answer or submitted evidence.
-12. Grade against the answer key or rubric, guided by the active study skill. Stay on the fast path.
-13. Explain the result.
-14. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
-15. Append evidence to `state/EVIDENCE_LOG.md`, update `activities/ACTIVITY_LOG.md` for activity results, and update touched canonical state.
-16. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
-17. Run `python3 scripts/validate_touched_state.py` on the touched IDs.
-18. Propose state updates.
-19. Confirm or apply authorized updates.
-20. At session close, run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
-21. End with the next best action in `NEXT_ACTIONS.md`.
-22. Leave a truthful handoff that lists the mode, files read, and files written.
+   Only run `compact_state.py` without `--check-stale` if summaries are stale.
+5. Check for an active fast-drill checkpoint (`state/ACTIVE_DRILL_SESSION.md`). If one exists, run `python3 scripts/fast_drill_mode.py recover` and either resume it or reconcile it before starting a new drill.
+6. Read `.studydd/context_pack.md` and the active study skill.
+7. Confirm session mode with the learner (normal, deep, low-energy, recovery).
+8. Plan the next learning activity with `scripts/plan_learning_activity.py` or its logic. A question is the default, but the best move may be a review, paper exercise, lab, interview rehearsal, presentation rehearsal, voice note, external resource, or upload-and-review task. Explain why and end with `You can accept, modify, or override this.`
+9. If the chosen activity is a retrieval-question drill and `learner_preferences.fast_drill_mode` is `true`, start a fast-drill checkpoint with `python3 scripts/fast_drill_mode.py start`. During the drill append one checkpoint line per answer; do not run full validation or rebuild context packs between questions.
+10. Confirm the active focus and next activity with the learner.
+11. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item. When a `recent_info_check` activity is completed, pass the source metadata to `scripts/record_activity_result.py` via `--source-id` and the related flags; it records the source check automatically. Only invoke `scripts/record_source_check.py` directly when you are not also recording an activity result.
+12. If the activity is a question, ask it; otherwise assign the activity and state expected evidence.
+13. Receive the answer or submitted evidence.
+14. Grade against the answer key or rubric, guided by the active study skill. Stay on the fast path.
+15. Explain the result.
+16. If wrong or incomplete, ask a repair or clarification question. Do not move to a new numbered question until the current one is resolved.
+17. During a fast drill, append the result to `state/ACTIVE_DRILL_SESSION.md` with `python3 scripts/fast_drill_mode.py append` instead of rewriting canonical state. Reconcile the checkpoint with `python3 scripts/fast_drill_mode.py end --apply` at session end, or immediately if a major state transition occurs (skill weak→demonstrated, readiness crosses a threshold, source promoted/demoted, or a broken invariant is detected).
+18. Append evidence to `state/EVIDENCE_LOG.md`, update `activities/ACTIVITY_LOG.md` for activity results, and update touched canonical state.
+19. Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
+20. Run `python3 scripts/validate_touched_state.py` on the touched IDs.
+21. Propose state updates.
+22. Confirm or apply authorized updates.
+23. At session close, run `python3 scripts/compact_state.py` then `python3 scripts/check_studydd.py`.
+24. End with the next best action in `NEXT_ACTIONS.md`.
+25. Leave a truthful handoff that lists the mode, files read, and files written.
 
 ## Handoff Requirements
 
