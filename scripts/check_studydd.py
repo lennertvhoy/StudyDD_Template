@@ -174,6 +174,7 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/check_environment.py",
     "scripts/setup_studydd.py",
     "scripts/test_cross_platform_paths.py",
+    "scripts/test_template_instance_boundary.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -308,6 +309,8 @@ QUESTION_MODES = {
     "exam_sim",
     "remediation",
 }
+
+BOUNDARY_VALUES = {"template", "instance", "generated"}
 
 
 
@@ -1322,10 +1325,98 @@ def check_state_manifest(yaml: object) -> list[str]:
         rel_path = ROOT / rel
         if meta.get("load_default") and not rel_path.is_file():
             errors.append(f"state/STATE_MANIFEST.yaml '{rel}' is load_default but missing")
+        boundary = meta.get("boundary")
+        if boundary not in BOUNDARY_VALUES:
+            errors.append(
+                f"state/STATE_MANIFEST.yaml '{rel}' has missing or invalid boundary {boundary!r}; "
+                f"must be one of {sorted(BOUNDARY_VALUES)}"
+            )
 
     missing_roles = required_roles - seen_roles
     for role in sorted(missing_roles):
         errors.append(f"state/STATE_MANIFEST.yaml missing at least one file with role '{role}'")
+
+    return errors
+
+
+def _audit_log_has_entries(text: str, content_header: str) -> bool:
+    """Return True if an append-only audit log section contains real entries."""
+    section = text.split(content_header, 1)[1] if content_header in text else text
+    entry_markers = ("- **Date:**", "- **Activity ID:**", "- **Timestamp:**")
+    has_placeholder = "None yet." in section
+    has_entry = any(marker in section for marker in entry_markers)
+    return has_entry or not has_placeholder
+
+
+def check_template_boundary(yaml: object, warnings: list[str]) -> list[str]:
+    """Warn when instance-boundary files contain learner data in template mode."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    mode_data = _load_yaml(mode_path, yaml)
+    if mode_data.get("mode") != "template":
+        return errors
+
+    manifest_path = ROOT / "state" / "STATE_MANIFEST.yaml"
+    manifest = _load_yaml(manifest_path, yaml)
+    files = manifest.get("files") or {}
+    if not isinstance(files, dict):
+        return errors
+
+    instance_checks: dict[str, object] = {
+        "state/STUDY_STATE.yaml": lambda d: (
+            (d.get("learner") or {}).get("name")
+            or d.get("active_target_id")
+            or d.get("targets")
+            or d.get("skills")
+            or d.get("session_history")
+        ),
+        "state/SKILL_MAP.yaml": lambda d: d.get("skills"),
+        "reviews/REVIEW_STATE.yaml": lambda d: d.get("review_items"),
+        "state/LEARNER_PROFILE.yaml": lambda d: (
+            (d.get("adaptation_state") or {}).get("methods_tried")
+            or (d.get("control") or {}).get("learner_overrides")
+            or (d.get("control") or {}).get("agent_recommendations_declined")
+        ),
+        "sources/SOURCE_STATE.yaml": lambda d: d.get("sources"),
+        "state/ACTIVITY_STATE.yaml": lambda d: (
+            (d.get("active_activity") or {}).get("id")
+            or d.get("recent_activities")
+        ),
+    }
+
+    log_headers = {
+        "state/EVIDENCE_LOG.md": "## Evidence items",
+        "sessions/SESSION_LOG.md": "## Sessions",
+        "reviews/REVIEW_OVERRIDES.md": "## Overrides",
+        "activities/ACTIVITY_LOG.md": "## Activities",
+    }
+
+    for rel, meta in files.items():
+        if meta.get("boundary") != "instance":
+            continue
+        if rel in instance_checks:
+            path = ROOT / rel
+            if not path.is_file():
+                continue
+            data = _load_yaml(path, yaml)
+            if instance_checks[rel](data):
+                warnings.append(
+                    f"Template boundary violation: {rel} contains learner-specific data. "
+                    "Run create_instance.py to personalize a copy instead."
+                )
+        elif rel in log_headers:
+            path = ROOT / rel
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8")
+            if _audit_log_has_entries(text, log_headers[rel]):
+                warnings.append(
+                    f"Template boundary violation: {rel} contains learner-specific data. "
+                    "Run create_instance.py to personalize a copy instead."
+                )
 
     return errors
 
@@ -1933,6 +2024,7 @@ def main() -> int:
         errors.extend(check_generated_freshness(warnings))
         errors.extend(check_source_state(yaml))
         errors.extend(check_learner_profile(yaml))
+        errors.extend(check_template_boundary(yaml, warnings))
         errors.extend(check_volatile_target_freshness(yaml, warnings))
         errors.extend(check_question_quality_records(yaml))
         errors.extend(check_stale_practice_overrides(yaml))

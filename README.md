@@ -132,6 +132,26 @@ The agent will read `AGENTS.md`, inspect the current state, initialize the learn
 
 If you are editing `StudyDD_Template` itself, you are maintaining the mold. Keep the repo generic and public-safe. Do not seed learner state, active targets, or private data.
 
+## Template vs Instance
+
+This repo is the public `StudyDD_Template`. It must stay generic and unpersonalized. Personalization should happen only in a separate learner instance created from the template.
+
+Use `scripts/create_instance.py` to cast the mold into a new learner repo:
+
+```bash
+python3 scripts/create_instance.py \
+  --target ../Study_MyTarget \
+  --remote https://github.com/example/Study_MyTarget.git
+```
+
+`state/STATE_MANIFEST.yaml` marks every tracked file with a `boundary`:
+
+- `template` — generic infrastructure that must stay identical in every clone.
+- `instance` — learner-specific state that must remain empty in the template.
+- `generated` — derived context/index produced automatically by scripts.
+
+If you are unsure whether a file is safe to edit in the template, check its `boundary` in `state/STATE_MANIFEST.yaml` and read `protocols/TEMPLATE_INSTANCE_BOUNDARY.md`.
+
 ## What The Agent Maintains
 
 - `state/STUDY_STATUS.md` — short human-readable snapshot
@@ -251,6 +271,7 @@ python3 scripts/test_learning_activities.py
 python3 scripts/test_next_activity_decision.py
 python3 scripts/test_source_freshness.py
 python3 scripts/test_record_source_check.py
+python3 scripts/test_template_instance_boundary.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke
