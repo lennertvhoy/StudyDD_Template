@@ -4,6 +4,8 @@
 
 This is a **session-boundary** operation. Full compaction and full validation are appropriate here.
 
+If a fast-drill checkpoint (`state/ACTIVE_DRILL_SESSION.md`) is active, reconcile it first with `scripts/fast_drill_mode.py end --apply` before running `compact_state.py` and `check_studydd.py`.
+
 ## Must Do
 
 1. **Summarize what was covered.**

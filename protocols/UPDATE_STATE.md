@@ -4,6 +4,8 @@
 
 This is a **fast-path** operation. Write minimal state and validate only the touched IDs.
 
+In **fast drill mode**, defer canonical state updates until session end unless a major state transition occurs. The active checkpoint (`state/ACTIVE_DRILL_SESSION.md`) is the temporary source of truth during the drill. Reconcile with `scripts/fast_drill_mode.py end --apply` at session end.
+
 ## Before Writing
 
 1. Propose the update to the learner.

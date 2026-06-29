@@ -14,6 +14,12 @@ budgets:
     max_raw_log_files_loaded: 0
     max_state_files_written: 4
     require_full_validation: false
+  fast_drill:
+    # During an active drill the agent only appends to the checkpoint.
+    max_files_loaded: 8
+    max_raw_log_files_loaded: 0
+    max_state_files_written: 1
+    require_full_validation: false
   session_boundary:
     max_files_loaded: 20
     max_raw_log_files_loaded: 2
@@ -32,6 +38,10 @@ rules:
     mode: fast_path
   ordinary_schedule_review:
     mode: fast_path
+  fast_drill_ask_question:
+    mode: fast_drill
+  fast_drill_grade_answer:
+    mode: fast_drill
   start_session:
     mode: session_boundary
   close_session:

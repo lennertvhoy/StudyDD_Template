@@ -5,5 +5,8 @@ __pycache__/
 .pytest_cache/
 .venv/
 
+# Fast-drill runtime checkpoint (reconciled into canonical state at session end)
+state/ACTIVE_DRILL_SESSION.md
+
 # Worktree isolation directories
 .worktrees/
