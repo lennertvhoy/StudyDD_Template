@@ -349,7 +349,7 @@ Supported activity types include:
 - writing or essay review
 - upload and review
 
-Use `scripts/plan_learning_activity.py` to recommend an activity and `scripts/record_activity_result.py` to record evidence submitted outside the chat. Readiness only changes when evidence demonstrates competence; completion and effort are acknowledged but do not inflate readiness.
+Use `scripts/plan_learning_activity.py` to recommend an activity and `scripts/record_activity_result.py` to record evidence submitted outside the chat. When the completed activity is a `recent_info_check`, pass `--source-id` and the relevant source metadata flags (`--source-outcome`, `--source-summary`, `--source-authority`, `--source-volatility`, `--source-checked-at`, `--source-expires-at`, `--source-usable-for-questions` / `--source-not-usable-for-questions`) so `record_activity_result.py` can write the source freshness state automatically. Readiness only changes when evidence demonstrates competence; completion and effort are acknowledged but do not inflate readiness.
 
 See `protocols/LEARNING_ACTIVITY_POLICY.md`, `protocols/EVIDENCE_INTAKE_POLICY.md`, `protocols/EXTERNAL_RESOURCE_POLICY.md`, `protocols/VOICE_NOTE_REVIEW_POLICY.md`, `protocols/INTERVIEW_PREP_POLICY.md`, and `protocols/PRESENTATION_PREP_POLICY.md`.
 
@@ -425,7 +425,7 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
 7. Plan the next learning activity with `scripts/plan_learning_activity.py` or its logic. A question is the default, but the best move may be a review, paper exercise, lab, interview rehearsal, presentation rehearsal, voice note, external resource, or upload-and-review task. Explain why and end with `You can accept, modify, or override this.`
 8. Confirm the active focus and next activity with the learner.
-9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item. When a source check is completed, record the result with `scripts/record_source_check.py`.
+9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item. When a `recent_info_check` activity is completed, pass the source metadata to `scripts/record_activity_result.py` via `--source-id` and the related flags; it records the source check automatically. Only invoke `scripts/record_source_check.py` directly when you are not also recording an activity result.
 10. If the activity is a question, ask it; otherwise assign the activity and state expected evidence.
 11. Receive the answer or submitted evidence.
 12. Grade against the answer key or rubric, guided by the active study skill. Stay on the fast path.

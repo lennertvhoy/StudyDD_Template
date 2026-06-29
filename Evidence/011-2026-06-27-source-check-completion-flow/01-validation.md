@@ -26,7 +26,7 @@ Results:
 - `scripts/test_record_source_check.py` — 13/13 tests passed
 - `scripts/test_source_freshness.py` — all tests passed
 - `scripts/test_next_activity_decision.py` — all tests passed
-- `scripts/test_learning_activities.py` — all tests passed
+- `scripts/test_learning_activities.py` — all tests passed, including the new `test_record_recent_info_check_updates_source_state`
 - `scripts/test_context_pack.py` — all tests passed
 - `scripts/test_question_quality.py` — all tests passed
 - `scripts/test_instantiate_template.py` — passed

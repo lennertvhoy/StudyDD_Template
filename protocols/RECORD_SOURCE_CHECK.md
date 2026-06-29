@@ -1,6 +1,6 @@
 # RECORD_SOURCE_CHECK — Recording Completed Source Freshness Checks
 
-> **Agent rule.** When a `recent_info_check` activity is completed, the checked source metadata must be written back to `sources/SOURCE_STATE.yaml` through the canonical writer `scripts/record_source_check.py`.
+> **Agent rule.** When a `recent_info_check` activity is completed, the checked source metadata must be written back to `sources/SOURCE_STATE.yaml`. Prefer to pass the source metadata to `scripts/record_activity_result.py` when recording the activity result; it calls the canonical writer `scripts/record_source_check.py` automatically. Only invoke `scripts/record_source_check.py` directly when you are not also recording an activity result.
 
 ## When to run this script
 
@@ -11,6 +11,12 @@ Run `scripts/record_source_check.py` immediately after a learner or agent comple
 - The agent verified a cached source against an authoritative reference.
 
 Do not run the script before the check is complete, and do not record a check from memory or assumption.
+
+## Automatic handoff from activity results
+
+When a completed activity is a `recent_info_check`, `scripts/record_activity_result.py` can write the source check automatically. Supply `--source-id` and any desired source metadata flags (`--source-outcome`, `--source-summary`, `--source-authority`, `--source-volatility`, `--source-checked-at`, `--source-expires-at`, `--source-usable-for-questions` / `--source-not-usable-for-questions`). The activity result is recorded first; then `record_source_check(...)` is called with the activity's `target_id`, `activity_id`, and `evidence_id`. If the source-check call fails, the activity result is kept and a warning is printed.
+
+If `--source-id` is not provided for a `recent_info_check`, `record_activity_result.py` behaves exactly as before and does not touch `sources/SOURCE_STATE.yaml`.
 
 ## Usage
 
