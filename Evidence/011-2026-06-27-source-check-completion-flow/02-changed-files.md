@@ -1,7 +1,7 @@
 # Evidence 011 — Changed Files
 
 ## Created
-- `scripts/record_source_check.py` — canonical writer for completed source-check metadata into `sources/SOURCE_STATE.yaml`.
+- `scripts/record_source_check.py` — canonical writer for completed source-check metadata into `sources/SOURCE_STATE.yaml`; refactored to expose a reusable `record_source_check(...)` function.
 - `scripts/test_record_source_check.py` — deterministic tests for the new script and the end-to-end freshness loop.
 - `protocols/RECORD_SOURCE_CHECK.md` — usage, privacy, and learner-override guidance.
 
@@ -16,5 +16,7 @@
 - `AGENTS.md` — added `record_source_check.py` to the core architecture list and updated source-freshness agent rules/session flow.
 - `README.md` — mentioned the source-check completion workflow and new test command.
 - `NEXT_ACTIONS.md` — marked the source-check completion flow complete and points to the next slice.
+- `scripts/record_activity_result.py` — added optional `--source-*` flags and automatic handoff to `record_source_check(...)` when a `recent_info_check` activity is completed.
+- `scripts/test_learning_activities.py` — added `test_record_recent_info_check_updates_source_state()` covering the automatic handoff.
 - `.github/workflows/validate.yml` — added `test_record_source_check.py` and the `--demo` smoke check.
 - `docs/superpowers/plans/2026-06-24-source-grounded-question-quality-plan.md` — updated stale `VOLATILITY_MAX_AGE_DAYS` literal to match canonical values.
