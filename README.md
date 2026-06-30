@@ -10,7 +10,7 @@ Your progress is never hidden inside an app database or chat history.
 
 ### Source-grounded question quality
 
-StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source freshness is tracked in `sources/SOURCE_STATE.yaml`. When freshness is missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the next-activity router chooses a `recent_info_check` instead of an authoritative question; fresh source state suppresses repeated source-check recommendations. Due reviews still take priority.
+StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source freshness is tracked in `sources/SOURCE_STATE.yaml`. When freshness is missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the next-activity router chooses a `recent_info_check` instead of an authoritative question; fresh source state suppresses repeated source-check recommendations. When a check is completed, `scripts/record_source_check.py` writes the fresh metadata back to `sources/SOURCE_STATE.yaml`. Due reviews still take priority.
 
 ### Learning activities and evidence intake
 
@@ -132,6 +132,26 @@ The agent will read `AGENTS.md`, inspect the current state, initialize the learn
 
 If you are editing `StudyDD_Template` itself, you are maintaining the mold. Keep the repo generic and public-safe. Do not seed learner state, active targets, or private data.
 
+## Template vs Instance
+
+This repo is the public `StudyDD_Template`. It must stay generic and unpersonalized. Personalization should happen only in a separate learner instance created from the template.
+
+Use `scripts/create_instance.py` to cast the mold into a new learner repo:
+
+```bash
+python3 scripts/create_instance.py \
+  --target ../Study_MyTarget \
+  --remote https://github.com/example/Study_MyTarget.git
+```
+
+`state/STATE_MANIFEST.yaml` marks every tracked file with a `boundary`:
+
+- `template` — generic infrastructure that must stay identical in every clone.
+- `instance` — learner-specific state that must remain empty in the template.
+- `generated` — derived context/index produced automatically by scripts.
+
+If you are unsure whether a file is safe to edit in the template, check its `boundary` in `state/STATE_MANIFEST.yaml` and read `protocols/TEMPLATE_INSTANCE_BOUNDARY.md`.
+
 ## What The Agent Maintains
 
 - `state/STUDY_STATUS.md` — short human-readable snapshot
@@ -251,6 +271,8 @@ python3 scripts/test_validate_touched_state.py
 python3 scripts/test_learning_activities.py
 python3 scripts/test_next_activity_decision.py
 python3 scripts/test_source_freshness.py
+python3 scripts/test_record_source_check.py
+python3 scripts/test_template_instance_boundary.py
 ```
 
 GitHub Actions runs the validator, instantiation smoke test, study-loop smoke

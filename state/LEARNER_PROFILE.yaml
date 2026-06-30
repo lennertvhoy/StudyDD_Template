@@ -15,6 +15,12 @@ learner_preferences:
   session_length_preference_minutes: null
   low_energy_mode_preference: ""
   source_refresh_preference: ""
+  # Fast Drill Mode: use a lightweight append-only checkpoint during question
+  # drills instead of rewriting canonical state after every answer.
+  fast_drill_mode: true
+  # When true, the agent may apply drill reconciliation without a second
+  # confirmation. When false, the agent must show the proposal and wait.
+  auto_state_update_during_drills: true
 
 adaptation_state:
   methods_tried: []
