@@ -37,6 +37,9 @@ This public template must stay generic. Do not seed a real learner, target, exam
 5. If the user asks to study, initialize a learner, answer a question, update readiness, or record evidence, first confirm the repo is a learner instance. If it is the template, stop and explain the instantiation workflow from `protocols/INSTANTIATE_TEMPLATE.md`.
 6. If the user asks to create a new StudyDD repo, use `protocols/INSTANTIATE_TEMPLATE.md` to clone/copy → remove `.git` → `git init` → new remote → first commit → then initialize learner state.
 7. Never apply learner-state changes to the template repo.
+8. Check `state/STATE_MANIFEST.yaml` for a file's `boundary` before writing state. If `boundary: instance` and mode is `template`, stop and use `scripts/create_instance.py`.
+
+See `protocols/TEMPLATE_INSTANCE_BOUNDARY.md` for the full boundary protocol.
 
 ## What the Agent Does
 
@@ -102,40 +105,41 @@ Before every StudyDD session, read:
 22. `protocols/GIT_PROVENANCE.md`
 23. `protocols/PRIVACY_REVIEW.md`
 24. `protocols/WRONG_REPO_RECOVERY.md`
-25. `protocols/SPACED_REPETITION_POLICY.md`
-26. `protocols/TUTOR_PROTOCOL.md`
-27. `protocols/SESSION_TEMPLATE.md`
-28. `protocols/START_SESSION.md`
-29. `protocols/SELECT_NEXT_ACTION.md`
-30. `protocols/ASK_QUESTION.md`
-31. `protocols/GRADE_ANSWER.md`
-32. `protocols/UPDATE_STATE.md`
-33. `protocols/SCHEDULE_REVIEW.md`
-34. `protocols/CLOSE_SESSION.md`
-35. `protocols/STATE_LOADING_POLICY.md`
-36. `protocols/PERFORMANCE_POLICY.md`
-37. `protocols/STATE_WRITE_POLICY.md`
-38. `protocols/SOURCE_TRUST.md`
-39. `protocols/READINESS_POLICY.md`
-40. `protocols/QUESTION_QUALITY.md`
-41. `protocols/MISTAKE_TAXONOMY.md`
-42. `protocols/LOW_ENERGY_MODE.md`
-43. `protocols/SOURCE_FRESHNESS_POLICY.md`
-44. `protocols/SOURCE_REFRESH_POLICY.md`
-45. `protocols/QUESTION_QUALITY_GOVERNOR.md`
-46. `protocols/LEARNER_ADAPTATION_POLICY.md`
-47. `protocols/LEARNER_FEEDBACK_POLICY.md`
-48. `state/LEARNER_PROFILE.yaml`
-49. `state/ACTIVITY_STATE.yaml`
-50. `activities/ACTIVITY_TEMPLATES.yaml`
-51. `activities/ACTIVITY_LOG.md`
-52. `protocols/LEARNING_ACTIVITY_POLICY.md`
-53. `protocols/EVIDENCE_INTAKE_POLICY.md`
-54. `protocols/EXTERNAL_RESOURCE_POLICY.md`
-55. `protocols/VOICE_NOTE_REVIEW_POLICY.md`
-56. `protocols/INTERVIEW_PREP_POLICY.md`
-57. `protocols/PRESENTATION_PREP_POLICY.md`
-58. `sources/SOURCE_STATE.yaml`
+25. `protocols/TEMPLATE_INSTANCE_BOUNDARY.md`
+26. `protocols/SPACED_REPETITION_POLICY.md`
+27. `protocols/TUTOR_PROTOCOL.md`
+28. `protocols/SESSION_TEMPLATE.md`
+29. `protocols/START_SESSION.md`
+30. `protocols/SELECT_NEXT_ACTION.md`
+31. `protocols/ASK_QUESTION.md`
+32. `protocols/GRADE_ANSWER.md`
+33. `protocols/UPDATE_STATE.md`
+34. `protocols/SCHEDULE_REVIEW.md`
+35. `protocols/CLOSE_SESSION.md`
+36. `protocols/STATE_LOADING_POLICY.md`
+37. `protocols/PERFORMANCE_POLICY.md`
+38. `protocols/STATE_WRITE_POLICY.md`
+39. `protocols/SOURCE_TRUST.md`
+40. `protocols/READINESS_POLICY.md`
+41. `protocols/QUESTION_QUALITY.md`
+42. `protocols/MISTAKE_TAXONOMY.md`
+43. `protocols/LOW_ENERGY_MODE.md`
+44. `protocols/SOURCE_FRESHNESS_POLICY.md`
+45. `protocols/SOURCE_REFRESH_POLICY.md`
+46. `protocols/QUESTION_QUALITY_GOVERNOR.md`
+47. `protocols/LEARNER_ADAPTATION_POLICY.md`
+48. `protocols/LEARNER_FEEDBACK_POLICY.md`
+49. `state/LEARNER_PROFILE.yaml`
+50. `state/ACTIVITY_STATE.yaml`
+51. `activities/ACTIVITY_TEMPLATES.yaml`
+52. `activities/ACTIVITY_LOG.md`
+53. `protocols/LEARNING_ACTIVITY_POLICY.md`
+54. `protocols/EVIDENCE_INTAKE_POLICY.md`
+55. `protocols/EXTERNAL_RESOURCE_POLICY.md`
+56. `protocols/VOICE_NOTE_REVIEW_POLICY.md`
+57. `protocols/INTERVIEW_PREP_POLICY.md`
+58. `protocols/PRESENTATION_PREP_POLICY.md`
+59. `sources/SOURCE_STATE.yaml`
 
 Open `state/EVIDENCE_LOG.md`, `sessions/SESSION_LOG.md`, and `reviews/REVIEW_OVERRIDES.md` only when the context pack or validator says it is necessary, or when grading/auditing requires exact historical text. Only then propose or execute a study action.
 
@@ -158,6 +162,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/select_next_study_action.py` = time-aware review-first recommendation
 - `scripts/plan_learning_activity.py` = recommends the next learning activity
 - `scripts/record_activity_result.py` = records evidence from completed activities
+- `scripts/record_source_check.py` = canonical writer for completed source-check metadata
 - `scripts/analyze_voice_note.py` = dependency-free transcript analysis
 - `scripts/analyze_presentation_rehearsal.py` = dependency-free rehearsal analysis
 - `scripts/compact_state.py` = compacts append-only logs into derived summaries/indexes
@@ -167,7 +172,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `scripts/run_demo_replay.py` = deterministic public demo of one full learning loop
 - `scripts/test_demo_replay.py` = asserts the demo replay produces expected artifacts
 - `state/STUDYDD_TEMPLATE_VERSION.yaml` = template version and upgrade origin
-- `state/STATE_MANIFEST.yaml` = declares file roles (canonical, audit, derived, protected)
+- `state/STATE_MANIFEST.yaml` = declares file roles (canonical, audit, derived, protected) and the template/instance/generated boundary for every tracked file
 - `state/PERFORMANCE_BUDGET.yaml` = numeric loading/writing limits per execution mode
 - `state/CURRENT_CONTEXT.md` = compact human/agent-readable learner summary
 - `state/EVIDENCE_INDEX.yaml` = machine-readable evidence lookup
@@ -265,7 +270,7 @@ Do not expose raw tool outputs, internal reasoning, or meta-commentary to the le
 
 ### 12. Do not generate authoritative volatile questions from memory
 
-Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`. The next-activity router keys `recent_info_check` off verified source freshness state, not only the recent activity type; fresh source state suppresses repeated source-check recommendations.
+Do not generate authoritative questions on volatile topics from memory. Run the freshness gate (`scripts/check_source_freshness.py`) or use cached fresh source metadata from `sources/SOURCE_STATE.yaml`. The next-activity router keys `recent_info_check` off verified source freshness state, not only the recent activity type; fresh source state suppresses repeated source-check recommendations. When a completed source check produces fresh metadata, record it via `scripts/record_source_check.py` so the freshness signal persists.
 
 ## Cross-Platform and Dependency Consent Rules
 
@@ -348,7 +353,7 @@ Supported activity types include:
 - writing or essay review
 - upload and review
 
-Use `scripts/plan_learning_activity.py` to recommend an activity and `scripts/record_activity_result.py` to record evidence submitted outside the chat. Readiness only changes when evidence demonstrates competence; completion and effort are acknowledged but do not inflate readiness.
+Use `scripts/plan_learning_activity.py` to recommend an activity and `scripts/record_activity_result.py` to record evidence submitted outside the chat. When the completed activity is a `recent_info_check`, pass `--source-id` and the relevant source metadata flags (`--source-outcome`, `--source-summary`, `--source-authority`, `--source-volatility`, `--source-checked-at`, `--source-expires-at`, `--source-usable-for-questions` / `--source-not-usable-for-questions`) so `record_activity_result.py` can write the source freshness state automatically. Readiness only changes when evidence demonstrates competence; completion and effort are acknowledged but do not inflate readiness.
 
 See `protocols/LEARNING_ACTIVITY_POLICY.md`, `protocols/EVIDENCE_INTAKE_POLICY.md`, `protocols/EXTERNAL_RESOURCE_POLICY.md`, `protocols/VOICE_NOTE_REVIEW_POLICY.md`, `protocols/INTERVIEW_PREP_POLICY.md`, and `protocols/PRESENTATION_PREP_POLICY.md`.
 
@@ -424,7 +429,7 @@ See `protocols/MISTAKE_TAXONOMY.md`.
 6. Confirm session mode with the learner (normal, deep, low-energy, recovery).
 7. Plan the next learning activity with `scripts/plan_learning_activity.py` or its logic. A question is the default, but the best move may be a review, paper exercise, lab, interview rehearsal, presentation rehearsal, voice note, external resource, or upload-and-review task. Explain why and end with `You can accept, modify, or override this.`
 8. Confirm the active focus and next activity with the learner.
-9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item.
+9. Before generating a volatile or live question, run `scripts/check_source_freshness.py` for the active target or inspect `sources/SOURCE_STATE.yaml`. If no fresh usable source exists, ask permission to refresh or choose a stable review item. When a `recent_info_check` activity is completed, pass the source metadata to `scripts/record_activity_result.py` via `--source-id` and the related flags; it records the source check automatically. Only invoke `scripts/record_source_check.py` directly when you are not also recording an activity result.
 10. If the activity is a question, ask it; otherwise assign the activity and state expected evidence.
 11. Receive the answer or submitted evidence.
 12. Grade against the answer key or rubric, guided by the active study skill. Stay on the fast path.

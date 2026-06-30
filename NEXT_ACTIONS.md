@@ -4,7 +4,7 @@
 
 ## Current next action
 
-1. Build the source-check completion flow (`feat/source-check-completion-flow`): when a learner completes a `recent_info_check`, provide a safe script/protocol path to record the checked source metadata into `sources/SOURCE_STATE.yaml`.
+1. Build the agent-driven study loop (`feat/agent-session-study-loop`): implement a single-entry wrapper that runs the full StudyDD session lifecycle (verify, read context, choose activity, ask/grade/update, validate, hand off) so agents can start a session with one command.
 
 ## Pending actions
 
@@ -13,6 +13,8 @@
 
 ## Recently completed
 
+- 2026-06-29: Closed the source-check completion flow (`feat/source-check-completion-flow`): refactored `scripts/record_source_check.py` into a reusable `record_source_check(...)` function and wired `scripts/record_activity_result.py` to call it automatically for completed `recent_info_check` activities when `--source-id` is supplied.
+- 2026-06-27: Built the source-check completion flow (`feat/source-check-completion-flow`): added `scripts/record_source_check.py` and `protocols/RECORD_SOURCE_CHECK.md` so completed `recent_info_check` metadata is recorded deterministically in `sources/SOURCE_STATE.yaml` and suppresses repeated source-check recommendations.
 - 2026-06-27: Integrated source freshness state into next-activity decisions so `recent_info_check` keys off verified source freshness in `sources/SOURCE_STATE.yaml`, not only recent activity type.
 - 2026-06-27: Wired the shared next-activity recommendation and auditable `Rule: ...` reason into `scripts/build_context_pack.py`; added focused decision-rule tests.
 - 2026-06-27: Improved next-activity selection to recommend among exam-style question, spaced-repetition review, lab/practical exercise, diagram/visual explanation, and recent-info check.

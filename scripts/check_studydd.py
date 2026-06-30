@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from check_source_freshness import classify_source
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -122,6 +124,7 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/VOICE_NOTE_REVIEW_POLICY.md",
     "protocols/INTERVIEW_PREP_POLICY.md",
     "protocols/PRESENTATION_PREP_POLICY.md",
+    "protocols/RECORD_SOURCE_CHECK.md",
 ]
 
 REQUIRED_PROMPT_FILES = [
@@ -164,12 +167,14 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/test_learner_adaptation.py",
     "scripts/plan_learning_activity.py",
     "scripts/record_activity_result.py",
+    "scripts/record_source_check.py",
     "scripts/analyze_voice_note.py",
     "scripts/analyze_presentation_rehearsal.py",
     "scripts/test_learning_activities.py",
     "scripts/check_environment.py",
     "scripts/setup_studydd.py",
     "scripts/test_cross_platform_paths.py",
+    "scripts/test_template_instance_boundary.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -300,6 +305,14 @@ SOURCE_VOLATILITY_VALUES = {
     "live",
 }
 
+SOURCE_OUTCOMES = {
+    "fresh",
+    "stale",
+    "missing",
+    "unverified",
+    "unknown",
+}
+
 QUESTION_MODES = {
     "authoritative_current",
     "conceptual_practice",
@@ -308,14 +321,8 @@ QUESTION_MODES = {
     "remediation",
 }
 
-# Duplicated from scripts/check_source_freshness.py to keep this script self-contained.
-VOLATILITY_MAX_AGE_DAYS = {
-    "stable": 3650,
-    "slow_changing": 730,
-    "moderate": 90,
-    "volatile": 30,
-    "live": 1,
-}
+BOUNDARY_VALUES = {"template", "instance", "generated"}
+
 
 
 def check_files() -> list[str]:
@@ -1329,10 +1336,98 @@ def check_state_manifest(yaml: object) -> list[str]:
         rel_path = ROOT / rel
         if meta.get("load_default") and not rel_path.is_file():
             errors.append(f"state/STATE_MANIFEST.yaml '{rel}' is load_default but missing")
+        boundary = meta.get("boundary")
+        if boundary not in BOUNDARY_VALUES:
+            errors.append(
+                f"state/STATE_MANIFEST.yaml '{rel}' has missing or invalid boundary {boundary!r}; "
+                f"must be one of {sorted(BOUNDARY_VALUES)}"
+            )
 
     missing_roles = required_roles - seen_roles
     for role in sorted(missing_roles):
         errors.append(f"state/STATE_MANIFEST.yaml missing at least one file with role '{role}'")
+
+    return errors
+
+
+def _audit_log_has_entries(text: str, content_header: str) -> bool:
+    """Return True if an append-only audit log section contains real entries."""
+    section = text.split(content_header, 1)[1] if content_header in text else text
+    entry_markers = ("- **Date:**", "- **Activity ID:**", "- **Timestamp:**")
+    has_placeholder = "None yet." in section
+    has_entry = any(marker in section for marker in entry_markers)
+    return has_entry or not has_placeholder
+
+
+def check_template_boundary(yaml: object, warnings: list[str]) -> list[str]:
+    """Warn when instance-boundary files contain learner data in template mode."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    mode_data = _load_yaml(mode_path, yaml)
+    if mode_data.get("mode") != "template":
+        return errors
+
+    manifest_path = ROOT / "state" / "STATE_MANIFEST.yaml"
+    manifest = _load_yaml(manifest_path, yaml)
+    files = manifest.get("files") or {}
+    if not isinstance(files, dict):
+        return errors
+
+    instance_checks: dict[str, object] = {
+        "state/STUDY_STATE.yaml": lambda d: (
+            (d.get("learner") or {}).get("name")
+            or d.get("active_target_id")
+            or d.get("targets")
+            or d.get("skills")
+            or d.get("session_history")
+        ),
+        "state/SKILL_MAP.yaml": lambda d: d.get("skills"),
+        "reviews/REVIEW_STATE.yaml": lambda d: d.get("review_items"),
+        "state/LEARNER_PROFILE.yaml": lambda d: (
+            (d.get("adaptation_state") or {}).get("methods_tried")
+            or (d.get("control") or {}).get("learner_overrides")
+            or (d.get("control") or {}).get("agent_recommendations_declined")
+        ),
+        "sources/SOURCE_STATE.yaml": lambda d: d.get("sources"),
+        "state/ACTIVITY_STATE.yaml": lambda d: (
+            (d.get("active_activity") or {}).get("id")
+            or d.get("recent_activities")
+        ),
+    }
+
+    log_headers = {
+        "state/EVIDENCE_LOG.md": "## Evidence items",
+        "sessions/SESSION_LOG.md": "## Sessions",
+        "reviews/REVIEW_OVERRIDES.md": "## Overrides",
+        "activities/ACTIVITY_LOG.md": "## Activities",
+    }
+
+    for rel, meta in files.items():
+        if meta.get("boundary") != "instance":
+            continue
+        if rel in instance_checks:
+            path = ROOT / rel
+            if not path.is_file():
+                continue
+            data = _load_yaml(path, yaml)
+            if instance_checks[rel](data):
+                warnings.append(
+                    f"Template boundary violation: {rel} contains learner-specific data. "
+                    "Run create_instance.py to personalize a copy instead."
+                )
+        elif rel in log_headers:
+            path = ROOT / rel
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8")
+            if _audit_log_has_entries(text, log_headers[rel]):
+                warnings.append(
+                    f"Template boundary violation: {rel} contains learner-specific data. "
+                    "Run create_instance.py to personalize a copy instead."
+                )
 
     return errors
 
@@ -1540,48 +1635,6 @@ def check_option_position_randomization() -> list[str]:
     return errors
 
 
-def _classify_source_freshness(
-    source: dict, now: datetime, target_volatility: str
-) -> tuple[str, str | None]:
-    """Return (freshness_status, reason) for a single source entry.
-
-    Mirrors the logic in scripts/check_source_freshness.py so the validator stays
-    self-contained. Statuses: fresh, stale, unverified, missing_timestamp.
-    """
-    if source.get("usable_for_questions") is False:
-        return "unverified", "usable_for_questions is false"
-
-    expires_at = source.get("expires_at")
-    if expires_at:
-        try:
-            expiry = datetime.fromisoformat(str(expires_at))
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-            if now <= expiry:
-                return "fresh", None
-            return "stale", f"expired at {expires_at}"
-        except Exception as exc:
-            return "missing_timestamp", f"invalid expires_at: {exc}"
-
-    last_checked_at = source.get("last_checked_at")
-    if last_checked_at:
-        try:
-            checked = datetime.fromisoformat(str(last_checked_at))
-            if checked.tzinfo is None:
-                checked = checked.replace(tzinfo=timezone.utc)
-        except Exception as exc:
-            return "missing_timestamp", f"invalid last_checked_at: {exc}"
-
-        volatility = source.get("volatility") or target_volatility
-        max_age_days = VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
-        expiry = checked + timedelta(days=max_age_days)
-        if now <= expiry:
-            return "fresh", None
-        return "stale", f"last checked {last_checked_at}; volatility {volatility} max age {max_age_days} days"
-
-    return "missing_timestamp", "no expires_at or last_checked_at"
-
-
 def _discover_question_files() -> list[Path]:
     """Return all question YAML files under targets/ and EXAMPLES/."""
     found: list[Path] = []
@@ -1655,6 +1708,28 @@ def check_source_state(yaml: object) -> list[str]:
         usable = source.get("usable_for_questions", True)
         if not isinstance(usable, bool):
             errors.append(f"Source '{sid}' usable_for_questions must be a boolean")
+
+        last_check = source.get("last_check")
+        if last_check is not None:
+            if not isinstance(last_check, dict):
+                errors.append(f"Source '{sid}' last_check must be a mapping")
+            else:
+                outcome = last_check.get("outcome")
+                if outcome is not None and outcome not in SOURCE_OUTCOMES:
+                    errors.append(
+                        f"Source '{sid}' last_check.outcome {outcome!r} is invalid; "
+                        f"must be one of {sorted(SOURCE_OUTCOMES)}"
+                    )
+                checked_at = last_check.get("checked_at")
+                if checked_at is not None and _parse_iso_timestamp(checked_at) is None:
+                    errors.append(
+                        f"Source '{sid}' last_check.checked_at is not a valid timezone-aware ISO 8601 timestamp"
+                    )
+                checked_by = last_check.get("checked_by")
+                if checked_by is not None and checked_by not in ("agent", "learner"):
+                    errors.append(
+                        f"Source '{sid}' last_check.checked_by must be 'agent' or 'learner'"
+                    )
 
     return errors
 
@@ -1745,7 +1820,7 @@ def check_volatile_target_freshness(yaml: object, warnings: list[str]) -> list[s
                 continue
             if source.get("usable_for_questions") is False:
                 continue
-            status, _ = _classify_source_freshness(source, now, volatility)
+            status, _ = classify_source(source, now, volatility)
             if status == "fresh":
                 has_fresh_authoritative = True
                 break
@@ -1859,7 +1934,7 @@ def check_question_quality_records(yaml: object) -> list[str]:
                     if source is None:
                         # Unknown source_id is already reported above.
                         continue
-                    status, reason = _classify_source_freshness(source, now, volatility)
+                    status, reason = classify_source(source, now, volatility)
                     if status != "fresh":
                         detail = f" ({reason})" if reason else ""
                         errors.append(
@@ -1960,6 +2035,7 @@ def main() -> int:
         errors.extend(check_generated_freshness(warnings))
         errors.extend(check_source_state(yaml))
         errors.extend(check_learner_profile(yaml))
+        errors.extend(check_template_boundary(yaml, warnings))
         errors.extend(check_volatile_target_freshness(yaml, warnings))
         errors.extend(check_question_quality_records(yaml))
         errors.extend(check_stale_practice_overrides(yaml))
