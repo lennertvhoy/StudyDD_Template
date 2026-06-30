@@ -197,6 +197,7 @@ Readiness is earned through demonstrated answers, not through source coverage or
 ## Examples
 
 - `EXAMPLES/ai-103-example/` — reference certification study state.
+- `EXAMPLES/ms-102-example/` — reference certification study state.
 
 Examples show how maintained state can look after sessions. They are not the root template's default learner or target.
 

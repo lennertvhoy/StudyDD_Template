@@ -1,0 +1,15 @@
+---
+id: "ms-102"
+title: "Microsoft MS-102"
+type: "certification"
+exam_or_goal: "Microsoft MS-102 certification target; verify the current Microsoft Learn credential name before active study."
+deadline: "2026-07-22"
+success_criteria:
+  - "Answer mixed Microsoft-style objective questions with evidence-backed confidence."
+  - "Resolve weak areas in security posture, endpoint management, Microsoft Purview compliance, service health, and reporting."
+trusted_sources:
+  - "S-MS102-001"
+  - "S-MS102-002"
+readiness_policy:
+  conservative: true
+  confirmed_requires_varied_evidence: true

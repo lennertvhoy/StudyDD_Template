@@ -1,0 +1,134 @@
+---
+learner:
+  name: "Alex"
+  target: "Microsoft MS-102 certification target"
+  current_context: "Preparing for exam; 4 weeks out"
+  preferred_language: "English"
+  preferred_tutoring_style: "Exam-style drills with short explanations"
+
+active_target_id: "ms-102"
+
+targets:
+  - id: "ms-102"
+    path: "targets/ms-102/TARGET.yaml"
+    title: "Microsoft MS-102"
+    status: "active"
+
+study_target:
+  title: "Microsoft MS-102"
+  exam_or_goal: "Microsoft MS-102 certification target; verify the current Microsoft Learn credential name before active study."
+  deadline: "2026-07-22"
+  current_readiness_estimate: "35%"
+  readiness_confidence: "Medium"
+  risk_level: "Moderate"
+
+skills:
+  - id: "ms102-tenant-admin"
+    label: "Microsoft 365 tenant administration"
+    status: "confirmed"
+    readiness: 80
+    confidence: "high"
+    evidence:
+      - "E-20260621-001"
+      - "E-20260623-002"
+    next_validation_question: "Design a tenant administration plan with identity, device, and compliance controls."
+
+  - id: "ms102-identity-access"
+    label: "Identity and access administration"
+    status: "confirmed"
+    readiness: 75
+    confidence: "medium"
+    evidence:
+      - "E-20260620-001"
+    next_validation_question: "Configure conditional access for a Microsoft 365 tenant scenario."
+
+  - id: "ms102-security-posture"
+    label: "Microsoft 365 security posture"
+    status: "weak"
+    readiness: 35
+    confidence: "low"
+    evidence:
+      - "E-20260622-001"
+    next_validation_question: "Compare custom security alerts to admin center reporting flows."
+
+  - id: "ms102-purview-compliance"
+    label: "Microsoft Purview compliance"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Explain retention policy selection vs sensitivity labeling."
+
+  - id: "ms102-endpoint management"
+    label: "Endpoint and device management"
+    status: "weak"
+    readiness: 30
+    confidence: "low"
+    evidence:
+      - "E-20260622-002"
+    next_validation_question: "Trace a device compliance workflow with conditional access enforcement."
+
+  - id: "ms102-collaboration"
+    label: "Collaboration workload administration"
+    status: "practiced"
+    readiness: 55
+    confidence: "medium"
+    evidence:
+      - "E-20260621-002"
+    next_validation_question: "Apply Teams policy and sharing controls in a real scenario."
+
+  - id: "ms102-service-health"
+    label: "Service health and reporting"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Interpret Microsoft 365 service health and audit signals."
+
+active_focus:
+  current_topic: "Microsoft 365 security posture"
+  reason: "Consistently scored partial on security baseline and alert handling"
+  next_question: "Q-20260624-004"
+  blocking_confusions:
+    - "Difference between manual review and automated policy signals"
+
+review:
+  queue: "reviews/REVIEW_QUEUE.md"
+  due_count: 2
+
+sources:
+  index: "sources/SOURCE_INDEX.md"
+  trusted_source_policy: "Use Microsoft Learn certification and product documentation first; treat notes and summaries as secondary."
+
+session_history:
+  - date: "2026-06-23"
+    focus: "Microsoft 365 tenant administration exam drill"
+    result: "Strong on tenant configuration; weak on security baseline controls"
+    evidence_added:
+      - "E-20260623-002"
+    state_change: "ms102-tenant-admin readiness 70 -> 80"
+
+  - date: "2026-06-22"
+    focus: "security posture and endpoint management"
+    result: "Partial on security alert handling; incorrect on device enrollment policy"
+    evidence_added:
+      - "E-20260622-001"
+      - "E-20260622-002"
+    state_change: "ms102-security-posture and ms102-endpoint management marked weak"
+
+workflow:
+  happy_path_step: 5
+  stage: "active_tutoring"
+  next_action_ref: "NEXT_ACTIONS.md"
+
+rules:
+  no_readiness_inflation: true
+  one_question_at_a_time: true
+  evidence_required_for_mastery: true
+  corrections_must_update_state: true
+  public_template_must_stay_generic: true
+
+metadata:
+  template_version: "0.4.0"
+  last_updated: "2026-06-24"
+  updated_by: "coding-agent"

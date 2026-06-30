@@ -183,7 +183,15 @@ REQUIRED_AI103_EXAMPLE_FILES = [
     "EXAMPLES/ai-103-example/targets/ai-103/TARGET.yaml",
 ]
 
-REQUIRED_INTERVIEW_EXAMPLE_FILES = [
+REQUIRED_MS102_EXAMPLE_FILES = [
+    "EXAMPLES/ms-102-example/NEXT_ACTIONS.md",
+    "EXAMPLES/ms-102-example/state/STUDY_STATUS.md",
+    "EXAMPLES/ms-102-example/state/STUDY_STATE.yaml",
+    "EXAMPLES/ms-102-example/state/SKILL_MAP.yaml",
+    "EXAMPLES/ms-102-example/reviews/REVIEW_QUEUE.md",
+    "EXAMPLES/ms-102-example/sessions/SESSION_LOG.md",
+    "EXAMPLES/ms-102-example/sources/SOURCE_INDEX.md",
+    "EXAMPLES/ms-102-example/targets/ms-102/TARGET.yaml",
 ]
 
 REQUIRED_DEMO_EXAMPLE_FILES = [
@@ -221,7 +229,7 @@ REQUIRED_FILES = (
     + REQUIRED_PROMPT_FILES
     + REQUIRED_SCRIPT_FILES
     + REQUIRED_AI103_EXAMPLE_FILES
-    + REQUIRED_INTERVIEW_EXAMPLE_FILES
+    + REQUIRED_MS102_EXAMPLE_FILES
     + REQUIRED_DEMO_EXAMPLE_FILES
     + REQUIRED_GITHUB_TEMPLATES
 )
@@ -242,6 +250,9 @@ YAML_FILES = [
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
     "EXAMPLES/ai-103-example/targets/ai-103/TARGET.yaml",
+    "EXAMPLES/ms-102-example/state/STUDY_STATE.yaml",
+    "EXAMPLES/ms-102-example/state/SKILL_MAP.yaml",
+    "EXAMPLES/ms-102-example/targets/ms-102/TARGET.yaml",
     "EXAMPLES/demo_ai_search_exam/state/STUDY_STATE.yaml",
     "EXAMPLES/demo_ai_search_exam/state/SKILL_MAP.yaml",
     "EXAMPLES/demo_ai_search_exam/reviews/REVIEW_STATE.yaml",
