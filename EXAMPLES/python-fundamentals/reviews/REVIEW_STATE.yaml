@@ -1,0 +1,14 @@
+---
+items:
+  - id: "rev-py-concurrency-001"
+    target_id: "python-fundamentals"
+    skill_id: "py-concurrency"
+    evidence_id: "ev-py-20260624-001"
+    prompt: "Explain how the Python GIL affects threading for I/O vs CPU-bound work. Provide one concrete scenario where multithreading is beneficial despite the GIL."
+    due: "2026-07-03"
+    interval_days: 3
+    ease: 2.5
+    lapse_count: 1
+    last_result: "partial"
+    mistake_type: "correct-concept-weak-implementation"
+    review_mode: "recall"

@@ -1,0 +1,27 @@
+---
+id: Q-PY-002
+target_id: python-fundamentals
+skill_id: py-typing
+cognitive_level: apply
+difficulty: 2
+source_ids:
+  - S-PY-002
+volatility: stable
+public_prompt: >
+  Write a type-annotated Python function signature that takes a list of JSON strings
+  and returns a dictionary mapping each unique user ID to the count of their
+  appearances. Use typing constructs appropriately.
+private_answer_key: |
+  def count_user_appearances(records: list[str]) -> dict[str, int]:
+      ...
+  Use list[str] for input, dict[str, int] for output. Python 3.9+ built-in generics.
+rubric:
+  - Uses list[str] for input parameter
+  - Uses dict[str, int] for return type
+  - Correct implementation using defaultdict or Counter
+common_traps:
+  - Omitting return type annotation
+  - Using bare dict without subscripting
+  - Annotating raw JSON strings as Any instead of str
+last_used: 2026-06-24
+cooldown_days: 7

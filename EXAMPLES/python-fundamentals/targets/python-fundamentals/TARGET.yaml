@@ -1,0 +1,15 @@
+---
+id: "python-fundamentals"
+title: "Python Fundamentals"
+type: "skill"
+exam_or_goal: "Achieve practical proficiency in Python: idiomatic code, concurrency patterns, type safety, and testing."
+deadline: null
+success_criteria:
+  - "Write idiomatic Python using comprehensions, generators, context managers, and type hints."
+  - "Design and explain threaded vs async concurrency with real examples."
+  - "Write and maintain type-annotated code checked with mypy."
+  - "Apply OOP patterns appropriate to the problem."
+trusted_sources:
+  - "S-PY-001"
+  - "S-PY-002"
+study_skill: generic

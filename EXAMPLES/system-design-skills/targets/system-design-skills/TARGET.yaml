@@ -1,0 +1,14 @@
+---
+id: "system-design-skills"
+title: "System Design Fundamentals"
+type: "skill"
+exam_or_goal: "Build practical system design knowledge for distributed backend architecture."
+deadline: null
+success_criteria:
+  - "Explain trade-offs in data partitioning, replication, and consistency models."
+  - "Design a scalable read-heavy or write-heavy service with concrete component choices."
+  - "Identify bottlenecks and failure modes in a given architecture."
+trusted_sources:
+  - "S-SD-001"
+  - "S-SD-002"
+study_skill: generic

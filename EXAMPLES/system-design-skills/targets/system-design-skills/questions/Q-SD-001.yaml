@@ -1,0 +1,27 @@
+---
+id: Q-SD-001
+target_id: system-design-skills
+skill_id: sd-consistency
+cognitive_level: explain
+difficulty: 3
+source_ids:
+  - S-SD-001
+volatility: stable
+public_prompt: >
+  Explain the difference between eventual consistency and strong consistency.
+  Give one concrete scenario where you would choose each.
+private_answer_key: |
+  Strong consistency: all reads return the most recent write; requires coordination (quorum) and increases latency.
+  Eventual consistency: replicas converge over time without coordination; fast writes but stale reads possible.
+  Strong consistency scenario: financial transaction ledger, inventory count where double-spend must be prevented.
+  Eventual consistency scenario: social media like counter, CDN cache, or any idempotent update where staleness is acceptable.
+rubric:
+  - Distinguishes strong vs eventual consistency with coordination trade-off
+  - Provides a financial/inventory scenario for strong consistency
+  - Provides a social/CDN scenario for eventual consistency
+common_traps:
+  - Claiming eventual consistency never loses data (it can under partition)
+  - Saying strong consistency is always slower (depends on quorum config)
+  - Confusing monotonic reads with eventual consistency
+last_used: 2026-06-24
+cooldown_days: 7

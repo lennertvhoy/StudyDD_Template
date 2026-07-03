@@ -1,0 +1,14 @@
+---
+items:
+  - id: "rev-sd-caching-001"
+    target_id: "system-design-skills"
+    skill_id: "sd-caching"
+    evidence_id: "ev-sd-20260624-002"
+    prompt: "You are designing a write-heavy analytics pipeline. Describe your cache invalidation strategy in detail, including at least one active invalidation mechanism."
+    due: "2026-07-03"
+    interval_days: 3
+    ease: 2.5
+    lapse_count: 1
+    last_result: "partial"
+    mistake_type: "correct-concept-weak-implementation"
+    review_mode: "scenario"

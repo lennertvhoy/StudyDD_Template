@@ -1,0 +1,19 @@
+---
+sources:
+  - id: "S-PY-001"
+    title: "Fluent Python, 2nd Edition"
+    type: book
+    trust_level: primary
+    last_checked: "2026-06-01"
+    volatility: stable
+    usable_for_questions: true
+    notes: "Comprehensive Python language reference."
+
+  - id: "S-PY-002"
+    title: "Python Official Documentation"
+    type: documentation
+    trust_level: primary
+    last_checked: "2026-06-15"
+    volatility: stable
+    usable_for_questions: true
+    notes: "Core reference for standard library and language spec."

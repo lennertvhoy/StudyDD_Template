@@ -1,0 +1,105 @@
+---
+learner:
+  name: "Sam"
+  target: "Python fundamentals proficiency"
+  current_context: "Active Python study; 2 skills assessed, 2 pending"
+  preferred_language: "English"
+  preferred_tutoring_style: "Code-driven questions with performance trade-offs"
+
+active_target_id: "python-fundamentals"
+
+targets:
+  - id: "python-fundamentals"
+    path: "targets/python-fundamentals/TARGET.yaml"
+    title: "Python Fundamentals"
+    status: "active"
+
+study_target:
+  title: "Python Fundamentals"
+  exam_or_goal: "Achieve practical proficiency in Python: idiomatic code, concurrency patterns, type safety, and testing."
+  current_readiness_estimate: "50%"
+  readiness_confidence: "Medium"
+  risk_level: "Low"
+
+skills:
+  - id: "py-dstructs"
+    label: "Data structures and idiomatic Python"
+    status: "demonstrated"
+    readiness: 75
+    confidence: "high"
+    evidence:
+      - "ev-py-20260622-001"
+      - "ev-py-20260623-001"
+    next_validation_question: "Use a generator to stream-process a 10 GB log file without loading it entirely."
+
+  - id: "py-oop"
+    label: "OOP and design patterns in Python"
+    status: "pending"
+    readiness: 0
+    confidence: "low"
+    evidence: []
+    next_validation_question: "Design a class hierarchy for a plugin system using ABC and __init_subclass__."
+
+  - id: "py-concurrency"
+    label: "Concurrency: threading, asyncio, multiprocessing"
+    status: "weak"
+    readiness: 30
+    confidence: "low"
+    evidence:
+      - "ev-py-20260624-001"
+    next_validation_question: "Rewrite a threaded polling loop using asyncio and explain the trade-offs."
+
+  - id: "py-typing"
+    label: "Type hints and static analysis"
+    status: "practiced"
+    readiness: 60
+    confidence: "medium"
+    evidence:
+      - "ev-py-20260624-002"
+    next_validation_question: "Add Protocol and TypedDict to a heterogeneous data processing pipeline."
+
+active_focus:
+  current_topic: "Concurrency patterns"
+  reason: "Scored partial on threading vs asyncio question; needs repair"
+  next_question: "Q-PY-004"
+  blocking_confusions:
+    - "When GIL is and is not a factor for I/O vs CPU work"
+
+review:
+  queue: "reviews/REVIEW_QUEUE.md"
+  due_count: 1
+
+sources:
+  index: "sources/SOURCE_INDEX.md"
+  trusted_source_policy: "Use official CPython docs and Fluent Python as primary references."
+
+session_history:
+  - date: "2026-06-24"
+    focus: "Concurrency and typing"
+    result: "Partial on concurrency (threading vs asyncio accuracy); correct on typing"
+    evidence_added:
+      - "ev-py-20260624-001"
+      - "ev-py-20260624-002"
+    state_change: "py-concurrency marked weak; py-typing marked practiced"
+
+  - date: "2026-06-23"
+    focus: "Idiomatic Python exercise"
+    result: "Completed practical lab: rewrote legacy code with comprehensions and generators"
+    evidence_added:
+      - "ev-py-20260623-001"
+    state_change: "py-dstructs demonstrated (readiness 75)"
+
+workflow:
+  happy_path_step: 4
+  stage: "active_tutoring"
+  next_action_ref: "NEXT_ACTIONS.md"
+
+rules:
+  no_readiness_inflation: true
+  one_question_at_a_time: true
+  evidence_required_for_mastery: true
+
+metadata:
+  template_version: "0.4.0"
+  last_updated: "2026-07-03"
+  updated_by: "coding-agent"

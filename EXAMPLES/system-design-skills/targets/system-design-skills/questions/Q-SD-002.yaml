@@ -1,0 +1,31 @@
+---
+id: Q-SD-002
+target_id: system-design-skills
+skill_id: sd-caching
+cognitive_level: apply
+difficulty: 4
+source_ids:
+  - S-SD-001
+volatility: stable
+public_prompt: >
+  You are designing a read-heavy social feed service. Users scroll through a feed
+  of posts from people they follow. Describe your caching strategy: what you would
+  cache, at which layer (client, CDN, app, database), and how you would handle
+  cache invalidation when a user posts new content.
+private_answer_key: |
+  Cache pre-computed feed timelines per user in a distributed cache (Redis/Memcached) at the application layer.
+  Use CDN for static assets and media, not for personalized feeds.
+  Write-through or write-behind cache for feed generation on new post.
+  Invalidation: invalidate follower's cached feed when followed user posts; use pub-sub or timestamp-based invalidation.
+  Consider cache-aside vs read-through trade-offs.
+rubric:
+  - Identifies application-layer cache (Redis/Memcached) for feed timelines
+  - Distinguishes CDN for static content vs app cache for dynamic content
+  - Proposes an active invalidation mechanism beyond TTL
+  - Discusses write-through or write-behind strategy
+common_traps:
+  - Caching entire DB query results without considering cache stampede
+  - Ignoring active invalidation or suggesting TTL-only solution
+  - Confusing application cache with CDN for dynamic content
+last_used: 2026-06-24
+cooldown_days: 7

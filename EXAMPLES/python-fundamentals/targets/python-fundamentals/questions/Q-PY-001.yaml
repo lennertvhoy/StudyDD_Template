@@ -1,0 +1,28 @@
+---
+id: Q-PY-001
+target_id: python-fundamentals
+skill_id: py-concurrency
+cognitive_level: explain
+difficulty: 3
+source_ids:
+  - S-PY-001
+volatility: stable
+public_prompt: >
+  Explain the difference between threading.Thread and asyncio for concurrent I/O
+  in Python. Give a concrete scenario for each.
+private_answer_key: |
+  threading.Thread: OS-managed threads, preemptive multitasking, GIL limits CPU-bound parallelism, good for blocking I/O (file reads, legacy DB drivers).
+  asyncio: cooperative multitasking with an event loop, single-threaded, no GIL contention, best for high-concurrency network I/O (web servers, HTTP clients).
+  Threading scenario: calling a blocking C-extension library or driving Selenium.
+  asyncio scenario: a web scraper fetching hundreds of URLs concurrently.
+rubric:
+  - Distinguishes OS-thread preemption from event-loop cooperation
+  - Mentions GIL as a factor for CPU-bound vs I/O-bound work
+  - Gives appropriate scenario for threading (blocking I/O)
+  - Gives appropriate scenario for asyncio (high-concurrency network I/O)
+common_traps:
+  - Claiming threading is always faster (misses OS-thread overhead vs event loop)
+  - Missing that asyncio requires all libraries in call chain to be async-compatible
+  - Confusing multiprocessing (bypasses GIL) with threading (GIL-bound)
+last_used: 2026-06-24
+cooldown_days: 7

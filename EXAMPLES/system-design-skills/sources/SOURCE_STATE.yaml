@@ -1,0 +1,19 @@
+---
+sources:
+  - id: "S-SD-001"
+    title: "Designing Data-Intensive Applications"
+    type: book
+    trust_level: primary
+    last_checked: "2026-06-01"
+    volatility: stable
+    usable_for_questions: true
+    notes: "Core reference for distributed systems concepts."
+
+  - id: "S-SD-002"
+    title: "System Design Interview — An Insider's Guide"
+    type: book
+    trust_level: secondary
+    last_checked: "2026-06-01"
+    volatility: stable
+    usable_for_questions: true
+    notes: "Good for interview patterns; supplement with primary sources."

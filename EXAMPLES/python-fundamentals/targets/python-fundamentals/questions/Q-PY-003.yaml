@@ -1,0 +1,40 @@
+---
+id: Q-PY-003
+target_id: python-fundamentals
+skill_id: py-dstructs
+cognitive_level: troubleshoot
+difficulty: 4
+source_ids:
+  - S-PY-001
+volatility: stable
+public_prompt: |
+  This code builds a list of unique words from a large file. Identify the
+  performance problem and rewrite it idiomatically.
+
+  ```python
+  def unique_words(filename):
+      words = []
+      with open(filename) as f:
+          for line in f:
+              for w in line.split():
+                  if w not in words:
+                      words.append(w)
+      return words
+  ```
+private_answer_key: |
+  Problem: O(n^2) from list membership test (if w not in words) inside a nested loop.
+  Fix: use a set for O(1) membership. Idiomatic rewrite:
+  def unique_words(filename):
+      with open(filename) as f:
+          return {w for line in f for w in line.split()}
+rubric:
+  - Identifies O(n^2) list membership as the problem
+  - Replaces list with set for O(1) lookup
+  - Writes idiomatic set comprehension or generator-based solution
+  - Considers memory: streaming line-by-line is fine
+common_traps:
+  - Fixing only dedup but keeping a list (still O(n^2))
+  - Not recognizing that `in` on a list is O(n)
+  - Reading entire file into memory instead of streaming
+last_used: 2026-06-22
+cooldown_days: 7
