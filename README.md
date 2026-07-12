@@ -333,4 +333,4 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.10.0 — cross-platform setup and dependency consent (`requirements.txt`, `docs/setup.md`, `scripts/check_environment.py`, `scripts/setup_studydd.py`, `scripts/test_cross_platform_paths.py`, `.github/workflows/validate.yml` matrix) layered on top of the learning activity orchestrator.
+v0.11.0-rc1 — lifecycle upgrade proof release candidate; preserves the v0.10.0 public template surface while adding a deterministic template-owned activity metadata marker.

@@ -46,7 +46,7 @@ def test_template_outputs_are_deterministic_and_public_safe() -> None:
             "studydd.source-freshness",
         ],
     }
-    assert version["template_version"] == "0.10.0"
+    assert version["template_version"] == "0.11.0"
     assert version["template_commit"] == ""
     assert manifest["generated_by"] == generator.SCRIPT_PATH
     assert manifest["files"]["state/LEARNER_PROFILE.yaml"]["owner"] == "instance"

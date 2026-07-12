@@ -179,8 +179,8 @@ def validate(data: dict[str, Any], origin_ref: str = "origin/main") -> list[str]
         raise ValidationError("template must be a mapping")
     if template.get("id") != "studydd":
         raise ValidationError("template.id must be 'studydd'")
-    if template.get("releaseVersion") != "0.10.0":
-        raise ValidationError("releaseVersion must match origin/main's 0.10.0 template version")
+    if template.get("releaseVersion") != "0.11.0":
+        raise ValidationError("releaseVersion must match the 0.11.0 release candidate")
     source = data.get("source")
     if not isinstance(source, dict) or source.get("class") != "canonical_source":
         raise ValidationError("source must identify a canonical_source")

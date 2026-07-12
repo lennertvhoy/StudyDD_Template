@@ -1,7 +1,7 @@
 # GENERATED FILE — edit .statedd/lock.yaml and regenerate.
 # Generator: scripts/generate_compatibility_views.py
 # Authority: .statedd/lock.yaml
-template_version: 0.10.0
+template_version: 0.11.0
 template_commit: ''
 template_source_path: ''
 instance_created_from_template_version: ''
