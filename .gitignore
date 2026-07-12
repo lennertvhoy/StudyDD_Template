@@ -5,5 +5,9 @@ __pycache__/
 .pytest_cache/
 .venv/
 
+# Fast Drill instance runtime and restartable reconciliation journal
+state/ACTIVE_DRILL_SESSION.md
+.fast_drill/
+
 # Worktree isolation directories
 .worktrees/

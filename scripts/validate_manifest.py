@@ -268,7 +268,7 @@ def validate(data: dict[str, Any], origin_ref: str = "origin/main") -> list[str]
         if kind == "file" and path in origin_paths and not (ROOT / path).is_file():
             raise ValidationError(f"manifest file asset is missing from checkout: {path}")
 
-    deferred = {"studydd.fast-drill", "studydd.question-bank-engine", "studydd.integrations"}
+    deferred = {"studydd.question-bank-engine", "studydd.integrations"}
     if selected.intersection(deferred):
         raise ValidationError("incomplete deferred StudyDD modules must not be selected")
     serialized = str(data)
