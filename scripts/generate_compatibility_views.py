@@ -142,7 +142,7 @@ def _lock_view(data: dict[str, Any], path: Path) -> dict[str, Any]:
 
     return {
         "template_version": version,
-        "template_commit": source_revision,
+        "template_commit": _optional_string(template, "sourceCommit", path) or source_revision,
         "template_source_path": source_path,
         "instance_created_from_template_version": instance_value(
             "createdFromTemplateVersion"

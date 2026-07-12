@@ -141,7 +141,15 @@ def _load_optional_hook(name: str) -> Callable[..., Any] | None:
             continue
         module = importlib.util.module_from_spec(spec)
         try:
-            spec.loader.exec_module(module)
+            # Loading an optional hook must not mutate the source checkout by
+            # creating __pycache__ entries. The template is an immutable input
+            # to instantiation and regeneration.
+            previous = sys.dont_write_bytecode
+            sys.dont_write_bytecode = True
+            try:
+                spec.loader.exec_module(module)
+            finally:
+                sys.dont_write_bytecode = previous
         except Exception as exc:  # pragma: no cover - integration seam
             raise RuntimeError(f"could not load lifecycle hook {path}: {exc}") from exc
         hook = getattr(module, name, None)
@@ -217,7 +225,75 @@ def _write_instance_descriptor(
         "digest": source_identity["digest"],
     }
     spec["personalized"] = False
+    metadata = data.setdefault("metadata", {})
+    if isinstance(metadata, dict) and mode != "template":
+        metadata["id"] = "studydd-bootstrap"
+        metadata["name"] = "StudyDD bootstrap instance"
     _write_yaml(descriptor_path, data)
+
+
+def _write_instance_lock(
+    target: Path, source_identity: Mapping[str, Any], *, mode: str
+) -> None:
+    """Record exact local source identity in the instance-owned lifecycle lock."""
+    lock_path = target / ".statedd" / "lock.yaml"
+    if lock_path.is_symlink():
+        raise RuntimeError("lifecycle lock must not be a symlink")
+    try:
+        data = yaml_safe_load(lock_path)
+    except OSError:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    data["formatVersion"] = "statedd.lock/v1"
+    data["instanceId"] = "studydd-bootstrap"
+    template = data.setdefault("template", {})
+    if not isinstance(template, dict):
+        template = {}
+        data["template"] = template
+    template.update(
+        {
+            "id": "studydd",
+            "version": source_identity["version"],
+            "sourceRevision": source_identity["digest"],
+            "sourceCommit": source_identity["commit"] or "",
+            "sourcePath": source_identity["origin"],
+            "manifestFormatVersion": "statedd.template-manifest/v2",
+            "stateddSpecVersion": "statedd-template-v5",
+            "instanceSchemaVersion": "studydd.instance-layout/v1",
+            "selectedModules": [
+                "studydd.core",
+                "studydd.activities",
+                "studydd.source-freshness",
+            ],
+        }
+    )
+    instance = data.setdefault("instance", {})
+    if not isinstance(instance, dict):
+        instance = {}
+        data["instance"] = instance
+    instance.update(
+        {
+            "mode": mode,
+            "createdFromTemplateVersion": source_identity["version"],
+            "createdFromTemplateCommit": source_identity["commit"] or "",
+            "lastTemplateUpgradeVersion": source_identity["version"],
+            "lastTemplateUpgradeCommit": source_identity["commit"] or "",
+        }
+    )
+    instance.setdefault("upgradeHistory", [])
+    data.setdefault("files", [
+        {
+            "path": ".statedd/lock.yaml",
+            "owner": "generated",
+            "merge": "replace",
+            "required": True,
+            "sensitivity": "internal",
+            "sourceHash": None,
+            "materializedHash": None,
+        }
+    ])
+    _write_yaml(lock_path, data)
 
 
 def yaml_safe_load(path: Path) -> Any:
@@ -379,6 +455,7 @@ def main() -> int:
         source_identity = _source_identity(template_root, template_version)
         print(f"Regenerating lifecycle-owned outputs in {target}")
         _write_instance_descriptor(target, source_identity, mode=current_mode or "bootstrap")
+        _write_instance_lock(target, source_identity, mode=current_mode or "bootstrap")
         _run_lifecycle_hooks(
             template_root,
             target,
@@ -473,6 +550,7 @@ def main() -> int:
     version_path.write_text(yaml.safe_dump(version_data, sort_keys=False), encoding="utf-8")
 
     _write_instance_descriptor(target, source_identity, mode="bootstrap")
+    _write_instance_lock(target, source_identity, mode="bootstrap")
 
     # 7. Let the lifecycle lane materialize ownership/lock and generate views.
     print("5. Applying available lifecycle adapter and compatibility generator")

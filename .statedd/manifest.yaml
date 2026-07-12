@@ -9,7 +9,7 @@ instanceLayoutContract: studydd.instance-layout/v1
 template:
   id: studydd
   releaseVersion: "0.10.0"
-  stateddSpecVersion: statedd.template-manifest/v2
+  stateddSpecVersion: statedd-template-v5
   instanceSchemaVersion: studydd.instance-layout/v1
 
 source:
@@ -37,12 +37,16 @@ modules:
     assets:
       - lifecycle-manifest
       - lifecycle-lock
+      - instance-descriptor
+      - instance-layout-contract
       - root-gitignore
       - root-agents
       - root-contributing
       - root-license
       - root-readme
       - root-next-actions
+      - root-worklog
+      - root-template-backlog
       - root-requirements
       - github-assets
       - public-evidence
@@ -62,6 +66,8 @@ modules:
       - state-performance-budget
       - state-skill-map
       - state-manifest
+      - state-manifest-template
+      - state-manifest-overlay
       - state-mode
       - state-template-version
       - state-study-backlog
@@ -147,6 +153,32 @@ assets:
     selectingModules:
       - studydd.core
 
+  - id: instance-descriptor
+    path: instance.yaml
+    kind: file
+    owner: instance
+    role: instance_lifecycle_descriptor
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: studydd.instance/v1
+    sensitivity: internal
+    selectingModules:
+      - studydd.core
+  - id: instance-layout-contract
+    path: contracts/studydd.instance-layout.yaml
+    kind: file
+    owner: template
+    role: instance_layout_contract
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: studydd.instance-layout/v1
+    sensitivity: public
+    source: contracts/studydd.instance-layout.yaml
+    selectingModules:
+      - studydd.core
+
   # Root files are individually classified because NEXT_ACTIONS and README
   # cross the template/instance boundary while the other files do not.
   - id: root-gitignore
@@ -223,6 +255,32 @@ assets:
     required: true
     schema: null
     sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: root-worklog
+    path: WORKLOG.md
+    kind: file
+    owner: template
+    role: lifecycle_adoption_history
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: WORKLOG.md
+    selectingModules:
+      - studydd.core
+  - id: root-template-backlog
+    path: TEMPLATE_BACKLOG.md
+    kind: file
+    owner: template
+    role: template_engineering_backlog
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: TEMPLATE_BACKLOG.md
     selectingModules:
       - studydd.core
   - id: root-requirements
@@ -508,38 +566,40 @@ assets:
   - id: state-manifest
     path: state/STATE_MANIFEST.yaml
     kind: file
-    owner: template
+    owner: generated
     role: domain_state_loading_contract
-    provisionPolicy: copy_from_template
-    updatePolicy: replace_if_unmodified
+    provisionPolicy: generated_output
+    updatePolicy: generated
     required: true
     schema: null
     sensitivity: public
-    source: state/STATE_MANIFEST.yaml
+    generator: scripts/generate_compatibility_views.py
     selectingModules:
       - studydd.core
   - id: state-mode
     path: state/STUDYDD_MODE.yaml
     kind: file
-    owner: instance
+    owner: generated
     role: instance_mode_and_origin
-    provisionPolicy: create_if_missing
-    updatePolicy: preserve
+    provisionPolicy: generated_output
+    updatePolicy: generated
     required: true
     schema: null
-    sensitivity: private
+    sensitivity: internal
+    generator: scripts/generate_compatibility_views.py
     selectingModules:
       - studydd.core
   - id: state-template-version
     path: state/STUDYDD_TEMPLATE_VERSION.yaml
     kind: file
-    owner: instance
+    owner: generated
     role: template_origin_compatibility_view
-    provisionPolicy: create_if_missing
-    updatePolicy: preserve
+    provisionPolicy: generated_output
+    updatePolicy: generated
     required: true
     schema: null
     sensitivity: internal
+    generator: scripts/generate_compatibility_views.py
     selectingModules:
       - studydd.core
   - id: state-study-backlog
@@ -571,6 +631,32 @@ assets:
     kind: file
     owner: instance
     role: study_status
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+
+  - id: state-manifest-template
+    path: state/STATE_MANIFEST.template.yaml
+    kind: file
+    owner: template
+    role: runtime_manifest_template_fragment
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: state/STATE_MANIFEST.template.yaml
+    selectingModules:
+      - studydd.core
+  - id: state-manifest-overlay
+    path: state/STATE_MANIFEST.instance.yaml
+    kind: file
+    owner: instance
+    role: runtime_manifest_instance_overlay
     provisionPolicy: create_if_missing
     updatePolicy: preserve
     required: true

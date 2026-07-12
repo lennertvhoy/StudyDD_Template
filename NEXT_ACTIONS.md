@@ -10,7 +10,10 @@
 
 - Run `python3 scripts/check_studydd.py` after initialization or any state change.
 - Add weak or uncertain skills to `reviews/REVIEW_QUEUE.md` after evidence exists.
-- Build the agent-driven study loop (`feat/agent-session-study-loop`): implement a single-entry wrapper that runs the full StudyDD session lifecycle (verify, read context, choose activity, ask/grade/update, validate, hand off) so agents can start a session with one command.
+- Complete canonical StudyDD integration review and establish the immutable
+  source identity before StatePort profile adoption.
+- Keep hosted execution, private learner migration, and release claims out of
+  this public template integration.
 
 ## Recently completed
 
