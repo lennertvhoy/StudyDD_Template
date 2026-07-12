@@ -10,6 +10,10 @@ metadata:
   last_updated: "2026-06-24"
   updated_by: "coding-agent"
 
+release_candidate:
+  version: "0.11.0"
+  note: "Lifecycle upgrade proof release candidate; activity ownership remains template-owned."
+
 activity_types:
   retrieval_question:
     description: "One direct question or exam-style scenario."
