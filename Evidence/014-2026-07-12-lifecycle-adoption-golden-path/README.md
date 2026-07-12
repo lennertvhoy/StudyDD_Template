@@ -54,7 +54,7 @@ The StatePort snapshot records PR #4/#5 as open and says neither is an implicit 
 - `python3 scripts/agent_privacy_check.py`: soft pass with warnings limited to scanner keyword lists, validator pattern text, and a generic design keyword; no matched secret/value finding.
 - `python3 scripts/validate_repo.py` in StatePort: passed.
 - StatePort `scripts/gitleaks_scan.sh`: passed, no leaks found.
-- StudyDD focused tests: instantiation, cross-platform path, and context-pack tests passed. `test_learning_activities.py` had one pre-existing time-sensitive failure: a fixture dated 2026-06-27 is classified stale on 2026-07-12, so the “fresh volatile source” assertion fails. No test or code was changed.
+- StudyDD focused tests: instantiation, cross-platform path, context-pack, and learning-activity tests passed. The initial integration run exposed a date-sensitive freshness fixture; it was corrected to use the test clock rather than a stale fixed date.
 - StatePort focused `test_lifecycle.py`, `test_statedd_core.py`, `test_template_validator.py`, and `test_contribution_bundle.py`: all passed.
 - `git diff --check` in both repositories: passed.
 

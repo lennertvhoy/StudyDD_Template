@@ -20,7 +20,7 @@
 - Deferred: `studydd.fast-drill`, `studydd.question-bank-engine`, and
   `studydd.integrations`; none is declared because its accepted implementation
   is not present on origin/main.
-- Coverage: 30 exact assets, 12 owned trees, 290 current tracked paths, and
+- Coverage: 31 exact assets, 12 owned trees, 295 current tracked paths, and
   278 origin/main paths. Every current tracked path resolves exactly once;
   exact/tree collisions, missing module assets, bad dependencies, private
   markers, and stale generated views fail validation.
@@ -50,6 +50,11 @@
   scripts/test_lifecycle_adoption.py` — pass.
 - `python3 scripts/agent_privacy_check.py` — soft pass with only known scanner
   self-match warnings; no credential or learner-content finding.
+
+The workflow's initial run exposed an existing date-sensitive freshness fixture
+in the learning-activity test; the fixture was made relative to the test clock,
+and the focused test passed afterward. The StatePort Gitleaks wrapper was also
+made worktree-safe with an explicit no-git scan mode.
 
 The golden-path proof used only synthetic placeholders in a temporary workspace.
 It did not inspect or copy private canary content.
