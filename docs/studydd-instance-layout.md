@@ -11,11 +11,11 @@ It describes the existing StudyDD template/instance boundary without changing th
 - Compact context, evidence indexes, session summaries, and context packs are generated views. Their declared generators and inputs are the surfaces to edit.
 - `state/STUDYDD_MODE.yaml`, `state/STUDYDD_TEMPLATE_VERSION.yaml`, and the domain `state/STATE_MANIFEST.yaml` are compatibility metadata. The latter remains a runtime loading manifest, not a StatePort lifecycle manifest.
 
-The contract deliberately leaves unknown paths and ownership-aware upgrade enforcement for a later lifecycle implementation. A consumer must not infer permission to overwrite a path from its directory name alone.
+`scripts/validate_manifest.py` now proves that every currently tracked path is classified exactly once, that exact assets and owned trees do not collide, that module assets and self-tests resolve, and that generated compatibility views are reproducible. A consumer must not infer permission to overwrite a path from its directory name alone.
 
 ## Source link and lock boundary
 
-The public template records `template_remote` in `state/STUDYDD_MODE.yaml`. A copied instance records the same source as `template_origin`, and `state/STUDYDD_TEMPLATE_VERSION.yaml` carries the current legacy version/commit fields. The current StudyDD validator does not require `template_origin` or `.statedd/lock.yaml`; the contract records an expected future immutable lock at `.statedd/lock.yaml` without pretending that it exists today.
+The public template records `template_remote` in `state/STUDYDD_MODE.yaml`. A copied instance records the same source as `template_origin`, and `.statedd/lock.yaml` records the local source digest, version, and creation provenance. `state/STUDYDD_MODE.yaml`, `state/STUDYDD_TEMPLATE_VERSION.yaml`, and `state/STATE_MANIFEST.yaml` remain generated compatibility views.
 
 ## Validator mapping
 
@@ -25,7 +25,7 @@ Run:
 python3 scripts/check_studydd.py
 ```
 
-The entry point validates the contract's presence and shape and maps mode, template-version, selected dynamic-tree, and generated-view checks. Lock expectations and complete ownership coverage are documented-only boundaries at this stage. `python3 scripts/test_instance_layout_contract.py` exercises the contract hook and malformed-contract failures.
+The entry point validates the contract's presence and shape and maps mode, template-version, selected dynamic-tree, and generated-view checks. Run `python3 scripts/validate_manifest.py` for lifecycle ownership coverage and StatePort-compatible manifest checks. `python3 scripts/test_instance_layout_contract.py` exercises the contract hook and malformed-contract failures.
 
 ## Privacy
 
@@ -33,4 +33,4 @@ Template mode is public-safe. Bootstrap requires review. Learner-instance data i
 
 ## Limitations
 
-This contract does not implement a lifecycle manifest, source resolver, lock writer, materializer, upgrade planner, transactional apply, or mixed-ownership generator. Optional instance trees may not exist until initialization, and current validation does not prove exhaustive path ownership.
+This contract does not implement Git source resolution, registry access, upgrade application, transactional migration, or retirement. Optional instance trees may not exist until initialization, but the manifest declares their ownership prefixes and the coverage validator rejects ambiguous tracked-path classification.

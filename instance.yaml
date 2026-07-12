@@ -18,6 +18,3 @@ spec:
     - studydd.core
     - studydd.activities
     - studydd.source-freshness
-    - studydd.fast-drill
-    - studydd.question-bank-engine
-    - studydd.integrations

@@ -44,9 +44,6 @@ def test_template_outputs_are_deterministic_and_public_safe() -> None:
             "studydd.core",
             "studydd.activities",
             "studydd.source-freshness",
-            "studydd.fast-drill",
-            "studydd.question-bank-engine",
-            "studydd.integrations",
         ],
     }
     assert version["template_version"] == "0.10.0"

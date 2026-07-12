@@ -86,8 +86,40 @@ def _origin_paths(ref: str) -> set[str]:
     return {line for line in result.stdout.splitlines() if line}
 
 
+def _tracked_paths() -> set[str]:
+    result = subprocess.run(
+        ["git", "ls-files"], cwd=ROOT, check=False, capture_output=True, text=True
+    )
+    if result.returncode:
+        raise ValidationError(f"cannot inspect tracked paths: {result.stderr.strip()}")
+    return {line for line in result.stdout.splitlines() if line}
+
+
 def _covers(asset_path: str, candidate: str) -> bool:
     return candidate == asset_path or candidate.startswith(asset_path + "/")
+
+
+def _validate_generated_views() -> None:
+    result = subprocess.run(
+        [sys.executable, "scripts/generate_compatibility_views.py", "--check"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode:
+        raise ValidationError(
+            "generated compatibility views are stale or invalid: "
+            + (result.stdout + result.stderr).strip()
+        )
+    runtime_manifest = ROOT / "state/STATE_MANIFEST.yaml"
+    if not runtime_manifest.is_file():
+        raise ValidationError("state/STATE_MANIFEST.yaml runtime contract is missing")
+    runtime_data = yaml.safe_load(runtime_manifest.read_text(encoding="utf-8")) or {}
+    if not isinstance(runtime_data, dict) or runtime_data.get("generated_by") != "scripts/generate_compatibility_views.py":
+        raise ValidationError("state/STATE_MANIFEST.yaml is not the generated runtime-state view")
+    if "formatVersion" in runtime_data:
+        raise ValidationError("state/STATE_MANIFEST.yaml must remain distinct from the lifecycle manifest")
 
 
 def _validate_modules(data: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], set[str]]:
@@ -219,11 +251,19 @@ def validate(data: dict[str, Any], origin_ref: str = "origin/main") -> list[str]
                 raise ValidationError(f"asset {asset_id!r} omits reciprocal module {module_id!r}")
 
     origin_paths = _origin_paths(origin_ref)
+    tracked_paths = _tracked_paths()
+    for left_index, (left_path, left_kind) in enumerate(declared_paths):
+        for right_path, right_kind in declared_paths[left_index + 1 :]:
+            if left_kind == "tree" and _covers(left_path, right_path):
+                raise ValidationError(f"tree asset {left_path!r} overlaps asset {right_path!r}")
+            if right_kind == "tree" and _covers(right_path, left_path):
+                raise ValidationError(f"tree asset {right_path!r} overlaps asset {left_path!r}")
     uncovered = sorted(
-        path for path in origin_paths if not any(_covers(asset_path, path) for asset_path, _ in declared_paths)
+        path for path in tracked_paths
+        if len([asset_path for asset_path, _ in declared_paths if _covers(asset_path, path)]) != 1
     )
     if uncovered:
-        raise ValidationError(f"origin/main paths are not classified: {uncovered}")
+        raise ValidationError(f"tracked paths are unclassified or multiply classified: {uncovered}")
     for path, kind in declared_paths:
         if kind == "file" and path in origin_paths and not (ROOT / path).is_file():
             raise ValidationError(f"manifest file asset is missing from checkout: {path}")
@@ -231,8 +271,14 @@ def validate(data: dict[str, Any], origin_ref: str = "origin/main") -> list[str]
     deferred = {"studydd.fast-drill", "studydd.question-bank-engine", "studydd.integrations"}
     if selected.intersection(deferred):
         raise ValidationError("incomplete deferred StudyDD modules must not be selected")
+    serialized = str(data)
+    for forbidden in ("Study_Lenny", "CTO_Lenny", "/home/ff", "private learner"):
+        if forbidden.lower() in serialized.lower():
+            raise ValidationError(f"manifest contains forbidden private/local marker: {forbidden}")
+    _validate_generated_views()
     return [
         f"validated {len(origin_paths)} origin/main paths",
+        f"validated {len(tracked_paths)} current tracked paths",
         f"validated {len(assets)} manifest assets",
         f"validated {len(selected)} selected modules",
     ]

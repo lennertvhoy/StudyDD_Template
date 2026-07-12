@@ -10,6 +10,8 @@
 
 - Run `python3 scripts/check_studydd.py` after initialization or any state change.
 - Add weak or uncertain skills to `reviews/REVIEW_QUEUE.md` after evidence exists.
+- Template engineering next slice: implement immutable Git source resolution
+  and a controlled lock-backed upgrade plan in StatePort; see `TEMPLATE_BACKLOG.md`.
 
 ## Recently completed
 

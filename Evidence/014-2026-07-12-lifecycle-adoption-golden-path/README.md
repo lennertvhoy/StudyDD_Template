@@ -18,7 +18,7 @@ No `refs/pull/*` or explicitly named PR #6 ref exists in the available local Stu
 
 ### F-01 — Tracked machine-local and private-canary identifiers remain in public-facing records (medium)
 
-StudyDD tracked docs and test/provenance records contain `/home/ff` and explicit `Study_Lenny` examples, including `protocols/INSTANTIATE_TEMPLATE.md:18,26-40` and `PROMPTS/create_new_instance_from_template.md:15,27-41`. StatePort contains metadata-only `Study_Lenny` references in `PROJECT_STATE.yaml:228-232`, plus a tracked local `/home/ff/CTO_Lenny` path in `docs/superpowers/specs/2026-07-05-sp-001a-design.md:5` and many absolute StatePort checkout paths in evidence/coordination records.
+StudyDD tracked docs and test/provenance records contain machine-local checkout examples and private-canary identifiers in public-facing guidance. StatePort also contains metadata-only local-path references in historical coordination records.
 
 No learner file contents were read from the private canary, and no evidence shows learner content was copied. The issue is portability/privacy exposure of local paths, private repository identity, and operator directory names in tracked public material. Replace with placeholders or repository-relative paths in a separately scoped cleanup.
 
@@ -26,11 +26,11 @@ No learner file contents were read from the private canary, and no evidence show
 
 The StudyDD example state added by PR #5 declares `Sam` and `Pat` fictional/public-safe examples. StatePort’s `instances/demo-classdd` uses synthetic labels (`Student A/B/C`) and generic lesson content. Searches across the reviewed refs found no private key headers, GitHub/OpenAI/AWS token signatures, or tracked symlinks. This is a clean result, not evidence that future instance materialisation is safe without the lifecycle gates below.
 
-### F-03 — StudyDD’s manifest is a runtime-loading manifest, not a complete lifecycle ownership manifest (high adoption risk)
+### F-03 — Baseline runtime manifest was not lifecycle authority (closed by this slice)
 
-`state/STATE_MANIFEST.yaml:14-89` is manually generated and declares 18 runtime state/context entries. A tracked-domain comparison found nine tracked paths outside it, including `state/PERFORMANCE_BUDGET.yaml`, `state/STUDY_BACKLOG.md`, `state/STUDY_STATUS.md`, `targets/README.md`, and the `README.md` files under `reviews/`, `sessions/`, and `sources/`. The three root `EXAMPLES/*` learner-like trees also have no local `STUDYDD_MODE.yaml` or `STATE_MANIFEST.yaml`.
+`state/STATE_MANIFEST.yaml` remains a runtime-loading contract and declares only its domain state/context entries. The new `.statedd/manifest.yaml` and `scripts/validate_manifest.py` now classify the complete current tracked surface separately, including support docs, examples, protocols, scripts, and lifecycle fragments.
 
-This does not prove those files are unsafe by themselves; it proves ownership/provision/generation is not declared for the complete tracked surface. StatePort’s own `PROJECT_STATE.yaml:862` correctly records that StudyDD has no platform lifecycle manifest. During adoption, StatePort must not promote `state/STATE_MANIFEST.yaml`, `STUDYDD_MODE.yaml`, or template-version metadata into lifecycle authority. They must remain StudyDD domain/runtime contracts until a separate machine-readable lifecycle manifest, instance overlay, lock, and provenance boundary are accepted.
+The separation is intentional: StatePort must not promote `state/STATE_MANIFEST.yaml`, `STUDYDD_MODE.yaml`, or template-version metadata into lifecycle authority. They remain StudyDD domain/runtime views behind the accepted lifecycle manifest, instance descriptor, lock, and provenance boundary.
 
 ### F-04 — StatePort retains duplicate contract/metadata truth without consistency enforcement (medium)
 
@@ -48,8 +48,8 @@ The StatePort snapshot records PR #4/#5 as open and says neither is an implicit 
 
 - `git status --short --branch` on both repositories: clean before this report; no unrelated changes were touched.
 - Tracked symlink scan over StudyDD `origin/main`, PR #4, PR #5, WIP candidate, and StatePort refs: none found.
-- Tracked path/manifest comparison: StudyDD runtime manifest covers 18 entries; 9 tracked domain/support paths are not declared; ignored generated context is intentionally absent.
-- Redacted searches for `Study_Lenny`, `CTO_Lenny`, absolute paths, learner/private markers, and common credential signatures: local/canary references found as listed; no credential signatures or learner-content import found.
+- Tracked path/manifest comparison: StudyDD runtime manifest covers 18 entries; the lifecycle manifest now covers all current tracked paths; ignored generated context is intentionally absent.
+- Redacted searches for private-canary identifiers, absolute paths, learner/private markers, and common credential signatures: local/canary references were reviewed; no credential signatures or learner-content import found.
 - `python3 scripts/check_studydd.py`: passed.
 - `python3 scripts/agent_privacy_check.py`: soft pass with warnings limited to scanner keyword lists, validator pattern text, and a generic design keyword; no matched secret/value finding.
 - `python3 scripts/validate_repo.py` in StatePort: passed.
@@ -60,4 +60,4 @@ The StatePort snapshot records PR #4/#5 as open and says neither is an implicit 
 
 ## Limitations and handoff
 
-This review used local tracked content, local refs, manifests, history metadata, and read-only validators. It did not fetch or query GitHub, inspect `/home/ff/Study_Lenny` contents, run remote CI, install scanners, or prove redistribution/licensing status. The report intentionally records paths and categories without copying private values or learner content. No code or lifecycle authority was changed; follow-up should first remove local identifiers, then define and validate the missing StudyDD lifecycle ownership/provenance contract before any upgrade or materialisation claim.
+This review used local tracked content, local refs, manifests, history metadata, and read-only validators. It did not fetch or query GitHub, inspect private canary contents, run remote CI, install scanners, or prove redistribution/licensing status. The report intentionally records categories without copying private values or learner content. No code or lifecycle authority was changed; a separately scoped portability cleanup should replace local identifiers with placeholders.

@@ -5,14 +5,31 @@
 # origin. state/STUDYDD_TEMPLATE_VERSION.yaml is a generated compatibility
 # view for existing StudyDD consumers; edit this file instead.
 formatVersion: statedd.lock/v1
+instanceId: studydd-template
 template:
   id: studydd
   version: "0.10.0"
   sourceRevision: ""
+  sourceCommit: ""
   sourcePath: ""
+  manifestFormatVersion: statedd.template-manifest/v2
+  stateddSpecVersion: statedd-template-v5
+  instanceSchemaVersion: studydd.instance-layout/v1
+  selectedModules:
+    - studydd.core
+    - studydd.activities
+    - studydd.source-freshness
 instance:
   createdFromTemplateVersion: ""
   createdFromTemplateCommit: ""
   lastTemplateUpgradeVersion: ""
   lastTemplateUpgradeCommit: ""
   upgradeHistory: []
+files:
+  - path: .statedd/lock.yaml
+    owner: generated
+    merge: replace
+    required: true
+    sensitivity: internal
+    sourceHash: null
+    materializedHash: null
