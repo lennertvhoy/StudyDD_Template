@@ -1,0 +1,595 @@
+# StudyDD's canonical lifecycle manifest for the StatePort v2 boundary.
+#
+# This is a virtual layout: it classifies the existing origin/main paths and
+# does not move or duplicate StudyDD content. `state/STATE_MANIFEST.yaml`
+# remains StudyDD's domain-state loading contract, separate from this file.
+formatVersion: statedd.template-manifest/v2
+instanceLayoutContract: studydd.instance-layout/v1
+
+template:
+  id: studydd
+  releaseVersion: "0.10.0"
+  stateddSpecVersion: statedd.template-manifest/v2
+  instanceSchemaVersion: studydd.instance-layout/v1
+
+source:
+  class: canonical_source
+  productionEligible: true
+  repository: https://github.com/lennertvhoy/StudyDD_Template.git
+  requestedRef: main
+  resolvedCommit: null
+  resolvedTree: null
+  # The resolver, not this upstream manifest, supplies immutable resolution.
+
+# These modules are complete on origin/main. The proposed fast-drill,
+# question-bank-engine, and integrations modules are intentionally not
+# selected until their independently testable implementation is present on
+# origin/main.
+modules:
+  - id: studydd.core
+    contractVersion: "1.0"
+    dependencies: []
+    conflicts: []
+    capabilities:
+      - read_state
+      - write_state
+      - run_validators
+    assets:
+      - lifecycle-manifest
+      - lifecycle-lock
+      - root-gitignore
+      - root-agents
+      - root-contributing
+      - root-license
+      - root-readme
+      - root-next-actions
+      - root-requirements
+      - github-assets
+      - public-evidence
+      - public-examples
+      - generic-docs
+      - prompts
+      - protocols
+      - scripts
+      - study-skills
+      - targets
+      - reviews
+      - sessions
+      - state-context
+      - state-evidence-index
+      - state-evidence-log
+      - state-learner-profile
+      - state-performance-budget
+      - state-skill-map
+      - state-manifest
+      - state-mode
+      - state-template-version
+      - state-study-backlog
+      - state-study-state
+      - state-study-status
+      - generated-context-pack
+    selfTests:
+      - id: core-health
+        command: python3 scripts/check_studydd.py
+      - id: core-demo-replay
+        command: python3 scripts/test_demo_replay.py
+      - id: core-cross-platform-paths
+        command: python3 scripts/test_cross_platform_paths.py
+    order: 10
+
+  - id: studydd.activities
+    contractVersion: "1.0"
+    dependencies:
+      - studydd.core
+    conflicts: []
+    capabilities:
+      - read_state
+      - write_state
+      - append_audit
+    assets:
+      - activities-templates
+      - activities-log
+      - state-activity
+    selfTests:
+      - id: activities-contract
+        command: python3 scripts/test_learning_activities.py
+    order: 20
+
+  - id: studydd.source-freshness
+    contractVersion: "1.0"
+    dependencies:
+      - studydd.core
+    conflicts: []
+    capabilities:
+      - read_state
+      - write_state
+      - read_external_sources
+    assets:
+      - sources
+    selfTests:
+      - id: source-freshness-contract
+        command: python3 scripts/test_source_freshness.py
+      - id: source-aware-routing
+        command: python3 scripts/test_next_activity_decision.py
+    order: 30
+
+selectedModules:
+  - studydd.core
+  - studydd.activities
+  - studydd.source-freshness
+
+assets:
+  # Lifecycle assets are StatePort-managed and are not origin/main content.
+  - id: lifecycle-manifest
+    path: .statedd/manifest.yaml
+    kind: file
+    owner: template
+    role: lifecycle_manifest
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: statedd.template-manifest/v2
+    sensitivity: public
+    source: .statedd/manifest.yaml
+    selectingModules:
+      - studydd.core
+  - id: lifecycle-lock
+    path: .statedd/lock.yaml
+    kind: file
+    owner: generated
+    role: lifecycle_lock
+    provisionPolicy: generated_output
+    updatePolicy: generated
+    required: true
+    schema: statedd.stateport.io/lock/v1
+    sensitivity: internal
+    generator: materializer
+    selectingModules:
+      - studydd.core
+
+  # Root files are individually classified because NEXT_ACTIONS and README
+  # cross the template/instance boundary while the other files do not.
+  - id: root-gitignore
+    path: .gitignore
+    kind: file
+    owner: template
+    role: repository_ignore_rules
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: .gitignore
+    selectingModules:
+      - studydd.core
+  - id: root-agents
+    path: AGENTS.md
+    kind: file
+    owner: template
+    role: agent_operating_contract
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: AGENTS.md
+    selectingModules:
+      - studydd.core
+  - id: root-contributing
+    path: CONTRIBUTING.md
+    kind: file
+    owner: template
+    role: contribution_guidance
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: CONTRIBUTING.md
+    selectingModules:
+      - studydd.core
+  - id: root-license
+    path: LICENSE.md
+    kind: file
+    owner: template
+    role: license
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: LICENSE.md
+    selectingModules:
+      - studydd.core
+  - id: root-readme
+    path: README.md
+    kind: file
+    owner: instance
+    role: instance_readme_seed
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: root-next-actions
+    path: NEXT_ACTIONS.md
+    kind: file
+    owner: instance
+    role: next_action
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: root-requirements
+    path: requirements.txt
+    kind: file
+    owner: template
+    role: runtime_dependencies
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: requirements.txt
+    selectingModules:
+      - studydd.core
+
+  # Public template content. These trees contain only origin/main paths and
+  # are not learner-instance state.
+  - id: github-assets
+    path: .github
+    kind: tree
+    owner: template
+    role: repository_automation
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: public-evidence
+    path: Evidence
+    kind: tree
+    owner: template
+    role: public_validation_history
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: public-examples
+    path: EXAMPLES
+    kind: tree
+    owner: template
+    role: public_reference_examples
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: generic-docs
+    path: docs
+    kind: tree
+    owner: template
+    role: generic_documentation
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: prompts
+    path: PROMPTS
+    kind: tree
+    owner: template
+    role: agent_prompts
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: protocols
+    path: protocols
+    kind: tree
+    owner: template
+    role: operating_protocols
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: scripts
+    path: scripts
+    kind: tree
+    owner: template
+    role: validators_and_workflows
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+  - id: study-skills
+    path: study_skills
+    kind: tree
+    owner: template
+    role: tutoring_policies
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: public
+    selectingModules:
+      - studydd.core
+
+  # Instance-owned trees permit future learner paths without importing them
+  # into this public template manifest.
+  - id: targets
+    path: targets
+    kind: tree
+    owner: instance
+    role: study_targets
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: reviews
+    path: reviews
+    kind: tree
+    owner: instance
+    role: review_queue_and_state
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: sessions
+    path: sessions
+    kind: tree
+    owner: instance
+    role: session_history
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: sources
+    path: sources
+    kind: tree
+    owner: instance
+    role: source_registry_and_freshness
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.source-freshness
+
+  - id: activities-templates
+    path: activities/ACTIVITY_TEMPLATES.yaml
+    kind: file
+    owner: template
+    role: activity_templates
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: activities/ACTIVITY_TEMPLATES.yaml
+    selectingModules:
+      - studydd.activities
+  - id: activities-log
+    path: activities/ACTIVITY_LOG.md
+    kind: file
+    owner: instance
+    role: activity_audit_log
+    provisionPolicy: create_if_missing
+    updatePolicy: append_only
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.activities
+
+  # state/ is intentionally exact-file inventory: it is mixed ownership and
+  # must not be flattened into one tree. STATE_MANIFEST remains a StudyDD
+  # runtime loading contract, not the StatePort lifecycle manifest.
+  - id: state-activity
+    path: state/ACTIVITY_STATE.yaml
+    kind: file
+    owner: instance
+    role: activity_state
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.activities
+  - id: state-context
+    path: state/CURRENT_CONTEXT.md
+    kind: file
+    owner: generated
+    role: compact_context
+    provisionPolicy: generated_output
+    updatePolicy: generated
+    required: true
+    schema: null
+    sensitivity: internal
+    generator: scripts/compact_state.py
+    selectingModules:
+      - studydd.core
+  - id: state-evidence-index
+    path: state/EVIDENCE_INDEX.yaml
+    kind: file
+    owner: generated
+    role: evidence_index
+    provisionPolicy: generated_output
+    updatePolicy: generated
+    required: true
+    schema: null
+    sensitivity: internal
+    generator: scripts/compact_state.py
+    selectingModules:
+      - studydd.core
+  - id: state-evidence-log
+    path: state/EVIDENCE_LOG.md
+    kind: file
+    owner: instance
+    role: evidence_audit_log
+    provisionPolicy: create_if_missing
+    updatePolicy: append_only
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: state-learner-profile
+    path: state/LEARNER_PROFILE.yaml
+    kind: file
+    owner: instance
+    role: learner_profile
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: state-performance-budget
+    path: state/PERFORMANCE_BUDGET.yaml
+    kind: file
+    owner: template
+    role: context_loading_budget
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: state/PERFORMANCE_BUDGET.yaml
+    selectingModules:
+      - studydd.core
+  - id: state-skill-map
+    path: state/SKILL_MAP.yaml
+    kind: file
+    owner: instance
+    role: skill_readiness_state
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: state-manifest
+    path: state/STATE_MANIFEST.yaml
+    kind: file
+    owner: template
+    role: domain_state_loading_contract
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: null
+    sensitivity: public
+    source: state/STATE_MANIFEST.yaml
+    selectingModules:
+      - studydd.core
+  - id: state-mode
+    path: state/STUDYDD_MODE.yaml
+    kind: file
+    owner: instance
+    role: instance_mode_and_origin
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: state-template-version
+    path: state/STUDYDD_TEMPLATE_VERSION.yaml
+    kind: file
+    owner: instance
+    role: template_origin_compatibility_view
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: internal
+    selectingModules:
+      - studydd.core
+  - id: state-study-backlog
+    path: state/STUDY_BACKLOG.md
+    kind: file
+    owner: instance
+    role: study_backlog
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: state-study-state
+    path: state/STUDY_STATE.yaml
+    kind: file
+    owner: instance
+    role: study_state
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: state-study-status
+    path: state/STUDY_STATUS.md
+    kind: file
+    owner: instance
+    role: study_status
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: true
+    schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+
+  # build_context_pack.py writes this ignored generated view after checkout.
+  - id: generated-context-pack
+    path: .studydd/context_pack.md
+    kind: file
+    owner: generated
+    role: task_context_pack
+    provisionPolicy: generated_output
+    updatePolicy: generated
+    required: false
+    schema: null
+    sensitivity: internal
+    generator: scripts/build_context_pack.py
+    selectingModules:
+      - studydd.core
