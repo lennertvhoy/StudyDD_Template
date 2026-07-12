@@ -1,0 +1,252 @@
+---
+# Public, descriptive contract for the layout of a StudyDD template or instance.
+# This file describes boundaries; it is not a lifecycle manifest or generator.
+contract_id: studydd.instance-layout/v1
+kind: studydd_instance_layout
+status: descriptive_and_validator_mapped
+public_safe: true
+
+source_template_link:
+  mode_file: state/STUDYDD_MODE.yaml
+  template_remote_field: template_remote
+  instance_origin_field: template_origin
+  template_remote: https://github.com/lennertvhoy/StudyDD_Template.git
+  provenance_file: state/STUDYDD_TEMPLATE_VERSION.yaml
+  provenance_fields:
+    template: [template_version, template_commit]
+    instance: [instance_created_from_template_version, instance_created_from_template_commit]
+  rule: >-
+    A template points at its public remote. A bootstrap or learner instance
+    records that remote as template_origin; the instance's own remote is
+    separate and is checked by the validator.
+
+modes:
+  template:
+    marker:
+      path: state/STUDYDD_MODE.yaml
+      field: mode
+      value: template
+    privacy_classification: public
+    source_link: state/STUDYDD_MODE.yaml.template_remote
+    lock:
+      path: .statedd/lock.yaml
+      required: false
+      expectation: not_shipped_by_current_template
+    authority_surfaces: [template_assets, compatibility_metadata, generated_views]
+  bootstrap:
+    marker:
+      path: state/STUDYDD_MODE.yaml
+      field: mode
+      value: bootstrap
+    privacy_classification: review_required
+    source_link: state/STUDYDD_MODE.yaml.template_origin
+    lock:
+      path: .statedd/lock.yaml
+      required: false
+      expectation: lifecycle_lock_is_not_yet_enforced_by_current_validator
+    authority_surfaces: [template_assets, instance_seed_and_metadata, generated_views]
+  learner_instance:
+    marker:
+      path: state/STUDYDD_MODE.yaml
+      field: mode
+      value: learner_instance
+    privacy_classification: private_by_default
+    source_link: state/STUDYDD_MODE.yaml.template_origin
+    lock:
+      path: .statedd/lock.yaml
+      required: false
+      expectation: >-
+        A future governed lifecycle must require an immutable source lock before
+        upgrade or replacement; current StudyDD validation only checks legacy
+        template-version metadata.
+    authority_surfaces: [template_assets, instance_state, instance_trees, generated_views]
+
+authority_surfaces:
+  - id: template_assets
+    authority: template
+    privacy_by_mode:
+      template: public
+      bootstrap: public
+      learner_instance: public_unless_locally_overridden
+    update_policy: template_upgrade
+    paths:
+      - scripts/**
+      - protocols/**
+      - PROMPTS/**
+      - study_skills/**
+      - docs/**
+      - contracts/**
+      - .github/**
+      - activities/ACTIVITY_TEMPLATES.yaml
+    notes: Generic workflow, tutoring policy, validation, and documentation assets.
+  - id: compatibility_metadata
+    authority: mixed_compatibility
+    privacy_by_mode:
+      template: public
+      bootstrap: review_required
+      learner_instance: private_by_default
+    update_policy: schema_or_protocol_migration
+    paths:
+      - AGENTS.md
+      - README.md
+      - state/STUDYDD_MODE.yaml
+      - state/STUDYDD_TEMPLATE_VERSION.yaml
+      - state/STATE_MANIFEST.yaml
+    notes: >-
+      These existing files expose compatibility metadata. They are not a
+      lifecycle manifest or an immutable install lock; do not blindly replace
+      them during an upgrade.
+  - id: instance_state
+    authority: instance
+    privacy_by_mode:
+      template: public_placeholder_only
+      bootstrap: review_required
+      learner_instance: private
+    update_policy: preserve_or_append_only
+    paths:
+      - state/STUDY_STATE.yaml
+      - state/SKILL_MAP.yaml
+      - state/LEARNER_PROFILE.yaml
+      - state/ACTIVITY_STATE.yaml
+      - state/EVIDENCE_LOG.md
+      - state/STUDY_BACKLOG.md
+      - NEXT_ACTIONS.md
+      - activities/ACTIVITY_LOG.md
+  - id: generated_views
+    authority: generated
+    privacy_by_mode:
+      template: public_placeholder_only
+      bootstrap: review_required
+      learner_instance: private_or_derived
+    update_policy: regenerate
+    paths:
+      - state/CURRENT_CONTEXT.md
+      - state/EVIDENCE_INDEX.yaml
+      - sessions/SESSION_SUMMARIES.md
+      - .studydd/context_pack.md
+    notes: >-
+      Generated views are disposable working context. Each view declares its
+      generator and authoritative input below; edit the input, not the view.
+
+dynamic_instance_trees:
+  - id: targets
+    root: targets
+    path_pattern: targets/**
+    privacy: private
+    provision: create_or_preserve
+    template_seed: targets/README.md
+    empty_in_template: true
+    validator_mapping: check_target_folders
+  - id: reviews
+    root: reviews
+    path_pattern: reviews/**
+    privacy: private
+    provision: seed_then_preserve
+    template_seed: reviews/
+    empty_in_template: false
+    validator_mapping: check_review_queue
+  - id: sessions
+    root: sessions
+    path_pattern: sessions/**
+    privacy: private
+    provision: seed_then_append_only
+    template_seed: sessions/
+    empty_in_template: false
+    validator_mapping: check_session_log
+  - id: sources
+    root: sources
+    path_pattern: sources/**
+    privacy: private
+    provision: seed_then_preserve
+    template_seed: sources/
+    empty_in_template: false
+    validator_mapping: check_source_freshness
+  - id: question_banks
+    root: question_banks
+    path_pattern: question_banks/**
+    privacy: private
+    provision: create_or_preserve
+    template_seed: null
+    empty_in_template: true
+    validator_mapping: documented_only
+  - id: learner_extensions
+    root: learner_extensions
+    path_pattern: learner_extensions/**
+    privacy: private
+    provision: create_or_preserve
+    template_seed: null
+    empty_in_template: true
+    validator_mapping: documented_only
+
+generated_views:
+  - path: state/CURRENT_CONTEXT.md
+    generator: scripts/compact_state.py
+    authoritative_inputs: [state/STUDY_STATE.yaml, state/SKILL_MAP.yaml, state/EVIDENCE_LOG.md, sessions/SESSION_LOG.md]
+    validator_mapping: check_current_context
+  - path: state/EVIDENCE_INDEX.yaml
+    generator: scripts/compact_state.py
+    authoritative_inputs: [state/EVIDENCE_LOG.md]
+    validator_mapping: check_evidence_index
+  - path: sessions/SESSION_SUMMARIES.md
+    generator: scripts/compact_state.py
+    authoritative_inputs: [sessions/SESSION_LOG.md]
+    validator_mapping: check_session_summaries
+  - path: .studydd/context_pack.md
+    generator: scripts/build_context_pack.py
+    authoritative_inputs: [state/CURRENT_CONTEXT.md, state/STUDY_STATE.yaml, state/SKILL_MAP.yaml]
+    validator_mapping: check_context_pack_gitignored
+
+privacy_classification:
+  values: [public, public_placeholder_only, public_unless_locally_overridden, review_required, private_by_default, private, private_or_derived, secret]
+  mode_defaults:
+    template: public
+    bootstrap: review_required
+    learner_instance: private_by_default
+  secret_rule: Secrets and credentials are never valid repository content.
+  instance_rule: >-
+    Learner names, targets, answers, evidence, sessions, reviews, sources, and
+    local extensions are private instance data even when the template ships an
+    empty or generic placeholder.
+
+validation:
+  entry_point: scripts/check_studydd.py
+  command: python3 scripts/check_studydd.py
+  contract_check: check_instance_layout_contract
+  mapping:
+    contract_presence_and_shape:
+      status: enforced
+      checks: [check_files, check_instance_layout_contract]
+    mode_marker_and_mode_privacy:
+      status: enforced
+      checks: [check_mode]
+    source_template_link:
+      status: partially_enforced
+      checks: [check_mode, check_template_version]
+      limitation: Template-origin field presence is not yet required for bootstrap instances.
+    dynamic_instance_trees:
+      status: partially_enforced
+      checks: [check_target_folders, check_review_queue, check_session_log, check_source_freshness]
+      limitation: Optional trees and ownership are documented but not created or audited automatically.
+    generated_views:
+      status: partially_enforced
+      checks: [check_current_context, check_evidence_index, check_session_summaries, check_context_pack_gitignored, check_generated_freshness]
+    lock_expectations:
+      status: documented_only
+      checks: []
+      limitation: Current StudyDD does not require or validate .statedd/lock.yaml.
+    authority_surfaces:
+      status: documented_only
+      checks: []
+      limitation: Current validation does not enforce ownership-aware upgrades or unknown-path blocking.
+    privacy_classification:
+      status: partially_enforced
+      checks: [check_mode, check_no_forbidden_brand]
+      limitation: Privacy review remains a human/operator responsibility; no secret scanner is claimed here.
+
+limitations:
+  - This is a layout and boundary contract, not a lifecycle manifest.
+  - It does not implement source resolution, locking, materialisation, upgrade planning, or transactional apply.
+  - It does not define or implement a mixed-ownership file generator.
+  - The current validator checks selected existing files and views; it does not prove exhaustive path ownership.
+  - Dynamic instance trees may be absent or empty until a learner initializes an instance.
+  - StatePort may consume this contract as an upstream description, but this repository remains the authority for StudyDD domain content.

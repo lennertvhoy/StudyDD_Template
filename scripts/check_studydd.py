@@ -31,6 +31,8 @@ REQUIRED_ROOT_FILES = [
     "requirements.txt",
 ]
 
+INSTANCE_LAYOUT_CONTRACT = "contracts/studydd.instance-layout.yaml"
+
 REQUIRED_DOC_FILES = [
     "docs/agent-native-quickstart.md",
     "docs/how-to-use-with-codex.md",
@@ -254,6 +256,7 @@ YAML_FILES = [
     "sources/SOURCE_STATE.yaml",
     "reviews/REVIEW_STATE.yaml",
     "activities/ACTIVITY_TEMPLATES.yaml",
+    INSTANCE_LAYOUT_CONTRACT,
     "EXAMPLES/ai-103-example/state/STUDY_STATE.yaml",
     "EXAMPLES/ai-103-example/state/SKILL_MAP.yaml",
     "EXAMPLES/ai-103-example/targets/ai-103/TARGET.yaml",
@@ -349,6 +352,130 @@ def check_target_folders() -> list[str]:
         if not (child / "TARGET.yaml").is_file():
             errors.append(f"Target folder missing TARGET.yaml: targets/{child.name}")
     return errors
+
+
+def _validate_instance_layout_contract(data: object) -> list[str]:
+    """Validate the public StudyDD instance-layout contract's own shape."""
+    errors: list[str] = []
+    if not isinstance(data, dict):
+        return ["Instance-layout contract must be a YAML mapping"]
+
+    if data.get("contract_id") != "studydd.instance-layout/v1":
+        errors.append("Instance-layout contract has unexpected contract_id")
+    if data.get("kind") != "studydd_instance_layout":
+        errors.append("Instance-layout contract has unexpected kind")
+    if data.get("public_safe") is not True:
+        errors.append("Instance-layout contract must declare public_safe: true")
+
+    source = data.get("source_template_link")
+    if not isinstance(source, dict):
+        errors.append("Instance-layout contract missing source_template_link mapping")
+    else:
+        for key in ("mode_file", "template_remote_field", "instance_origin_field", "template_remote", "provenance_file"):
+            if not source.get(key):
+                errors.append(f"Instance-layout source_template_link missing {key}")
+        if source.get("mode_file") != "state/STUDYDD_MODE.yaml":
+            errors.append("Instance-layout source link must use state/STUDYDD_MODE.yaml")
+        if source.get("provenance_file") != "state/STUDYDD_TEMPLATE_VERSION.yaml":
+            errors.append("Instance-layout provenance must use state/STUDYDD_TEMPLATE_VERSION.yaml")
+
+    modes = data.get("modes")
+    expected_modes = {"template", "bootstrap", "learner_instance"}
+    if not isinstance(modes, dict) or set(modes) != expected_modes:
+        errors.append("Instance-layout modes must be exactly template, bootstrap, learner_instance")
+    else:
+        for mode, mode_data in modes.items():
+            if not isinstance(mode_data, dict):
+                errors.append(f"Instance-layout mode {mode} must be a mapping")
+                continue
+            marker = mode_data.get("marker")
+            if not isinstance(marker, dict) or marker.get("path") != "state/STUDYDD_MODE.yaml" or marker.get("field") != "mode" or marker.get("value") != mode:
+                errors.append(f"Instance-layout mode {mode} has an invalid mode marker")
+            if not mode_data.get("privacy_classification"):
+                errors.append(f"Instance-layout mode {mode} missing privacy_classification")
+            lock = mode_data.get("lock")
+            if not isinstance(lock, dict) or lock.get("path") != ".statedd/lock.yaml" or not isinstance(lock.get("required"), bool) or not lock.get("expectation"):
+                errors.append(f"Instance-layout mode {mode} has an invalid lock expectation")
+
+    surfaces = data.get("authority_surfaces")
+    surface_ids = [item.get("id") for item in surfaces] if isinstance(surfaces, list) and all(isinstance(item, dict) for item in surfaces) else []
+    if not {"template_assets", "instance_state", "generated_views"}.issubset(surface_ids):
+        errors.append("Instance-layout authority_surfaces must include template_assets, instance_state, generated_views")
+    if len(surface_ids) != len(set(surface_ids)):
+        errors.append("Instance-layout authority_surfaces contain duplicate IDs")
+
+    trees = data.get("dynamic_instance_trees")
+    if not isinstance(trees, list) or not trees:
+        errors.append("Instance-layout dynamic_instance_trees must be a non-empty list")
+    else:
+        tree_ids = []
+        for item in trees:
+            if not isinstance(item, dict):
+                errors.append("Instance-layout dynamic tree must be a mapping")
+                continue
+            tree_ids.append(item.get("id"))
+            for key in ("id", "root", "path_pattern", "privacy", "provision", "validator_mapping"):
+                if not item.get(key):
+                    errors.append(f"Instance-layout dynamic tree missing {key}")
+            root = item.get("root")
+            if isinstance(root, str) and (root.startswith("/") or ".." in root.split("/")):
+                errors.append(f"Instance-layout dynamic tree has unsafe root: {root}")
+        if len(tree_ids) != len(set(tree_ids)):
+            errors.append("Instance-layout dynamic trees contain duplicate IDs")
+
+    views = data.get("generated_views")
+    if not isinstance(views, list) or not views:
+        errors.append("Instance-layout generated_views must be a non-empty list")
+    else:
+        view_paths = []
+        for item in views:
+            if not isinstance(item, dict):
+                errors.append("Instance-layout generated view must be a mapping")
+                continue
+            view_paths.append(item.get("path"))
+            for key in ("path", "generator", "authoritative_inputs", "validator_mapping"):
+                if not item.get(key):
+                    errors.append(f"Instance-layout generated view missing {key}")
+            if not isinstance(item.get("authoritative_inputs"), list) or not item.get("authoritative_inputs"):
+                errors.append(f"Instance-layout generated view {item.get('path', '<unknown>')} needs authoritative_inputs")
+        if len(view_paths) != len(set(view_paths)):
+            errors.append("Instance-layout generated views contain duplicate paths")
+
+    privacy = data.get("privacy_classification")
+    if not isinstance(privacy, dict):
+        errors.append("Instance-layout missing privacy_classification mapping")
+    else:
+        values = set(privacy.get("values") or [])
+        required_values = {"public", "review_required", "private_by_default", "private", "secret"}
+        if not required_values.issubset(values):
+            errors.append("Instance-layout privacy values are incomplete")
+        defaults = privacy.get("mode_defaults") or {}
+        if any(defaults.get(mode) not in values for mode in ("template", "bootstrap", "learner_instance")):
+            errors.append("Instance-layout privacy mode_defaults are invalid")
+
+    validation = data.get("validation")
+    if not isinstance(validation, dict) or validation.get("entry_point") != "scripts/check_studydd.py" or validation.get("command") != "python3 scripts/check_studydd.py" or validation.get("contract_check") != "check_instance_layout_contract":
+        errors.append("Instance-layout validation mapping must point to scripts/check_studydd.py")
+    elif not isinstance(validation.get("mapping"), dict) or not validation.get("mapping"):
+        errors.append("Instance-layout validation mapping must be a non-empty mapping")
+
+    limitations = data.get("limitations")
+    if not isinstance(limitations, list) or not limitations:
+        errors.append("Instance-layout limitations must be a non-empty list")
+
+    return errors
+
+
+def check_instance_layout_contract(yaml: object) -> list[str]:
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+    path = ROOT / INSTANCE_LAYOUT_CONTRACT
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return [f"Could not read {INSTANCE_LAYOUT_CONTRACT}: {exc}"]
+    return _validate_instance_layout_contract(data)
 
 
 def check_yaml() -> list[str]:
@@ -2020,6 +2147,7 @@ def main() -> int:
         yaml = None
 
     if yaml is not None:
+        errors.extend(check_instance_layout_contract(yaml))
         errors.extend(check_mode(yaml, warnings))
         errors.extend(check_active_target(yaml))
         errors.extend(check_template_version(yaml, warnings))
