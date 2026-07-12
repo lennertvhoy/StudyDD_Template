@@ -22,11 +22,9 @@ public_prompt: |
       return words
   ```
 private_answer_key: |
-  Problem: O(n^2) from list membership test (if w not in words) inside a nested loop.
-  Fix: use a set for O(1) membership. Idiomatic rewrite:
-  def unique_words(filename):
-      with open(filename) as f:
-          return {w for line in f for w in line.split()}
+  The algorithm becomes quadratic because each membership check scans a growing list.
+  Accumulate into a set instead, whose average membership lookup is constant time.
+  An idiomatic solution uses a set comprehension while continuing to stream the input.
 rubric:
   - Identifies O(n^2) list membership as the problem
   - Replaces list with set for O(1) lookup

@@ -55,8 +55,12 @@ mode: "normal"
 drill_type: "retrieval_question"
 started_at: "2026-06-27T14:00:00+00:00"
 source_ref: ""
+drill_scope: "single_target"
+primary_target_id: "demo-ai-search-exam"
+allowed_target_ids:
+  - "demo-ai-search-exam"
 ---
-{"ts":"2026-06-27T14:01:12+00:00","question_id":"Q-001","skill_id":"search-rag-basics","concept":"keyword vs vector search","answer_summary":"Correct distinction, no scenario","verdict":"partial","correction_summary":"Asked for concrete hybrid config","confidence":"medium","evidence_marker":"E-20260627-001"}
+{"ts":"2026-06-27T14:01:12+00:00","question_id":"Q-001","skill_id":"search-rag-basics","concept":"keyword vs vector search","answer_summary":"Correct distinction, no scenario","verdict":"partial","correction_summary":"Asked for concrete hybrid config","confidence":"medium","evidence_marker":"E-20260627-001","actual_target_id":"demo-ai-search-exam","objective_id":"demo-search-objective","ambiguity_status":"clear","evidence_weight":"medium","readiness_eligible":true}
 {"ts":"2026-06-27T14:03:44+00:00","question_id":"Q-002","skill_id":"search-rag-basics","concept":"hybrid retrieval config","answer_summary":"Index with text+vector fields","verdict":"correct","correction_summary":"","confidence":"medium","evidence_marker":"E-20260627-002"}
 ```
 
@@ -73,6 +77,18 @@ source_ref: ""
 | `correction_summary` | Empty if no repair; otherwise the repair prompt/response summary |
 | `confidence` | `high`, `medium`, or `low` |
 | `evidence_marker` | Stable ID that will become the canonical evidence ID on reconciliation |
+| `actual_target_id` | Target directly tested by this question |
+| `objective_id` | Optional source objective identifier |
+| `ambiguity_status` | `clear`, `ambiguous`, `source_dependent`, or `insufficient_constraints` |
+| `evidence_weight` | `none`, `low`, `medium`, or `high` |
+| `readiness_eligible` | Whether this entry may affect readiness |
+
+`single_target` drills allow only the primary target. `multi_target` drills
+require an explicit allowlist and an `actual_target_id` on every entry.
+Ambiguous entries must be readiness-ineligible and carry `none` or `low`
+weight; they remain in the evidence trail without changing readiness.
+Evidence markers must be unique across both the active checkpoint and canonical
+evidence log; duplicate markers are rejected before append.
 
 ## Agent Rules During A Drill
 
@@ -190,9 +206,9 @@ Python API (for agent scripts and tests):
 ```python
 from scripts.fast_drill_mode import start_drill, append_checkpoint, end_drill, load_checkpoint
 
-start_drill(repo_root, session_id="S-001", target_id="demo", mode="normal", drill_type="retrieval_question")
-append_checkpoint(repo_root, question_id="Q-1", skill_id="skill-1", concept="x", answer_summary="y", verdict="correct", correction_summary="", confidence="medium", evidence_marker="E-1")
-proposal = end_drill(repo_root, apply=True)
+start_drill(session_id="S-001", target_id="demo", mode="normal", drill_type="retrieval_question", repo_root=repo_root)
+append_checkpoint(question_id="Q-1", skill_id="skill-1", concept="x", answer_summary="y", verdict="correct", correction_summary="", confidence="medium", evidence_marker="E-1", repo_root=repo_root)
+proposal = end_drill(apply=True, repo_root=repo_root)
 ```
 
 ## Minimalism Guardrails

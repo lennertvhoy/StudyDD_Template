@@ -22,10 +22,14 @@ Every tutoring turn should produce exactly one canonical update and exactly one 
 
 1. Run targeted validation on the touched IDs:
    ```bash
-   python3 scripts/validate_touched_state.py --skill-id <skill_id>
-   python3 scripts/validate_touched_state.py --evidence-id <evidence_id>
+   python3 scripts/validate_touched_state.py \
+     --operation grade_answer \
+     --skill-id <skill_id> \
+     --evidence-id <evidence_id>
    python3 scripts/validate_touched_state.py --review-id <review_id>
    ```
+   The validator reads newly appended evidence from canonical
+   `state/EVIDENCE_LOG.md`; session-boundary compaction is not required first.
 2. If targeted validation passes, continue.
 3. If targeted validation fails, stop and escalate to a session-boundary or deep-audit pass:
    ```bash

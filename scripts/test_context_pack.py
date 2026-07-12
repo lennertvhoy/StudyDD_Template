@@ -227,17 +227,15 @@ def test_context_pack_includes_source_freshness_status() -> None:
 
 
 def test_context_pack_stays_generic_in_template_mode_no_active_target() -> None:
-    print("\nTest: template mode context pack stays generic with no active target")
-    run([sys.executable, "scripts/build_context_pack.py", "--task", "start_session"], ROOT)
-    text = (ROOT / ".studydd" / "context_pack.md").read_text(encoding="utf-8")
-    assert "- **Mode:** template" in text
-    assert "- **Target ID:** none" in text
-    assert "Source freshness:" in text
-    assert "- Status: not_required" in text
-    assert "**Recommended activity:** retrieval_question" in text
-    assert "generic template fallback" in text
-    assert "Study_Context" not in text, "Template pack must not leak temp instance learner name"
-    assert "Context Test Learner" not in text, "Template pack must not leak learner name"
+    print("\nTest: template mode refuses learner context pack creation")
+    result = run(
+        [sys.executable, "scripts/build_context_pack.py", "--task", "start_session"],
+        ROOT,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "INSTANCE_REQUIRED" in (result.stdout + result.stderr)
+    assert "retrieval_question" not in (result.stdout + result.stderr)
 
 
 def test_context_pack_shows_stale_source_freshness_when_relevant() -> None:

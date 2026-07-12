@@ -10,6 +10,9 @@
 - Do not put private learner state into the template repo.
 - Personalization happens only after the template has been cloned, its `.git/` removed, and Git reinitialized in a new learner directory.
 - The repo must pass through `bootstrap` mode before it becomes a `learner_instance`.
+- A learner command refused in template mode reports `INSTANCE_REQUIRED`; use
+  `scripts/create_instance.py` or the workflow below. `TEMPLATE_BACKLOG.md` is
+  template-only and is not copied into learner instances.
 
 ## Source Template Verification
 

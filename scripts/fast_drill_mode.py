@@ -18,14 +18,35 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
+from studydd.atomic import atomic_write_text
 
 VALID_VERDICTS = {"correct", "partial", "incorrect", "unclear", "override"}
+VALID_DRILL_SCOPES = {"single_target", "multi_target"}
+VALID_AMBIGUITY_STATUSES = {
+    "clear",
+    "ambiguous",
+    "source_dependent",
+    "insufficient_constraints",
+}
 RECOVERY_AGE_HOURS = 4
 
 
 def _state_path(repo_root: Path | str | None, rel: str) -> Path:
     root = Path(repo_root) if repo_root else ROOT
     return root / rel
+
+
+def _canonical_evidence_id_exists(root: Path, evidence_id: str) -> bool:
+    path = root / "state" / "EVIDENCE_LOG.md"
+    if not path.is_file():
+        return False
+    pattern = re.compile(
+        rf"(?m)^- \*\*Evidence ID:\*\*\s*{re.escape(evidence_id)}\s*$"
+    )
+    return bool(pattern.search(path.read_text(encoding="utf-8")))
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -48,7 +69,7 @@ def save_yaml(path: Path, data: dict[str, Any]) -> None:
     import yaml
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    atomic_write_text(path, yaml.safe_dump(data, sort_keys=False))
 
 
 def now_iso() -> str:
@@ -63,11 +84,11 @@ def repo_mode(repo_root: Path | str | None = None) -> str:
 def _refuse_template(repo_root: Path | str | None, demo: bool = False) -> bool:
     if demo:
         return False
-    if repo_mode(repo_root) == "template":
-        print("Error: fast_drill_mode checkpoint operations are not allowed in template mode.")
-        print("Create a learner instance with scripts/create_instance.py first.")
-        return True
-    return False
+    return bool(require_learner_mode(
+        Path(repo_root) if repo_root else ROOT,
+        operation="use fast-drill checkpoint operations",
+        learner_instance_only=True,
+    ))
 
 
 def start_drill(
@@ -76,6 +97,9 @@ def start_drill(
     mode: str = "normal",
     drill_type: str = "retrieval_question",
     source_ref: str = "",
+    drill_scope: str = "single_target",
+    primary_target_id: str = "",
+    allowed_target_ids: list[str] | None = None,
     repo_root: Path | str | None = None,
     demo: bool = False,
 ) -> int:
@@ -92,6 +116,27 @@ def start_drill(
         )
         return 1
 
+    if drill_scope not in VALID_DRILL_SCOPES:
+        print(
+            f"Error: invalid drill_scope '{drill_scope}'. "
+            f"Must be one of {sorted(VALID_DRILL_SCOPES)}."
+        )
+        return 1
+
+    primary = primary_target_id or target_id
+    if primary != target_id:
+        print("Error: primary_target_id must equal the drill target_id.")
+        return 1
+    allowed = list(dict.fromkeys(allowed_target_ids or [primary]))
+    if primary not in allowed:
+        allowed.insert(0, primary)
+    if drill_scope == "single_target" and allowed != [primary]:
+        print("Error: single_target drills may allow only primary_target_id.")
+        return 1
+    if drill_scope == "multi_target" and len(allowed) < 2:
+        print("Error: multi_target drills require at least two allowed target IDs.")
+        return 1
+
     import yaml
 
     metadata = {
@@ -101,10 +146,13 @@ def start_drill(
         "drill_type": drill_type,
         "started_at": now_iso(),
         "source_ref": source_ref or "",
+        "drill_scope": drill_scope,
+        "primary_target_id": primary,
+        "allowed_target_ids": allowed,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     header = "---\n" + yaml.safe_dump(metadata, sort_keys=False) + "---\n"
-    path.write_text(header, encoding="utf-8")
+    atomic_write_text(path, header)
     print(f"Started drill: {session_id}")
     return 0
 
@@ -118,6 +166,11 @@ def append_checkpoint(
     correction_summary: str,
     confidence: str,
     evidence_marker: str,
+    actual_target_id: str = "",
+    objective_id: str = "",
+    ambiguity_status: str = "clear",
+    evidence_weight: str = "medium",
+    readiness_eligible: bool | None = None,
     repo_root: Path | str | None = None,
 ) -> int:
     """Append one graded-answer line to the active checkpoint."""
@@ -134,6 +187,56 @@ def append_checkpoint(
         print(f"Error: invalid verdict '{verdict}'. Must be one of {sorted(VALID_VERDICTS)}.")
         return 1
 
+    if ambiguity_status not in VALID_AMBIGUITY_STATUSES:
+        print(
+            f"Error: invalid ambiguity_status '{ambiguity_status}'. "
+            f"Must be one of {sorted(VALID_AMBIGUITY_STATUSES)}."
+        )
+        return 1
+
+    try:
+        checkpoint = load_checkpoint(root)
+        metadata = checkpoint["metadata"]
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"Error: could not validate active drill metadata: {exc}")
+        return 1
+
+    if any(
+        entry.get("evidence_marker") == evidence_marker
+        for entry in checkpoint.get("entries", [])
+    ):
+        print(f"Error: duplicate evidence marker '{evidence_marker}' in active drill.")
+        return 1
+    if _canonical_evidence_id_exists(root, evidence_marker):
+        print(f"Error: evidence ID '{evidence_marker}' already exists in canonical evidence.")
+        return 1
+
+    scope = metadata.get("drill_scope", "single_target")
+    primary = metadata.get("primary_target_id") or metadata.get("target_id")
+    allowed = metadata.get("allowed_target_ids") or [primary]
+    actual = actual_target_id or (primary if scope == "single_target" else "")
+    if not actual:
+        print("Error: multi_target drill entries require --actual-target-id.")
+        return 1
+    if actual not in allowed:
+        print(
+            f"Error: actual_target_id '{actual}' is outside the drill's allowed target IDs."
+        )
+        return 1
+    if scope == "single_target" and actual != primary:
+        print(
+            f"Error: single_target drill entry belongs to '{actual}', not primary target '{primary}'."
+        )
+        return 1
+
+    eligible = ambiguity_status == "clear" if readiness_eligible is None else readiness_eligible
+    if ambiguity_status != "clear" and eligible:
+        print("Error: ambiguous drill entries must set readiness_eligible to false.")
+        return 1
+    if ambiguity_status != "clear" and evidence_weight not in {"none", "low"}:
+        print("Error: ambiguous drill entries must use evidence_weight 'none' or 'low'.")
+        return 1
+
     entry = {
         "ts": now_iso(),
         "question_id": question_id,
@@ -144,9 +247,14 @@ def append_checkpoint(
         "correction_summary": correction_summary or "",
         "confidence": confidence,
         "evidence_marker": evidence_marker,
+        "actual_target_id": actual,
+        "objective_id": objective_id,
+        "ambiguity_status": ambiguity_status,
+        "evidence_weight": evidence_weight,
+        "readiness_eligible": bool(eligible),
     }
-    with path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    checkpoint_text = path.read_text(encoding="utf-8")
+    atomic_write_text(path, checkpoint_text + json.dumps(entry, ensure_ascii=False) + "\n")
     print(f"Appended checkpoint: {evidence_marker}")
     return 0
 
@@ -296,12 +404,14 @@ def build_reconciliation(repo_root: Path | str | None = None) -> dict[str, Any]:
     skill_effects: dict[str, list[dict[str, Any]]] = {}
 
     for entry in entries:
+        ambiguity_status = entry.get("ambiguity_status", "clear")
+        readiness_eligible = bool(entry.get("readiness_eligible", True)) and ambiguity_status == "clear"
         ev_id = entry.get("evidence_marker") or entry.get("question_id", "unknown")
         evidence_items.append(
             {
                 "evidence_id": ev_id,
                 "date": entry.get("ts", now_iso())[:10],
-                "target_id": metadata.get("target_id", "unknown"),
+                "target_id": entry.get("actual_target_id") or metadata.get("target_id", "unknown"),
                 "skill_id": entry.get("skill_id", "unknown"),
                 "question_id": entry.get("question_id", "unknown"),
                 "question_summary": entry.get("concept", "unknown"),
@@ -310,10 +420,14 @@ def build_reconciliation(repo_root: Path | str | None = None) -> dict[str, Any]:
                 "mistake_type": "",
                 "explanation": f"Fast-drill entry. Correction: {entry.get('correction_summary') or 'none'}",
                 "confidence": entry.get("confidence", "low"),
+                "objective_id": entry.get("objective_id", ""),
+                "ambiguity_status": ambiguity_status,
+                "evidence_weight": entry.get("evidence_weight", "medium"),
+                "readiness_eligible": readiness_eligible,
             }
         )
         sid = entry.get("skill_id")
-        if sid:
+        if sid and readiness_eligible:
             skill_effects.setdefault(sid, []).append(entry)
 
     skill_updates = _compute_skill_updates(root, skill_effects)
@@ -345,6 +459,10 @@ def _append_evidence_items(repo_root: Path | str | None, items: list[dict[str, A
             f"- **Target ID:** {item['target_id']}\n"
             f"- **Skill ID:** {item['skill_id']}\n"
             f"- **Question ID:** {item['question_id']}\n"
+        )
+        if item.get("objective_id"):
+            entry += f"- **Objective ID:** {item['objective_id']}\n"
+        entry += (
             f"- **Question summary:** {item['question_summary']}\n"
             f"- **Learner answer summary:** {item['learner_answer_summary']}\n"
             f"- **Verdict:** {item['verdict']}\n"
@@ -354,6 +472,9 @@ def _append_evidence_items(repo_root: Path | str | None, items: list[dict[str, A
         entry += (
             f"- **Explanation:** {item['explanation']}\n"
             f"- **Confidence:** {item['confidence']}\n"
+            f"- **Ambiguity status:** {item.get('ambiguity_status', 'clear')}\n"
+            f"- **Evidence weight:** {item.get('evidence_weight', 'medium')}\n"
+            f"- **Readiness eligible:** {str(bool(item.get('readiness_eligible'))).lower()}\n"
         )
 
         marker = "## Evidence items\n\nNone yet."
@@ -361,7 +482,7 @@ def _append_evidence_items(repo_root: Path | str | None, items: list[dict[str, A
             text = text.replace(marker, "## Evidence items" + entry)
         else:
             text += entry
-    path.write_text(text, encoding="utf-8")
+    atomic_write_text(path, text)
 
 
 def _apply_skill_updates(
@@ -399,7 +520,7 @@ def _apply_next_action(repo_root: Path | str | None, next_action: str) -> None:
         "> **Agent-maintained.** This is the single canonical next-action file for the repo.\n\n"
         "## Current next action\n\n"
     )
-    path.write_text(header + next_action + "\n", encoding="utf-8")
+    atomic_write_text(path, header + next_action + "\n")
 
 
 def write_reconciliation(proposal: dict[str, Any], repo_root: Path | str | None = None) -> None:
@@ -450,6 +571,8 @@ def end_drill(apply: bool = False, repo_root: Path | str | None = None) -> tuple
 def recover_drill(repo_root: Path | str | None = None) -> tuple[dict[str, Any] | None, int]:
     """Inspect an active checkpoint and recommend resume/reconcile/abort."""
     root = Path(repo_root) if repo_root else ROOT
+    if _refuse_template(root):
+        return None, 2
     path = _state_path(root, "state/ACTIVE_DRILL_SESSION.md")
     if not path.is_file():
         print("No active drill checkpoint to recover.")
@@ -537,6 +660,18 @@ def main() -> int:
     start_p.add_argument("--drill-type", default="retrieval_question")
     start_p.add_argument("--source-ref", default="")
     start_p.add_argument(
+        "--drill-scope",
+        choices=sorted(VALID_DRILL_SCOPES),
+        default="single_target",
+    )
+    start_p.add_argument("--primary-target-id", default="")
+    start_p.add_argument(
+        "--allowed-target-id",
+        action="append",
+        dest="allowed_target_ids",
+        default=None,
+    )
+    start_p.add_argument(
         "--demo",
         action="store_true",
         help="Allow operation in template mode for testing",
@@ -551,6 +686,23 @@ def main() -> int:
     append_p.add_argument("--correction-summary", default="")
     append_p.add_argument("--confidence", required=True)
     append_p.add_argument("--evidence-marker", required=True)
+    append_p.add_argument("--actual-target-id", default="")
+    append_p.add_argument("--objective-id", default="")
+    append_p.add_argument(
+        "--ambiguity-status",
+        choices=sorted(VALID_AMBIGUITY_STATUSES),
+        default="clear",
+    )
+    append_p.add_argument(
+        "--evidence-weight",
+        choices=["none", "low", "medium", "high"],
+        default="medium",
+    )
+    append_p.add_argument(
+        "--readiness-ineligible",
+        action="store_true",
+        help="Record evidence without allowing it to change readiness",
+    )
 
     sub.add_parser("status", help="Show active drill status")
 
@@ -568,6 +720,9 @@ def main() -> int:
             mode=args.mode,
             drill_type=args.drill_type,
             source_ref=args.source_ref,
+            drill_scope=args.drill_scope,
+            primary_target_id=args.primary_target_id,
+            allowed_target_ids=args.allowed_target_ids,
             demo=args.demo,
         )
     if args.command == "append":
@@ -580,6 +735,11 @@ def main() -> int:
             correction_summary=args.correction_summary,
             confidence=args.confidence,
             evidence_marker=args.evidence_marker,
+            actual_target_id=args.actual_target_id,
+            objective_id=args.objective_id,
+            ambiguity_status=args.ambiguity_status,
+            evidence_weight=args.evidence_weight,
+            readiness_eligible=not args.readiness_ineligible,
         )
     if args.command == "status":
         if is_drill_active():

@@ -63,6 +63,19 @@ source_freshness_status: "fresh | stale | not_required | unverified"
 # What kind of factual claim this question makes.
 question_mode: authoritative_current | conceptual_practice | stale_practice | exam_sim | remediation
 
+# Optional drill ownership. If drill_scope is present, all four fields are
+# validated together.
+drill_scope: single_target | multi_target
+primary_target_id: "<target_id>"
+allowed_target_ids:
+  - "<target_id>"
+actual_target_id: "<target directly tested by this question>"
+
+# Ambiguous questions remain auditable but cannot move readiness.
+ambiguity_status: clear | ambiguous | source_dependent | insufficient_constraints
+readiness_eligible: true | false
+evidence_weight: none | low | medium | high
+
 # For volatile/current questions, the private answer key should include source
 # grounding so it is not just model memory.
 private_answer_key:
@@ -100,6 +113,12 @@ question_quality:
   quality auditing and mapping to learning-objective depth.
 - `public_prompt` must be safe to show the learner.
 - `private_answer_key` and `rubric` must never appear in learner-facing surfaces.
+- `single_target` questions must keep primary, actual, and allowed target IDs
+  identical. `multi_target` questions must stay inside their explicit allowlist.
+- `ambiguous`, `source_dependent`, and `insufficient_constraints` questions
+  must set `readiness_eligible: false` and use `evidence_weight: none` or `low`.
+- The linter warns when a correct fixed option is more than 1.25 times the mean
+  distractor length. Rewrite the options; do not add meaningless padding.
 - The validator does not require a question bank, but if one exists it checks
   that every required field is present.
 - See `protocols/QUESTION_QUALITY.md` for the question-quality gate.

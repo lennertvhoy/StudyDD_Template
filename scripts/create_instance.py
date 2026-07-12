@@ -16,6 +16,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from studydd.mode import ModeViolation, RepoMode, normalized_remote, require_mode
 
 AGENT_NAME = "StudyDD Agent"
 AGENT_EMAIL = "studydd-agent@example.invalid"
@@ -80,19 +83,26 @@ def main() -> int:
         print("Error: PyYAML is required.")
         return 1
 
-    # 1. Verify current repo is template mode.
-    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
-    mode_data = yaml.safe_load(mode_path.read_text(encoding="utf-8")) or {}
-    if mode_data.get("mode") != "template":
-        print(f"Error: current repo is not in template mode (mode={mode_data.get('mode')}).")
-        return 1
+    # 1. Verify current repo is the exact public template.
+    try:
+        require_mode(ROOT, RepoMode.TEMPLATE, operation="create a learner instance")
+    except ModeViolation as exc:
+        print(f"Error [{exc.code}]: {exc}")
+        return 2
+    if normalized_remote(remote) == normalized_remote("https://github.com/lennertvhoy/StudyDD_Template.git"):
+        print("Error [MODE_REMOTE_MISMATCH]: destination remote must not be the template remote.")
+        return 2
 
-    remotes = run(["git", "remote", "-v"], ROOT, check=False).stdout
-    if "StudyDD_Template" not in remotes:
-        print("Error: current repo does not appear to be the StudyDD_Template remote.")
-        return 1
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
 
     # 2. Refuse to overwrite existing non-empty target.
+    try:
+        target.relative_to(ROOT)
+    except ValueError:
+        pass
+    else:
+        print("Error: target directory must be outside the template repository.")
+        return 1
     if is_non_empty_dir(target):
         print(f"Error: target directory already exists and is not empty: {target}")
         return 1
@@ -117,6 +127,7 @@ def main() -> int:
             ".DS_Store",
             "*.pyc",
             "*.pyo",
+            "TEMPLATE_BACKLOG.md",
         ),
     )
 

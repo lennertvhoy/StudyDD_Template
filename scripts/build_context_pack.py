@@ -27,6 +27,9 @@ from next_activity_decision import (
 )
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
 CONTEXT_PACK_DIR = ROOT / ".studydd"
 CONTEXT_PACK_PATH = CONTEXT_PACK_DIR / "context_pack.md"
 STATE_CACHE_PATH = CONTEXT_PACK_DIR / "state_cache.json"
@@ -901,6 +904,10 @@ def main() -> int:
     parser.add_argument("--review-id", help="Narrow context to this review ID")
     parser.add_argument("--skill-id", help="Alias for --active-skill")
     args = parser.parse_args()
+
+    refusal = require_learner_mode(ROOT, operation=f"build the '{args.task}' learner context pack")
+    if refusal:
+        return refusal
 
     active_skill = args.active_skill or args.skill_id
 

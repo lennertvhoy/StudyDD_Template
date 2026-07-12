@@ -20,6 +20,12 @@ The validator (`scripts/check_studydd.py`) reads this field. In template mode it
 
 ## Agent rule
 
+The executable mode precondition is part of the boundary. Supported learner
+planning, context, recording, review, and fast-drill commands must fail with
+`INSTANCE_REQUIRED` in template mode before learner state is loaded. Template
+maintenance reads `TEMPLATE_BACKLOG.md`; learner-instance work reads
+`state/STUDY_BACKLOG.md` and `NEXT_ACTIONS.md`.
+
 Before writing any state file, check `state/STATE_MANIFEST.yaml` for its `boundary`.
 
 - If `boundary: instance` and the repo is in template mode, **stop**. Do not add learner data. Use `scripts/create_instance.py` to create a learner copy, or explain the instantiation workflow from `protocols/INSTANTIATE_TEMPLATE.md`.

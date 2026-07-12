@@ -4,6 +4,11 @@
 
 StudyDD is not a human-facing app. It is a study brain operated by coding agents such as Codex, Kimi Code, Claude Code, or ChatGPT agents. The human says "Start a StudyDD session" and the agent runs the learning loop inside the repo.
 
+The public template refuses learner planning, recording, review, and study
+context commands with `INSTANCE_REQUIRED`. Create a separate learner repo with
+`python3 scripts/create_instance.py --target <path> --remote <learner-remote>`
+before starting study work.
+
 Give the repo to a coding agent, tell it who you are and what you want to learn, and it maintains your study library, tutor memory, readiness tracker, spaced-repetition queue, source registry, and next-action engine in plain files.
 
 Your progress is never hidden inside an app database or chat history.
@@ -159,6 +164,7 @@ If you are unsure whether a file is safe to edit in the template, check its `bou
 - `state/SKILL_MAP.yaml` — skills with readiness and confidence
 - `state/EVIDENCE_LOG.md` — demonstrated evidence
 - `state/STUDY_BACKLOG.md` — strategic backlog
+- `TEMPLATE_BACKLOG.md` — public-template engineering backlog (not copied to instances)
 - `targets/` — target-specific files
 - `reviews/REVIEW_QUEUE.md` — spaced repetition queue
 - `sessions/SESSION_LOG.md` — session history

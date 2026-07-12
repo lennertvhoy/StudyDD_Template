@@ -9,6 +9,12 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
 
 PLANS = {
     "ask_question": {
@@ -151,6 +157,9 @@ def main() -> int:
         help="StudyDD operation to plan",
     )
     args = parser.parse_args()
+    refusal = require_learner_mode(ROOT, operation=f"plan the '{args.operation}' learner update")
+    if refusal:
+        return refusal
     return print_plan(args.operation)
 
 

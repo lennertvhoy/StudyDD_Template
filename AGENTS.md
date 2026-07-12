@@ -34,6 +34,8 @@ This public template must stay generic. Do not seed a real learner, target, exam
 2. If `mode` is `template` or the remote is `StudyDD_Template`, you are in template mode.
 3. In template mode, never personalize learner state, never answer study questions, never record evidence, never update readiness, never create active targets.
 4. In template mode, only edit generic template files.
+   Template engineering work is tracked in root `TEMPLATE_BACKLOG.md`; do not
+   treat it as learner next-action state.
 5. If the user asks to study, initialize a learner, answer a question, update readiness, or record evidence, first confirm the repo is a learner instance. If it is the template, stop and explain the instantiation workflow from `protocols/INSTANTIATE_TEMPLATE.md`.
 6. If the user asks to create a new StudyDD repo, use `protocols/INSTANTIATE_TEMPLATE.md` to clone/copy → remove `.git` → `git init` → new remote → first commit → then initialize learner state.
 7. Never apply learner-state changes to the template repo.
@@ -92,6 +94,7 @@ Before every StudyDD session, read:
 9. `state/EVIDENCE_INDEX.yaml`
 10. `NEXT_ACTIONS.md`
 11. `state/STUDY_BACKLOG.md`
+    In template mode, also read `TEMPLATE_BACKLOG.md` for engineering work.
 12. `targets/README.md`
 13. `reviews/REVIEW_STATE.yaml`
 14. `reviews/REVIEW_QUEUE.md`
@@ -187,6 +190,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - `.studydd/state_cache.json` = generated fingerprints to skip unnecessary compaction
 - `study_skills/<id>/SKILL.md` = domain-specific tutoring policy
 - `NEXT_ACTIONS.md` = the single next best study action
+- `TEMPLATE_BACKLOG.md` = template engineering work; never learner state
 - `AGENTS.md` = how coding and tutor agents must behave
 - `protocols/` = actionable operating rules for agents
 

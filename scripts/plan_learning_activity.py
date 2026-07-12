@@ -28,6 +28,10 @@ from next_activity_decision import (
 )
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
+from studydd.atomic import atomic_write_text
 ACTIVITY_STATE_PATH = ROOT / "state" / "ACTIVITY_STATE.yaml"
 ACTIVITY_TEMPLATES_PATH = ROOT / "activities" / "ACTIVITY_TEMPLATES.yaml"
 STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
@@ -72,7 +76,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
 def save_yaml(path: Path, data: dict[str, Any]) -> None:
     import yaml
 
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    atomic_write_text(path, yaml.safe_dump(data, sort_keys=False))
 
 
 def now_iso() -> str:
@@ -217,6 +221,11 @@ def main() -> int:
     parser.add_argument("--low-energy", action="store_true", help="Plan a low-energy activity")
     parser.add_argument("--demo", action="store_true", help="Print deterministic demo recommendation")
     args = parser.parse_args()
+
+    if not args.demo:
+        refusal = require_learner_mode(ROOT, operation="plan a learner activity")
+        if refusal:
+            return refusal
 
     output, proposed = plan_activity(
         task=args.task,

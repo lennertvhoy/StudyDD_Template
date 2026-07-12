@@ -46,6 +46,7 @@ python3 scripts/schedule_review.py \
 - **Prompt:**
 - **Due date:**
 - **Interval days:**
+- **Learning step:** explicit positive duration and unit
 - **Confidence/ease:**
 - **Lapse count:**
 - **Last result:**
@@ -57,7 +58,7 @@ python3 scripts/schedule_review.py \
 
 The simple transparent scheduler uses these intervals:
 
-- wrong + low confidence: same day (0 days)
+- wrong + low confidence: 10 minutes
 - wrong + medium/high confidence: 1 day
 - partial: 1 day
 - correct + low confidence: 2 days
@@ -65,6 +66,11 @@ The simple transparent scheduler uses these intervals:
 - correct + high confidence: 7 days
 - repeated success: expand interval gradually
 - lapse: reset to the shortest interval and increment lapse count
+
+Every interval must represent a positive duration. Sub-day steps store a
+positive fractional `interval_days` value and an explicit `learning_step`, for
+example `{value: 10, unit: minutes}`. A zero-day interval is not a valid
+schedule because it is indistinguishable from an already-due item.
 
 A future algorithm (FSRS, SM-2) can replace this map once the review data is stable, without changing the file surface.
 

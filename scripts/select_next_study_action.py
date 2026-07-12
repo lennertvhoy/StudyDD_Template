@@ -14,6 +14,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
 REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 SKILL_MAP_PATH = ROOT / "state" / "SKILL_MAP.yaml"
 STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
@@ -43,11 +46,6 @@ def load_yaml(path: Path) -> dict:
     except Exception as exc:
         print(f"Error reading {path}: {exc}")
         sys.exit(1)
-
-
-def save_yaml(path: Path, data: dict) -> None:
-    import yaml
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
 
 def classify_due(item: dict, now: datetime) -> str:
@@ -83,6 +81,10 @@ def main() -> int:
     parser.add_argument("--now", default=None, help="ISO 8601 timestamp with timezone")
     args = parser.parse_args()
 
+    refusal = require_learner_mode(ROOT, operation="select the next learner study action")
+    if refusal:
+        return refusal
+
     now = parse_now(args.now)
     review_state = load_yaml(REVIEW_STATE_PATH)
     skill_map = load_yaml(SKILL_MAP_PATH)
@@ -90,13 +92,11 @@ def main() -> int:
 
     items = review_state.get("review_items") or []
 
-    # Refresh statuses in place.
-    for item in items:
-        item["status"] = classify_due(item, now)
-    save_yaml(REVIEW_STATE_PATH, review_state)
-
-    due = [item for item in items if item.get("status") == "due"]
-    overdue = [item for item in items if item.get("status") == "overdue"]
+    # Classification is computed at read time. Selection must never mutate
+    # canonical review state merely because time passed.
+    classified = [(item, classify_due(item, now)) for item in items]
+    due = [item for item, status in classified if status == "due"]
+    overdue = [item for item, status in classified if status == "overdue"]
     total_due = len(due) + len(overdue)
 
     if total_due == 0:

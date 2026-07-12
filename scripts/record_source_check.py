@@ -20,6 +20,10 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
+from studydd.atomic import atomic_write_text
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
 MODE_PATH = ROOT / "state" / "STUDYDD_MODE.yaml"
 
@@ -109,7 +113,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
 def save_yaml(path: Path, data: dict[str, Any]) -> None:
     import yaml
 
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    atomic_write_text(path, yaml.safe_dump(data, sort_keys=False))
 
 
 def now_iso() -> str:
@@ -346,8 +350,6 @@ def record_source_check(
         print(f"Validation error: {exc}")
         return 1
 
-    mode = load_yaml(mode_path).get("mode", "unknown")
-
     if dry_run:
         state = normalize_source_state(load_yaml(source_state_path))
         existing = find_source(state, source_id)
@@ -359,13 +361,9 @@ def record_source_check(
         print_dry_run(source_id, resolved_target_id, source)
         return 0
 
-    if mode != "learner_instance":
-        print(
-            f"Error: write refused — repo mode is '{mode}', "
-            "but source checks may only be recorded in learner_instance mode. "
-            "Use --dry-run or --demo for read-only output."
-        )
-        return 2
+    refusal = require_learner_mode(root, operation="record a source check", learner_instance_only=True)
+    if refusal:
+        return refusal
 
     state = normalize_source_state(load_yaml(source_state_path))
     existing = find_source(state, source_id)

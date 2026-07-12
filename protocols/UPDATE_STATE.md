@@ -34,6 +34,7 @@ Leave these for session close unless the learner explicitly requests otherwise:
 ## Evidence Item Format
 
 ```markdown
+- **Evidence ID:** stable, unique ID
 - **Date:**
 - **Target ID:**
 - **Skill ID:**
@@ -44,6 +45,9 @@ Leave these for session close unless the learner explicitly requests otherwise:
 - **Mistake type:** (use `protocols/MISTAKE_TAXONOMY.md`)
 - **Explanation:**
 - **Confidence:** high / medium / low
+- **Ambiguity status:** clear / ambiguous / source_dependent / insufficient_constraints
+- **Evidence weight:** none / low / medium / high
+- **Readiness eligible:** true / false
 ```
 
 ## State Update Rules
