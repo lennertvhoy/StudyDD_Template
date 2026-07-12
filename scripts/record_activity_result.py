@@ -30,6 +30,11 @@ REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 
 VALID_RESULTS = {"correct", "partial", "incorrect", "unclear", "insufficient_evidence"}
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+import record_source_check
+
 
 def load_yaml(path: Path) -> dict[str, Any]:
     try:
@@ -226,6 +231,19 @@ def main() -> int:
     parser.add_argument("--evidence-id", required=True)
     parser.add_argument("--mistake-tags", default="", help="Comma-separated mistake tags")
     parser.add_argument("--notes", default="", help="Optional notes")
+    parser.add_argument("--source-id", default="", help="Source ID for a completed recent_info_check")
+    parser.add_argument("--source-outcome", default="fresh")
+    parser.add_argument("--source-summary", default="")
+    parser.add_argument("--source-checked-by", default="agent")
+    parser.add_argument("--source-checked-at", default=None)
+    parser.add_argument("--source-expires-at", default=None)
+    parser.add_argument("--source-authority", default="official")
+    parser.add_argument("--source-volatility", default=None)
+    parser.add_argument("--source-freshness-window-days", type=int, default=None)
+    source_usable = parser.add_mutually_exclusive_group()
+    source_usable.add_argument("--source-usable-for-questions", dest="source_usable_for_questions", action="store_true")
+    source_usable.add_argument("--source-not-usable-for-questions", dest="source_usable_for_questions", action="store_false")
+    parser.set_defaults(source_usable_for_questions=None)
     args = parser.parse_args()
 
     activity = update_activity_state(args.activity_id, args.result, args.evidence_id)
@@ -238,6 +256,26 @@ def main() -> int:
     append_evidence_log(activity, args.result, args.evidence_id, mistake_tags, args.notes)
     update_skill_map(activity.get("skill_id"), args.result)
     schedule_review_if_needed(activity.get("skill_id"), args.evidence_id, args.result)
+
+    if activity.get("type") == "recent_info_check" and args.source_id:
+        source_status = record_source_check.record_source_check(
+            args.source_id,
+            target_id=activity.get("target_id") or None,
+            outcome=args.source_outcome,
+            summary=args.source_summary,
+            evidence_id=args.evidence_id,
+            activity_id=args.activity_id,
+            checked_by=args.source_checked_by,
+            checked_at=args.source_checked_at,
+            expires_at=args.source_expires_at,
+            authority=args.source_authority,
+            volatility=args.source_volatility,
+            freshness_window_days=args.source_freshness_window_days,
+            usable_for_questions=args.source_usable_for_questions,
+            repo_root=ROOT,
+        )
+        if source_status != 0:
+            return source_status
 
     print(f"Recorded activity result for {args.activity_id}")
     print(f"  result: {args.result}")
