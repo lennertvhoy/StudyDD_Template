@@ -74,6 +74,7 @@ modules:
       - state-study-state
       - state-study-status
       - generated-context-pack
+      - question-banks
     selfTests:
       - id: core-health
         command: python3 scripts/check_studydd.py
@@ -407,6 +408,18 @@ assets:
     updatePolicy: preserve
     required: true
     schema: null
+    sensitivity: private
+    selectingModules:
+      - studydd.core
+  - id: question-banks
+    path: question_banks
+    kind: tree
+    owner: instance
+    role: private_question_bank_boundary
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: false
+    schema: studydd.question-bank/v1
     sensitivity: private
     selectingModules:
       - studydd.core

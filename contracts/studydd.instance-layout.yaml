@@ -167,7 +167,12 @@ dynamic_instance_trees:
     provision: create_or_preserve
     template_seed: null
     empty_in_template: true
-    validator_mapping: documented_only
+    validator_mapping: lint_questions_typed_boundary
+    schema: studydd.question-bank/v1
+    notes: >-
+      This is an instance-owned exchange boundary. The public template keeps it
+      empty; learner answers, evidence, reviews, sessions, and readiness never
+      cross into a question-bank document.
   - id: learner_extensions
     root: learner_extensions
     path_pattern: learner_extensions/**
@@ -224,8 +229,8 @@ validation:
       limitation: Template-origin values are checked during create_instance and lock generation.
     dynamic_instance_trees:
       status: enforced
-      checks: [check_target_folders, check_review_queue, check_session_log, check_source_freshness]
-      limitation: Untracked future trees are covered by declared path prefixes; content policy remains domain-specific.
+      checks: [check_target_folders, check_review_queue, check_session_log, check_source_freshness, lint_questions_typed_boundary]
+      limitation: Untracked future trees are covered by declared path prefixes; typed question-bank content is validated by scripts/lint_questions.py, not materialized here.
     generated_views:
       status: partially_enforced
       checks: [check_current_context, check_evidence_index, check_session_summaries, check_context_pack_gitignored, check_generated_freshness]

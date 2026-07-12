@@ -31,8 +31,16 @@ def main() -> int:
 
     surface_ids = {surface["id"] for surface in contract["authority_surfaces"]}
     assert {"template_assets", "instance_state", "generated_views"} <= surface_ids
-    assert {tree["id"] for tree in contract["dynamic_instance_trees"]} >= {"targets", "reviews", "sessions", "sources"}
+    trees = {tree["id"]: tree for tree in contract["dynamic_instance_trees"]}
+    assert set(trees) >= {"targets", "reviews", "sessions", "sources", "question_banks"}
+    assert trees["question_banks"]["privacy"] == "private"
+    assert trees["question_banks"]["validator_mapping"] == "lint_questions_typed_boundary"
     assert all(view["generator"] for view in contract["generated_views"])
+
+    lifecycle_manifest = yaml.safe_load(
+        (ROOT / ".statedd" / "manifest.yaml").read_text(encoding="utf-8")
+    )
+    assert "studydd.question-bank-engine" not in lifecycle_manifest["selectedModules"]
 
     malformed = copy.deepcopy(contract)
     malformed["contract_id"] = "studydd.instance-layout/v0"

@@ -110,3 +110,88 @@ question_quality:
 - For moderate, volatile, or live topics, `lint_questions.py` warns when only `source_ref` is used.
 - `source_freshness_status` and `generated_from_memory_allowed` are cached hints; the linter
   recomputes the canonical values from `sources/SOURCE_STATE.yaml`.
+
+## Typed QuestionBank v1 boundary
+
+The repository has a small typed envelope for future question-bank exchange.
+It is a schema and linter boundary only; it is not a question-bank engine and
+does not select or install a StudyDD module. The lifecycle manifest continues
+to defer `studydd.question-bank-engine` until an independently accepted
+implementation exists.
+
+Typed bank documents use this private-instance path:
+
+```text
+question_banks/<bank_id>/bank.yaml
+```
+
+`question_banks/` is empty in the public template and private by default in a
+learner instance. Existing public-safe examples under
+`EXAMPLES/*/targets/*/questions/` remain valid legacy fixtures; they are not
+learner data and are not copied into the private tree.
+
+The v1 envelope is deliberately narrow:
+
+```yaml
+apiVersion: studydd.question-bank/v1
+kind: QuestionBank
+metadata:
+  id: example-bank             # stable, path-safe identity
+  version: 1                   # content revision, not a new identity
+provenance:
+  kind: authored                # authored | imported | derived | migrated
+  source:
+    kind: repository             # structured source kind, not a free-form note
+    ref: "local-authoring"
+    digest: "sha256:<64 lowercase hex digits>"  # optional
+  recorded_at: "2026-07-12T12:00:00+00:00"
+questions:
+  - id: q-example-001            # unique with metadata.id in this bank
+    target_id: example-target
+    skill_id: example-skill
+    cognitive_level: explain
+    difficulty: 2
+    source_ref: "local-authoring"
+    public_prompt: "Learner-facing prompt."
+    private_answer_key: "Agent-only answer key."
+    rubric: ["Required point"]
+    common_traps: ["Common trap"]
+    last_used: "2026-07-12"
+    cooldown_days: 7
+```
+
+Identity rules are intentionally boring and deterministic:
+
+- `metadata.id` and every `questions[].id` are stable IDs containing only
+  letters, digits, `.`, `_`, and `-`; IDs are not generated from content or
+  filenames.
+- The structured question identity is `(metadata.id, questions[].id)`. A bank
+  or question identity may not occur twice in one lint run.
+- Do not add a second `id` or `identity` object to duplicate that structure.
+  The linter rejects both forms.
+- Provenance is structured and must include an origin kind, source kind/ref,
+  and a timezone-aware recording timestamp. A source digest, when present,
+  must be a SHA-256 digest.
+
+Import/export boundary:
+
+- Only the typed envelope and question content cross this boundary. The linter
+  accepts a file with `--bank-path` for validation but performs no import,
+  export, materialisation, or merge.
+- Learner state never belongs in a bank document. Fields such as `learner`,
+  `answer_history`, `attempts`, `evidence`, `readiness`, `review_state`,
+  `session_log`, and `state` are rejected anywhere in the envelope.
+- `private_answer_key` remains question content and must not be rendered in a
+  learner-facing prompt. Learner answers, review outcomes, and session history
+  stay in the instance-owned state trees.
+
+Validate the boundary with:
+
+```bash
+python3 scripts/lint_questions.py
+python3 scripts/lint_questions.py --bank-path question_banks/<bank_id>/bank.yaml
+```
+
+The typed envelope is intentionally not wired into module selection or a
+runtime loader in this slice. That is a known limit, not a claim of engine
+completeness.
