@@ -24,6 +24,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from studydd.atomic import atomic_write_text
 
 STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
 SKILL_MAP_PATH = ROOT / "state" / "SKILL_MAP.yaml"
@@ -69,7 +72,7 @@ def save_yaml(path: Path, data: dict) -> None:
     import yaml
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    atomic_write_text(path, yaml.safe_dump(data, sort_keys=False))
 
 
 def parse_iso(value: str | None) -> datetime | None:
@@ -142,8 +145,23 @@ def _looks_like_date(value: str) -> bool:
 
 def parse_evidence_items(text: str) -> list[dict]:
     items: list[dict] = []
-    # Split by blank lines so each evidence item is one contiguous block.
-    blocks = re.split(r"\n\s*\n", text)
+    # Evidence writers append one record marker per item. Split on the marker
+    # so adjacent appends remain distinct even when an older writer omitted a
+    # blank separator. Preserve legacy date-only records before the first ID.
+    section = text.split("## Evidence items", 1)[-1]
+    first_id = re.search(r"(?m)^- \*\*Evidence ID:\*\*", section)
+    blocks: list[str] = []
+    if first_id:
+        legacy_prefix = section[: first_id.start()]
+        blocks.extend(re.split(r"\n\s*\n", legacy_prefix))
+        blocks.extend(
+            re.split(
+                r"(?m)(?=^- \*\*Evidence ID:\*\*)",
+                section[first_id.start() :],
+            )
+        )
+    else:
+        blocks = re.split(r"\n\s*\n", section)
     for block in blocks:
         block = block.strip()
         if not block:
@@ -157,13 +175,19 @@ def parse_evidence_items(text: str) -> list[dict]:
             ("target_id", r"\*\*Target ID:\*\*\s*(\S+)"),
             ("skill_id", r"\*\*Skill ID:\*\*\s*(\S+)"),
             ("question_id", r"\*\*Question ID:\*\*\s*(\S+)"),
+            ("objective_id", r"\*\*Objective ID:\*\*\s*(\S+)"),
             ("verdict", r"\*\*Verdict:\*\*\s*(\S+)"),
             ("confidence", r"\*\*Confidence:\*\*\s*(\S+)"),
             ("mistake_type", r"\*\*Mistake type:\*\*\s*(\S+)"),
+            ("ambiguity_status", r"\*\*Ambiguity status:\*\*\s*(\S+)"),
+            ("evidence_weight", r"\*\*Evidence weight:\*\*\s*(\S+)"),
+            ("readiness_eligible", r"\*\*Readiness eligible:\*\*\s*(\S+)"),
         ]:
             match = re.search(pattern, block)
             if match:
                 item[field] = match.group(1).strip()
+        if "readiness_eligible" in item:
+            item["readiness_eligible"] = str(item["readiness_eligible"]).lower() == "true"
         # Skip format-documentation blocks that have not produced a real record.
         if not item.get("evidence_id") and not _looks_like_date(item.get("date", "")):
             continue
@@ -230,7 +254,7 @@ def load_state_cache() -> dict:
 
 def save_state_cache(cache: dict) -> None:
     STATE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_CACHE_PATH.write_text(json.dumps(cache, indent=2, sort_keys=True), encoding="utf-8")
+    atomic_write_text(STATE_CACHE_PATH, json.dumps(cache, indent=2, sort_keys=True))
 
 
 def current_fingerprints() -> dict:
@@ -373,9 +397,13 @@ def build_evidence_index() -> dict:
                 "target_id": item.get("target_id", ""),
                 "skill_id": item.get("skill_id", ""),
                 "question_id": item.get("question_id", ""),
+                "objective_id": item.get("objective_id", ""),
                 "verdict": item.get("verdict", ""),
                 "confidence": item.get("confidence", ""),
                 "mistake_type": item.get("mistake_type", ""),
+                "ambiguity_status": item.get("ambiguity_status", "clear"),
+                "evidence_weight": item.get("evidence_weight", "medium"),
+                "readiness_eligible": item.get("readiness_eligible", True),
                 "source_file": "state/EVIDENCE_LOG.md",
                 "line_hint": item.get("evidence_id", "") or item.get("date", ""),
             }
@@ -445,7 +473,7 @@ def compact(force: bool = False, dry_run: bool = False) -> tuple[bool, dict]:
     if rebuild_context:
         context = build_current_context(study_state, skill_map, review_state, next_actions_text, now)
         CURRENT_CONTEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        CURRENT_CONTEXT_PATH.write_text(context + "\n", encoding="utf-8")
+        atomic_write_text(CURRENT_CONTEXT_PATH, context + "\n")
         print(f"Updated {CURRENT_CONTEXT_PATH.relative_to(ROOT)}")
 
     if rebuild_evidence:
@@ -456,7 +484,7 @@ def compact(force: bool = False, dry_run: bool = False) -> tuple[bool, dict]:
     if rebuild_sessions:
         session_summaries = build_session_summaries()
         SESSION_SUMMARIES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        SESSION_SUMMARIES_PATH.write_text(session_summaries, encoding="utf-8")
+        atomic_write_text(SESSION_SUMMARIES_PATH, session_summaries)
         print(f"Updated {SESSION_SUMMARIES_PATH.relative_to(ROOT)}")
 
     if not (rebuild_context or rebuild_evidence or rebuild_sessions):

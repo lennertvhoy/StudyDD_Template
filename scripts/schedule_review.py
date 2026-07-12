@@ -23,6 +23,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
+from studydd.atomic import atomic_write_text
 REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 REVIEW_QUEUE_PATH = ROOT / "reviews" / "REVIEW_QUEUE.md"
 
@@ -36,13 +40,13 @@ def parse_now(value: str | None) -> datetime:
     return dt
 
 
-def compute_interval(grade: str, confidence: str, lapses: int = 0) -> int:
+def compute_interval(grade: str, confidence: str, lapses: int = 0) -> float:
     grade = grade.lower()
     confidence = confidence.lower()
 
     if grade in ("wrong", "incorrect"):
         if confidence == "low":
-            interval = 0
+            interval = 10 / (24 * 60)
         else:
             interval = 1
     elif grade == "partial":
@@ -65,7 +69,7 @@ def compute_interval(grade: str, confidence: str, lapses: int = 0) -> int:
 
 
 def make_review_id(skill_id: str, now: datetime) -> str:
-    stamp = now.strftime("%Y%m%d_%H%M%S")
+    stamp = now.strftime("%Y%m%d_%H%M%S_%f")
     safe_skill = re.sub(r"[^a-zA-Z0-9_-]", "_", skill_id)
     return f"rev_{safe_skill}_{stamp}"
 
@@ -88,10 +92,25 @@ def load_yaml(path: Path) -> dict:
 
 def save_yaml(path: Path, data: dict) -> None:
     import yaml
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    atomic_write_text(path, yaml.safe_dump(data, sort_keys=False))
 
 
-def add_to_queue(review_id: str, skill_id: str, evidence_id: str | None, due_at: str, interval: int, prompt: str) -> None:
+def learning_step(interval_days: float) -> dict[str, int | str | float]:
+    if interval_days < 1:
+        return {"value": max(1, round(interval_days * 24 * 60)), "unit": "minutes"}
+    value: int | float = int(interval_days) if float(interval_days).is_integer() else interval_days
+    return {"value": value, "unit": "days"}
+
+
+def add_to_queue(
+    review_id: str,
+    skill_id: str,
+    evidence_id: str | None,
+    due_at: str,
+    interval: float,
+    step: dict[str, int | str | float],
+    prompt: str,
+) -> None:
     if not REVIEW_QUEUE_PATH.is_file():
         return
 
@@ -105,7 +124,9 @@ def add_to_queue(review_id: str, skill_id: str, evidence_id: str | None, due_at:
     entry += (
         f"- **Prompt:** {prompt}\n"
         f"- **Due date:** {due_at[:10]}\n"
+        f"- **Due at:** {due_at}\n"
         f"- **Interval days:** {interval}\n"
+        f"- **Learning step:** {step['value']} {step['unit']}\n"
     )
 
     # Place newly scheduled items under Scheduled. The selector will move them
@@ -116,7 +137,7 @@ def add_to_queue(review_id: str, skill_id: str, evidence_id: str | None, due_at:
     else:
         text += entry
 
-    REVIEW_QUEUE_PATH.write_text(text, encoding="utf-8")
+    atomic_write_text(REVIEW_QUEUE_PATH, text)
 
 
 def main() -> int:
@@ -129,17 +150,48 @@ def main() -> int:
     parser.add_argument("--now", default=None, help="ISO 8601 timestamp with timezone")
     parser.add_argument("--prompt", default="Review this skill using a question in a different mode than the original.")
     parser.add_argument("--source", default="missed_question", help="Why the review was scheduled")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and print the schedule without writing state",
+    )
     args = parser.parse_args()
+
+    refusal = require_learner_mode(ROOT, operation="schedule a learner review", learner_instance_only=True)
+    if refusal:
+        return refusal
 
     now = parse_now(args.now)
     interval = compute_interval(args.grade, args.confidence)
     due_at = now + timedelta(days=interval)
     due_at_str = due_at.isoformat()
+    step = learning_step(interval)
 
     review_id = make_review_id(args.skill_id, now)
 
     state = load_yaml(REVIEW_STATE_PATH)
     items = state.setdefault("review_items", [])
+    if args.evidence_id:
+        existing = next(
+            (
+                item
+                for item in items
+                if item.get("skill_id") == args.skill_id
+                and item.get("evidence_id") == args.evidence_id
+                and item.get("status") not in {"completed", "suspended"}
+            ),
+            None,
+        )
+        if existing:
+            existing_id = existing.get("id") or existing.get("review_id")
+            print(
+                f"Review already scheduled for skill '{args.skill_id}' and evidence "
+                f"'{args.evidence_id}': {existing_id}"
+            )
+            return 0
+    if any(item.get("id") == review_id or item.get("review_id") == review_id for item in items):
+        print(f"Error: duplicate review ID '{review_id}'.")
+        return 1
 
     item = {
         "id": review_id,
@@ -149,6 +201,7 @@ def main() -> int:
         "due_at": due_at_str,
         "last_reviewed_at": None,
         "interval_days": interval,
+        "learning_step": step,
         "stability": None,
         "difficulty": None,
         "lapses": 0,
@@ -157,10 +210,25 @@ def main() -> int:
         "source": args.source,
         "override_count": 0,
     }
+    if args.dry_run:
+        print(f"Review schedule preflight passed for {review_id}")
+        print(f"  interval_days: {interval}")
+        print(f"  learning_step: {step['value']} {step['unit']}")
+        print(f"  due_at: {due_at_str}")
+        return 0
+
     items.append(item)
     save_yaml(REVIEW_STATE_PATH, state)
 
-    add_to_queue(review_id, args.skill_id, args.evidence_id, due_at_str, interval, args.prompt)
+    add_to_queue(
+        review_id,
+        args.skill_id,
+        args.evidence_id,
+        due_at_str,
+        interval,
+        step,
+        args.prompt,
+    )
 
     print(f"Scheduled review {review_id}")
     print(f"  skill_id: {args.skill_id}")
@@ -168,6 +236,7 @@ def main() -> int:
     print(f"  grade: {args.grade}")
     print(f"  confidence: {args.confidence}")
     print(f"  interval_days: {interval}")
+    print(f"  learning_step: {step['value']} {step['unit']}")
     print(f"  due_at: {due_at_str}")
     return 0
 

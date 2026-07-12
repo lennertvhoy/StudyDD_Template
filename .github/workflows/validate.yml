@@ -70,6 +70,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_validate_touched_state.py
 
+      - name: Run fast-path integrity test
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/test_fast_path_integrity.py
+
       - name: Run source freshness test
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/test_source_freshness.py

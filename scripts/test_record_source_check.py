@@ -18,7 +18,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT_NAME = "scripts/record_source_check.py"
 
-NOW = datetime(2026, 6, 27, 12, 0, 0, tzinfo=timezone.utc)
+
+def fresh_timestamp() -> str:
+    """Return a current timezone-aware timestamp for freshness assertions."""
+
+    return datetime.now(timezone.utc).isoformat()
 
 
 def run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess:
@@ -163,7 +167,7 @@ def test_learner_instance_updates_existing_source_and_bumps_last_checked() -> No
             },
         )
 
-        new_checked = "2026-06-27T10:00:00+00:00"
+        new_checked = fresh_timestamp()
         result = run_script(
             target,
             "existing-source",
@@ -197,7 +201,7 @@ def test_learner_instance_creates_source_when_target_id_given() -> None:
         target_yaml = "---\nid: create-target\ntype: certification\ntitle: Create target\nvolatility: volatile\nstudy_skill: it_certification\n"
         target = create_temp_instance(tmp, "SourceCreate", "create-target", target_yaml)
 
-        checked_at = "2026-06-27T10:00:00+00:00"
+        checked_at = fresh_timestamp()
         result = run_script(
             target,
             "new-source",
@@ -367,7 +371,7 @@ def test_fresh_source_check_suppresses_recent_info_check() -> None:
         assert before.returncode == 0, before.stderr
         assert "recent_info_check" in before.stdout, "Volatile target with no source state should route to recent_info_check"
 
-        checked_at = "2026-06-27T10:00:00+00:00"
+        checked_at = fresh_timestamp()
         result = run_script(
             target,
             "fresh-integration-source",
@@ -419,7 +423,7 @@ def test_context_pack_reflects_recorded_fresh_source_state() -> None:
             "--volatility",
             "volatile",
             "--checked-at",
-            "2026-06-27T10:00:00+00:00",
+            fresh_timestamp(),
             "--summary",
             "Official docs verified for pack test",
         )

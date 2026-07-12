@@ -68,7 +68,10 @@ def read_yaml(rel: str) -> dict | None:
 
 def check_files() -> list[str]:
     missing: list[str] = []
-    for rel in REQUIRED_FILES + REQUIRED_PROTOCOLS:
+    required = list(REQUIRED_FILES)
+    if current_mode() == "template":
+        required.append("TEMPLATE_BACKLOG.md")
+    for rel in required + REQUIRED_PROTOCOLS:
         if not (ROOT / rel).is_file():
             missing.append(rel)
     return missing
@@ -152,6 +155,10 @@ def main() -> int:
     print("\nRequired files: present")
 
     print(f"\nMode: {current_mode()}")
+    if current_mode() == "template":
+        print("Template engineering backlog: TEMPLATE_BACKLOG.md")
+    else:
+        print("Learner backlog: state/STUDY_BACKLOG.md")
 
     study_state = read_yaml("state/STUDY_STATE.yaml")
     print(f"\nActive target: {active_target(study_state)}")

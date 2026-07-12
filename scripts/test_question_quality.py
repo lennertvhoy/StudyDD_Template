@@ -435,6 +435,84 @@ def test_option_position_bias_warns() -> None:
         assert "correct option is always in position 1" in result.stdout
 
 
+def test_option_length_bias_warns() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "length-bias-target"
+        write_mode(tmp_root, "learner_instance")
+        write_target(tmp_root, target_id, volatility="stable")
+        write_source_state(tmp_root, [])
+        write_question(
+            tmp_root,
+            target_id,
+            "Q-LENGTH-001",
+            {
+                "cognitive_level": "choose-best",
+                "options": [
+                    {"label": "A", "text": "A very long, detailed correct option with multiple qualifying constraints"},
+                    {"label": "B", "text": "Short distractor"},
+                    {"label": "C", "text": "Brief alternative"},
+                    {"label": "D", "text": "Another distractor"},
+                ],
+                "correct_label": "A",
+                "private_answer_key": {"correct_label": "A"},
+            },
+        )
+
+        result = run_script(tmp_root, "--target-id", target_id)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "correct option is" in result.stdout
+        assert "longer than the mean distractor" in result.stdout
+
+
+def test_ambiguous_question_cannot_affect_readiness() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "ambiguity-target"
+        write_mode(tmp_root, "learner_instance")
+        write_target(tmp_root, target_id, volatility="stable")
+        write_source_state(tmp_root, [])
+        write_question(
+            tmp_root,
+            target_id,
+            "Q-AMB-001",
+            {
+                "ambiguity_status": "ambiguous",
+                "readiness_eligible": True,
+                "evidence_weight": "high",
+            },
+        )
+
+        result = run_script(tmp_root, "--target-id", target_id)
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert "ambiguous question must set readiness_eligible: false" in result.stdout
+        assert "ambiguous question must use evidence_weight: none or low" in result.stdout
+
+
+def test_single_target_scope_rejects_cross_target_question() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
+        tmp_root = Path(tmp)
+        target_id = "primary-target"
+        write_mode(tmp_root, "learner_instance")
+        write_target(tmp_root, target_id, volatility="stable")
+        write_source_state(tmp_root, [])
+        write_question(
+            tmp_root,
+            target_id,
+            "Q-SCOPE-001",
+            {
+                "drill_scope": "single_target",
+                "primary_target_id": target_id,
+                "actual_target_id": "different-target",
+                "allowed_target_ids": [target_id],
+            },
+        )
+
+        result = run_script(tmp_root, "--target-id", target_id)
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert "actual_target_id must equal primary_target_id" in result.stdout
+
+
 def test_discovers_example_target_questions() -> None:
     with tempfile.TemporaryDirectory(prefix="studydd-lint-") as tmp:
         tmp_root = Path(tmp)
@@ -510,6 +588,9 @@ def main() -> int:
         test_question_volatility_overrides_target,
         test_skill_question_balance_warns_on_recall_only,
         test_option_position_bias_warns,
+        test_option_length_bias_warns,
+        test_ambiguous_question_cannot_affect_readiness,
+        test_single_target_scope_rejects_cross_target_question,
         test_discovers_example_target_questions,
         test_generated_from_memory_false_with_fresh_source_passes,
     ]

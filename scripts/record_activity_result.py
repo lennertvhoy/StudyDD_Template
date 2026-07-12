@@ -15,6 +15,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -22,6 +23,10 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from mode_guard import require_learner_mode
+from studydd.atomic import atomic_write_text
 ACTIVITY_STATE_PATH = ROOT / "state" / "ACTIVITY_STATE.yaml"
 ACTIVITY_LOG_PATH = ROOT / "activities" / "ACTIVITY_LOG.md"
 EVIDENCE_LOG_PATH = ROOT / "state" / "EVIDENCE_LOG.md"
@@ -56,7 +61,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
 def save_yaml(path: Path, data: dict[str, Any]) -> None:
     import yaml
 
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    atomic_write_text(path, yaml.safe_dump(data, sort_keys=False))
 
 
 def now_iso() -> str:
@@ -118,7 +123,7 @@ def append_activity_log(activity: dict[str, Any], result: str, evidence_id: str,
         text = text.replace(marker, "## Activities" + entry)
     else:
         text += entry
-    ACTIVITY_LOG_PATH.write_text(text, encoding="utf-8")
+    atomic_write_text(ACTIVITY_LOG_PATH, text)
 
 
 def append_evidence_log(
@@ -163,10 +168,10 @@ def append_evidence_log(
         text = text.replace(marker, "## Evidence items" + entry)
     else:
         text += entry
-    EVIDENCE_LOG_PATH.write_text(text, encoding="utf-8")
+    atomic_write_text(EVIDENCE_LOG_PATH, text)
 
 
-def update_skill_map(skill_id: str, result: str) -> None:
+def update_skill_map(skill_id: str, result: str, evidence_id: str) -> None:
     if not skill_id:
         return
 
@@ -192,18 +197,25 @@ def update_skill_map(skill_id: str, result: str) -> None:
         # insufficient_evidence does not change readiness.
 
         evidence = skill.get("evidence") or []
-        # Do not duplicate; append placeholder reference if needed.
+        if evidence_id not in evidence:
+            evidence.append(evidence_id)
         skill["evidence"] = evidence
         break
 
     save_yaml(SKILL_MAP_PATH, data)
 
 
-def schedule_review_if_needed(skill_id: str, evidence_id: str, result: str) -> None:
+def schedule_review_if_needed(
+    skill_id: str,
+    evidence_id: str,
+    result: str,
+    *,
+    dry_run: bool = False,
+) -> int:
     if result not in ("partial", "incorrect", "unclear", "insufficient_evidence"):
-        return
+        return 0
     if not skill_id:
-        return
+        return 0
 
     confidence = "low" if result in ("incorrect", "unclear", "insufficient_evidence") else "medium"
     cmd = [
@@ -222,7 +234,29 @@ def schedule_review_if_needed(skill_id: str, evidence_id: str, result: str) -> N
         "--prompt",
         "Review the skill using a different activity type than the original submission.",
     ]
-    subprocess.run(cmd, cwd=ROOT, check=False)
+    if dry_run:
+        cmd.append("--dry-run")
+    completed = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, check=False)
+    if completed.stdout and (not dry_run or completed.returncode != 0):
+        print(completed.stdout, end="")
+    if completed.returncode != 0:
+        if completed.stderr:
+            print(completed.stderr, file=sys.stderr, end="")
+        print(
+            f"Error: review scheduling failed with exit code {completed.returncode}; "
+            "activity result is not complete.",
+            file=sys.stderr,
+        )
+    return completed.returncode
+
+
+def markdown_id_exists(path: Path, label: str, value: str) -> bool:
+    if not path.is_file():
+        return False
+    pattern = re.compile(
+        rf"(?m)^- \*\*{re.escape(label)}:\*\*\s*{re.escape(value)}\s*$"
+    )
+    return bool(pattern.search(path.read_text(encoding="utf-8")))
 
 
 def record_source_check_from_activity(activity: dict[str, Any], args: argparse.Namespace) -> int:
@@ -275,6 +309,40 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    refusal = require_learner_mode(ROOT, operation="record a learner activity result", learner_instance_only=True)
+    if refusal:
+        return refusal
+
+    if markdown_id_exists(EVIDENCE_LOG_PATH, "Evidence ID", args.evidence_id):
+        print(f"Error: evidence ID '{args.evidence_id}' already exists.")
+        return 1
+    if markdown_id_exists(ACTIVITY_LOG_PATH, "Activity ID", args.activity_id):
+        print(f"Error: activity ID '{args.activity_id}' is already recorded.")
+        return 1
+
+    activity_preview = (load_yaml(ACTIVITY_STATE_PATH).get("active_activity") or {})
+    if activity_preview.get("id") != args.activity_id:
+        print(f"Error: activity ID '{args.activity_id}' not found in active_activity.")
+        return 1
+    preview_skill_id = activity_preview.get("skill_id")
+    if preview_skill_id and not any(
+        skill.get("id") == preview_skill_id
+        for skill in (load_yaml(SKILL_MAP_PATH).get("skills") or [])
+    ):
+        print(
+            f"Error: activity '{args.activity_id}' references unknown skill "
+            f"'{preview_skill_id}'."
+        )
+        return 1
+    preflight_code = schedule_review_if_needed(
+        preview_skill_id,
+        args.evidence_id,
+        args.result,
+        dry_run=True,
+    )
+    if preflight_code != 0:
+        return preflight_code
+
     activity = update_activity_state(args.activity_id, args.result, args.evidence_id)
     if activity is None:
         print(f"Error: activity ID '{args.activity_id}' not found in active_activity.")
@@ -283,8 +351,12 @@ def main() -> int:
     mistake_tags = [t.strip() for t in args.mistake_tags.split(",") if t.strip()]
     append_activity_log(activity, args.result, args.evidence_id, mistake_tags, args.notes)
     append_evidence_log(activity, args.result, args.evidence_id, mistake_tags, args.notes)
-    update_skill_map(activity.get("skill_id"), args.result)
-    schedule_review_if_needed(activity.get("skill_id"), args.evidence_id, args.result)
+    update_skill_map(activity.get("skill_id"), args.result, args.evidence_id)
+    review_code = schedule_review_if_needed(
+        activity.get("skill_id"), args.evidence_id, args.result
+    )
+    if review_code != 0:
+        return review_code
 
     # Automatic source-check handoff for completed recent_info_check activities.
     if activity.get("type") == "recent_info_check" and args.source_id:

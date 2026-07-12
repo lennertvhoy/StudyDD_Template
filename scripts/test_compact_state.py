@@ -87,6 +87,22 @@ def main() -> int:
             "- **Verdict:** correct\n"
             "- **Explanation:** Initial answer was complete and concrete.\n"
             "- **Confidence:** medium\n"
+            "- **Ambiguity status:** clear\n"
+            "- **Evidence weight:** medium\n"
+            "- **Readiness eligible:** true\n"
+            "- **Evidence ID:** ev_compact_002\n"
+            "- **Date:** 2026-06-24\n"
+            "- **Target ID:** compact-target\n"
+            "- **Skill ID:** compact-search-basics\n"
+            "- **Question ID:** Q-COMPACT-002\n"
+            "- **Question summary:** Apply retrieval selection.\n"
+            "- **Learner answer summary:** The item was ambiguous.\n"
+            "- **Verdict:** unclear\n"
+            "- **Explanation:** Recorded without readiness effect.\n"
+            "- **Confidence:** low\n"
+            "- **Ambiguity status:** ambiguous\n"
+            "- **Evidence weight:** none\n"
+            "- **Readiness eligible:** false\n"
         )
         evidence_path.write_text(evidence_text + evidence_entry, encoding="utf-8")
 
@@ -132,9 +148,12 @@ def main() -> int:
         assert "compact-target" in context_text
 
         evidence_index = yaml.safe_load(evidence_index_path.read_text(encoding="utf-8")) or {}
-        assert evidence_index.get("count") == 1, f"Expected 1 evidence item, got {evidence_index.get('count')}"
+        assert evidence_index.get("count") == 2, f"Expected 2 evidence items, got {evidence_index.get('count')}"
         items = evidence_index.get("items") or []
         assert any(item.get("evidence_id") == "ev_compact_001" for item in items), "ev_compact_001 not in evidence index"
+        second = next(item for item in items if item.get("evidence_id") == "ev_compact_002")
+        assert second["ambiguity_status"] == "ambiguous"
+        assert second["readiness_eligible"] is False
 
         summaries_text = session_summaries_path.read_text(encoding="utf-8")
         assert "**Total sessions:** 1" in summaries_text

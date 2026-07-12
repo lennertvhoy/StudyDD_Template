@@ -9,6 +9,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -233,6 +234,7 @@ def test_plan_includes_source_freshness_for_fresh_volatile_target() -> None:
         target_yaml = "---\nid: fresh-source-target\ntype: certification\ntitle: Fresh Source Cert\nvolatility: volatile\nstudy_skill: it_certification\n"
         target = create_temp_instance(tmp, "FreshSourceTest", "fresh-source-target", target_yaml)
 
+        now = datetime.now(timezone.utc).isoformat()
         source_state = {
             "metadata": {"template_version": "0.9.0", "last_updated": "2026-06-27"},
             "sources": [
@@ -240,7 +242,7 @@ def test_plan_includes_source_freshness_for_fresh_volatile_target() -> None:
                     "id": "fresh-docs",
                     "authority": "official",
                     "target_ids": ["fresh-source-target"],
-                    "last_checked_at": "2026-06-27T10:00:00+00:00",
+                    "last_checked_at": now,
                     "volatility": "volatile",
                 }
             ],
@@ -292,13 +294,12 @@ def test_presentation_analyzer() -> None:
 
 
 def test_context_pack_includes_active_activity() -> None:
-    run([sys.executable, "scripts/build_context_pack.py", "--task", "start_session"])
-    pack_path = ROOT / ".studydd" / "context_pack.md"
-    assert pack_path.is_file(), "Context pack was not built"
-    text = pack_path.read_text(encoding="utf-8")
-    assert "## Active activity" in text or "active_activity" in text, "Context pack should surface active activity"
-    # Raw activity log is append-only audit; should not be loaded as file content by default.
-    assert "### activities/ACTIVITY_LOG.md" not in text, "Context pack should not include full activity log contents"
+    result = run(
+        [sys.executable, "scripts/build_context_pack.py", "--task", "start_session"],
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "INSTANCE_REQUIRED" in result.stdout + result.stderr
 
 
 def test_demo_replay_mentions_non_question_activity() -> None:
@@ -397,6 +398,7 @@ def test_record_activity_result_on_temp_instance() -> None:
         updated_skill_map = load_yaml(target / "state" / "SKILL_MAP.yaml")
         skill = updated_skill_map["skills"][0]
         assert skill["status"] in ("weak", "practiced"), "Skill status should be updated conservatively"
+        assert "ev_test_001" in skill["evidence"], "Skill must reference the recorded evidence"
 
         review_state = load_yaml(target / "reviews" / "REVIEW_STATE.yaml")
         assert review_state.get("review_items"), "A review should be scheduled for a partial result"
@@ -410,6 +412,8 @@ def test_record_recent_info_check_updates_source_state() -> None:
         target_yaml = "---\nid: recent-info-target\ntype: certification\ntitle: Recent Info Cert\nvolatility: volatile\nstudy_skill: it_certification\n"
         target = create_temp_instance(tmp, "RecentInfoTest", "recent-info-target", target_yaml)
 
+        now = datetime.now(timezone.utc).isoformat()
+
         # Set active recent_info_check activity.
         activity_state = load_yaml(target / "state" / "ACTIVITY_STATE.yaml")
         activity_state["active_activity"] = {
@@ -417,7 +421,7 @@ def test_record_recent_info_check_updates_source_state() -> None:
             "type": "recent_info_check",
             "target_id": "recent-info-target",
             "skill_id": "recent-info-skill",
-            "assigned_at": "2026-06-27T12:00:00+00:00",
+            "assigned_at": now,
             "due_at": "",
             "status": "proposed",
             "reason": "Source freshness check for volatile cert.",
@@ -440,7 +444,7 @@ def test_record_recent_info_check_updates_source_state() -> None:
         ]
         save_yaml(target / "state" / "SKILL_MAP.yaml", skill_map)
 
-        checked_at = "2026-06-27T12:30:00+00:00"
+        checked_at = now
         run(
             [
                 sys.executable,

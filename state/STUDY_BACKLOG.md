@@ -1,24 +1,18 @@
-# STUDY_BACKLOG — Strategic Roadmap
+# STUDY_BACKLOG — Learner Seed Backlog
 
-> **Agent-maintained.** This file holds non-immediate work. The immediate next step lives only in `NEXT_ACTIONS.md`.
+> Generic seed backlog for a future learner instance. The public template's
+> engineering work lives in `TEMPLATE_BACKLOG.md` and is never learner state.
 
 ## Backlog items
 
-- **core-initialize-learner:** Initialize learner profile, preferred language, and preferred tutoring style.
-- **core-add-first-target:** Create the first folder under `targets/` and register it in `state/STUDY_STATE.yaml`.
-- **core-build-skill-map:** Build the first conservative skill map from trusted sources in `sources/SOURCE_INDEX.md`.
-- **core-first-diagnostic:** Run one hard diagnostic question and record evidence.
-- **core-review-queue:** Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
-- **addon-telegram-study-bot:** Future add-on for daily review prompts, answer capture, reminders, and low-energy study mode.
-- **addon-containerized-studydd:** Future add-on for Docker, Podman, devcontainer, or compose-based portable local execution.
+- **core-initialize-learner:** Initialize learner profile, language, and tutoring style in an instance only.
+- **core-add-first-target:** Create the first target and register it in learner state.
+- **core-build-skill-map:** Build a conservative skill map from trusted sources.
+- **core-first-diagnostic:** Run one strong diagnostic and record evidence.
+- **core-review-queue:** Schedule weak or repaired learner evidence.
+- **addon-telegram-study-bot:** Optional future add-on after the core path is stable.
+- **addon-containerized-studydd:** Optional future portability add-on after the core path is stable.
 
 ## Done
 
 - None.
-
-## Backlog rules
-
-- Each item should have a stable ID.
-- Items move to `NEXT_ACTIONS.md` only when they are the immediate next step.
-- Completed items move to the Done section with a date and evidence reference.
-- Add-ons stay in the backlog until the core happy path is stable.

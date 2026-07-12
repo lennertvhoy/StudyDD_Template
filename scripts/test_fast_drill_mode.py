@@ -141,6 +141,132 @@ def test_start_and_append() -> None:
         assert fdm.is_drill_active(instance) is True
 
 
+def test_single_target_scope_rejects_cross_target_entry() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        instance = create_temp_instance(tmp, "drill_scope", "demo-target")
+        rc = fdm.start_drill(
+            "S-SCOPE",
+            "demo-target",
+            drill_scope="single_target",
+            repo_root=instance,
+        )
+        assert rc == 0
+        rc = fdm.append_checkpoint(
+            "Q-001",
+            "skill-a",
+            "concept",
+            "answer",
+            "correct",
+            "",
+            "medium",
+            "E-SCOPE-001",
+            actual_target_id="other-target",
+            repo_root=instance,
+        )
+        assert rc != 0
+        assert fdm.load_checkpoint(instance)["entries"] == []
+
+
+def test_multi_target_scope_routes_evidence_and_excludes_ambiguity() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        instance = create_temp_instance(
+            tmp,
+            "drill_multi_scope",
+            "primary-target",
+            skills=[{"id": "skill-a", "label": "Skill A", "status": "practiced", "readiness": 55}],
+        )
+        rc = fdm.start_drill(
+            "S-MULTI",
+            "primary-target",
+            drill_scope="multi_target",
+            allowed_target_ids=["primary-target", "secondary-target"],
+            repo_root=instance,
+        )
+        assert rc == 0
+        rc = fdm.append_checkpoint(
+            "Q-001",
+            "skill-a",
+            "ambiguous concept",
+            "defensible answer",
+            "incorrect",
+            "",
+            "medium",
+            "E-MULTI-001",
+            actual_target_id="secondary-target",
+            ambiguity_status="ambiguous",
+            evidence_weight="none",
+            readiness_eligible=False,
+            repo_root=instance,
+        )
+        assert rc == 0
+        proposal = fdm.build_reconciliation(instance)
+        assert proposal["evidence_items"][0]["target_id"] == "secondary-target"
+        assert proposal["evidence_items"][0]["readiness_eligible"] is False
+        assert proposal["skill_updates"] == {}
+        proposal, rc = fdm.end_drill(apply=True, repo_root=instance)
+        assert rc == 0
+        run([sys.executable, "scripts/compact_state.py"], cwd=instance)
+        evidence_index = load_yaml(instance / "state" / "EVIDENCE_INDEX.yaml")
+        indexed = next(
+            item
+            for item in evidence_index.get("items", [])
+            if item.get("evidence_id") == "E-MULTI-001"
+        )
+        assert indexed["target_id"] == "secondary-target"
+        assert indexed["readiness_eligible"] is False
+
+
+def test_duplicate_evidence_marker_is_rejected_before_append() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        instance = create_temp_instance(tmp, "drill_duplicate", "demo-target")
+        assert fdm.start_drill("S-DUP", "demo-target", repo_root=instance) == 0
+        assert fdm.append_checkpoint(
+            "Q-001",
+            "skill-a",
+            "concept",
+            "answer",
+            "correct",
+            "",
+            "medium",
+            "E-DUP-001",
+            repo_root=instance,
+        ) == 0
+        assert fdm.append_checkpoint(
+            "Q-002",
+            "skill-a",
+            "another concept",
+            "answer",
+            "correct",
+            "",
+            "medium",
+            "E-DUP-001",
+            repo_root=instance,
+        ) != 0
+        assert len(fdm.load_checkpoint(instance)["entries"]) == 1
+
+    with tempfile.TemporaryDirectory() as tmp:
+        instance = create_temp_instance(tmp, "drill_existing", "demo-target")
+        evidence_path = instance / "state" / "EVIDENCE_LOG.md"
+        evidence_path.write_text(
+            evidence_path.read_text(encoding="utf-8")
+            + "\n- **Evidence ID:** E-EXISTING-001\n- **Date:** 2026-07-12\n",
+            encoding="utf-8",
+        )
+        assert fdm.start_drill("S-EXIST", "demo-target", repo_root=instance) == 0
+        assert fdm.append_checkpoint(
+            "Q-001",
+            "skill-a",
+            "concept",
+            "answer",
+            "correct",
+            "",
+            "medium",
+            "E-EXISTING-001",
+            repo_root=instance,
+        ) != 0
+        assert fdm.load_checkpoint(instance)["entries"] == []
+
+
 def test_end_dry_run_then_apply() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         instance = create_temp_instance(

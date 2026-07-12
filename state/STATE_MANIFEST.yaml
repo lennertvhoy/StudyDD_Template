@@ -28,7 +28,20 @@ manifest_version: "1.1"
 last_updated: "2026-06-29"
 generated_by: "manual"
 
+# Closure is evidence-gated. Dirty or unpushed work must never be reported as
+# clean; an environment that cannot write .git is an explicit handoff blocker.
+closure_policy:
+  dirty_worktree_handoff: blocked
+  commit_required_before_completion: true
+  push_status_required: true
+  environment_git_write_failure_code: GIT_WRITE_BLOCKED
+
 files:
+  TEMPLATE_BACKLOG.md:
+    role: canonical
+    boundary: template
+    load_default: false
+    protected: true
   state/STUDY_STATE.yaml:
     role: canonical
     boundary: instance

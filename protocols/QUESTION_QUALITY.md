@@ -19,6 +19,33 @@ Before asking, the agent must internally define:
 
 The learner must not see the answer key before answering.
 
+## Drill Scope And Target Ownership
+
+Declare the drill scope before the first question:
+
+- `single_target` — every question belongs to one primary target. The primary,
+  actual, and only allowed target IDs must match.
+- `multi_target` — intentional interleaving across an explicit allowlist. Every
+  question must still declare the target it directly tests.
+
+Use `primary_target_id`, `allowed_target_ids`, and `actual_target_id`. Never
+infer ownership from a skill-name prefix or from adjacent subject matter. A
+question outside the declared allowlist must be rejected or moved to a new
+drill before it can create evidence.
+
+## Ambiguity And Evidence Weight
+
+Use one of these ambiguity states: `clear`, `ambiguous`, `source_dependent`, or
+`insufficient_constraints`.
+
+- Repair avoidable ambiguity by adding the missing constraint before asking.
+- If ambiguity remains, set `readiness_eligible: false` and
+  `evidence_weight: none` or `low`.
+- Record the interaction for audit and discussion, but do not reward or
+  penalize readiness from an ambiguous item.
+- Strong distractors are welcome only when the answer key explains why one
+  option remains best under the stated constraints.
+
 ## Cognitive Levels
 
 - **recall** — definition, fact, list, parameter, command.
@@ -37,6 +64,8 @@ The learner must not see the answer key before answering.
 - Scenario-first for certification and interview targets.
 - Mixed checkpoints for readiness above 80.
 - Match difficulty to current readiness; avoid questions that are too easy or impossibly hard.
+- Run `scripts/lint_questions.py`; a conspicuously longer correct option is a
+  warning to rewrite the card, never permission to pad distractors mechanically.
 
 ## Answer-Position Randomization Rules
 
@@ -44,7 +73,7 @@ For multiple-choice, choose-two, choose-three, and matching-style questions:
 
 1. **Create stable internal option IDs first.** Assign IDs like `opt_1`, `opt_2`, `opt_3`, `opt_4` to option content before any visible label exists. Mark which IDs are correct in the private answer key.
 2. **Do not leak the private answer key before the learner answers.** The answer key may live in the agent's working context only. Do not write it to repo files, active question files, session logs, or evidence logs before grading.
-3. **Shuffle visible options.** Assign shuffled visible labels (A, B, C, D) to the stable option IDs. Do not let the correct answer repeatedly be A, first, longest, most detailed, or most obviously worded.
+3. **Shuffle visible options.** Assign shuffled visible labels (A, B, C, D) to the stable option IDs. For matching questions, shuffle the outcome column independently. Do not let the correct answer repeatedly be A, first, longest, most detailed, or most obviously worded.
 4. **Verify the answer key after shuffling.** Confirm that the answer key points to the correct visible labels, not the original positions.
 5. **Randomize choose-two/choose-three positions too.** Correct answers should not cluster as A+B or C+D.
 6. **Keep distractors plausible.** Do not make wrong answers obviously weaker just because the correct option moved.

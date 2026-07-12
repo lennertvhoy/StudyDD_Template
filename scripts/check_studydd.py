@@ -169,6 +169,12 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/record_activity_result.py",
     "scripts/record_source_check.py",
     "scripts/fast_drill_mode.py",
+    "scripts/test_fast_path_integrity.py",
+    "scripts/mode_guard.py",
+    "scripts/test_mode_guards.py",
+    "studydd/__init__.py",
+    "studydd/atomic.py",
+    "studydd/mode.py",
     "scripts/analyze_voice_note.py",
     "scripts/analyze_presentation_rehearsal.py",
     "scripts/test_learning_activities.py",
@@ -314,7 +320,12 @@ BOUNDARY_VALUES = {"template", "instance", "generated"}
 
 def check_files() -> list[str]:
     errors: list[str] = []
-    for rel in REQUIRED_FILES:
+    required = list(REQUIRED_FILES)
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    mode_text = mode_path.read_text(encoding="utf-8") if mode_path.is_file() else ""
+    if re.search(r"(?m)^\s*mode\s*:\s*['\"]?template\b", mode_text):
+        required.append("TEMPLATE_BACKLOG.md")
+    for rel in required:
         path = ROOT / rel
         if not path.is_file():
             errors.append(f"Missing required file: {rel}")
@@ -857,9 +868,9 @@ def check_evidence_references(yaml: object) -> list[str]:
         session_text = session_log_path.read_text(encoding="utf-8")
         # Require evidence IDs to contain at least one digit or hyphen so the
         # format-line placeholder "references to ..." is not treated as a ref.
-        id_token = r"[\w\-]*[\d\-][\w\-]*"
+        id_pattern = r"[\w\-]*[\d\-][\w\-]*"
         for match in re.finditer(
-            rf"\*\*Evidence added:\*\*[ \t]+({id_token}(?:,\s*{id_token})*)", session_text
+            rf"\*\*Evidence added:\*\*[ \t]+({id_pattern}(?:,\s*{id_pattern})*)", session_text
         ):
             refs = [r.strip() for r in match.group(1).split(",") if r.strip()]
             for ref in refs:

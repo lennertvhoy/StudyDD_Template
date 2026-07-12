@@ -24,6 +24,9 @@ TARGETS_DIR = ROOT / "targets"
 EXAMPLES_DIR = ROOT / "EXAMPLES"
 
 TRANSFER_COGNITIVE_LEVELS = {"apply", "troubleshoot", "choose-best", "explain", "design"}
+AMBIGUITY_STATUSES = {"clear", "ambiguous", "source_dependent", "insufficient_constraints"}
+DRILL_SCOPES = {"single_target", "multi_target"}
+OPTION_LENGTH_BIAS_THRESHOLD = 1.25
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -220,7 +223,7 @@ def _extract_position(question: dict[str, Any]) -> tuple[int, int] | None:
             return value, total
 
     # Label fields.
-    for key in ("correct_label", "correct_option_label", "answer_label"):
+    for key in ("correct_label", "correct_option_label", "answer_label", "correct_answer"):
         value = question.get(key)
         idx = _label_to_index(value)
         if idx is not None:
@@ -233,13 +236,44 @@ def _extract_position(question: dict[str, Any]) -> tuple[int, int] | None:
             value = answer_key.get(key)
             if isinstance(value, int):
                 return value, total
-        for key in ("correct_label", "correct_option_label", "answer_label"):
+        for key in ("correct_label", "correct_option_label", "answer_label", "correct_answer"):
             value = answer_key.get(key)
             idx = _label_to_index(value)
             if idx is not None:
                 return idx, total
 
     return None
+
+
+def option_length_bias(question: dict[str, Any]) -> str | None:
+    """Return a warning when answer length makes the correct option conspicuous."""
+
+    position = _extract_position(question)
+    options = question.get("options") or question.get("choices")
+    if position is None or not isinstance(options, list):
+        return None
+    correct_index, _total = position
+    if not 0 <= correct_index < len(options):
+        return None
+
+    def option_text(option: Any) -> str:
+        if isinstance(option, dict):
+            return str(option.get("text") or "").strip()
+        return str(option or "").strip()
+
+    lengths = [len(option_text(option)) for option in options]
+    correct_length = lengths[correct_index]
+    distractors = [length for index, length in enumerate(lengths) if index != correct_index]
+    if not correct_length or not distractors or any(length == 0 for length in distractors):
+        return None
+    distractor_mean = sum(distractors) / len(distractors)
+    ratio = correct_length / distractor_mean
+    if ratio <= OPTION_LENGTH_BIAS_THRESHOLD:
+        return None
+    return (
+        f"correct option is {ratio:.2f}x longer than the mean distractor "
+        f"(threshold {OPTION_LENGTH_BIAS_THRESHOLD:.2f}x)"
+    )
 
 
 def discover_question_files(target_id: str | None = None) -> list[tuple[Path, Path]]:
@@ -395,6 +429,58 @@ def lint_question(
     # 10. No transfer probe before readiness upgrade.
     if _readiness_impact(question) and not question.get("transfer_probe"):
         warnings.append("question claims readiness impact but has no transfer_probe")
+
+    # 11. Ambiguous items are useful for discussion but cannot move readiness.
+    ambiguity_status = question.get("ambiguity_status")
+    if ambiguity_status is not None and ambiguity_status not in AMBIGUITY_STATUSES:
+        failures.append(
+            f"unknown ambiguity_status '{ambiguity_status}'; expected one of {sorted(AMBIGUITY_STATUSES)}"
+        )
+    if ambiguity_status in AMBIGUITY_STATUSES - {"clear"}:
+        if question.get("readiness_eligible") is not False:
+            failures.append("ambiguous question must set readiness_eligible: false")
+        if question.get("evidence_weight") not in {"none", "low"}:
+            failures.append("ambiguous question must use evidence_weight: none or low")
+
+    # 12. A declared drill scope must make target ownership explicit.
+    drill_scope = question.get("drill_scope")
+    if drill_scope is not None:
+        if drill_scope not in DRILL_SCOPES:
+            failures.append(
+                f"unknown drill_scope '{drill_scope}'; expected one of {sorted(DRILL_SCOPES)}"
+            )
+        primary_target = question.get("primary_target_id")
+        actual_target = question.get("actual_target_id")
+        allowed_targets = question.get("allowed_target_ids")
+        if not primary_target:
+            failures.append("declared drill_scope requires primary_target_id")
+        if not actual_target:
+            failures.append("declared drill_scope requires actual_target_id")
+        if not isinstance(allowed_targets, list) or not allowed_targets:
+            failures.append("declared drill_scope requires non-empty allowed_target_ids")
+            allowed_targets = []
+        if primary_target and primary_target not in allowed_targets:
+            failures.append("primary_target_id must be present in allowed_target_ids")
+        if primary_target and primary_target != question.get("target_id"):
+            failures.append("primary_target_id must equal the question target_id")
+        if actual_target and actual_target not in allowed_targets:
+            failures.append("actual_target_id must be present in allowed_target_ids")
+        if drill_scope == "single_target":
+            if actual_target and primary_target and actual_target != primary_target:
+                failures.append(
+                    "single_target drill actual_target_id must equal primary_target_id"
+                )
+            if primary_target and set(allowed_targets) != {primary_target}:
+                failures.append(
+                    "single_target drill allowed_target_ids must contain only primary_target_id"
+                )
+        if drill_scope == "multi_target" and len(set(allowed_targets)) < 2:
+            failures.append("multi_target drill requires at least two allowed_target_ids")
+
+    # 13. Surface a common multiple-choice cue without rewriting card content.
+    length_warning = option_length_bias(question)
+    if length_warning:
+        warnings.append(length_warning)
 
     return failures, warnings
 
