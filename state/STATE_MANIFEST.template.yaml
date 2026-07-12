@@ -1,9 +1,11 @@
-# GENERATED FILE — edit the template base or instance overlay and regenerate.
-# Generator: scripts/generate_compatibility_views.py
-# Authorities: state/STATE_MANIFEST.template.yaml + state/STATE_MANIFEST.instance.yaml
-manifest_version: '1.0'
-last_updated: '2026-06-24'
-generated_by: scripts/generate_compatibility_views.py
+---
+# StateDD domain loading manifest: template-owned base.
+#
+# This is not the StatePort lifecycle manifest. The generated
+# state/STATE_MANIFEST.yaml view is composed from this file and the
+# instance-local overlay by scripts/generate_compatibility_views.py.
+manifest_version: "1.0"
+last_updated: "2026-06-24"
 files:
   state/STUDY_STATE.yaml:
     role: canonical

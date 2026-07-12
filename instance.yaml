@@ -1,0 +1,23 @@
+---
+# StudyDD instance descriptor.
+#
+# This is the authoritative home for repository mode and selected module
+# settings.  state/STUDYDD_MODE.yaml is a generated compatibility view for
+# existing StudyDD consumers; edit this file instead.
+apiVersion: studydd.studydd.io/v1
+kind: StudyDDInstance
+metadata:
+  id: studydd-template
+  name: StudyDD public template
+spec:
+  mode: template
+  templateOrigin: "https://github.com/lennertvhoy/StudyDD_Template.git"
+  personalized: false
+  publicSafe: true
+  modules:
+    - studydd.core
+    - studydd.activities
+    - studydd.source-freshness
+    - studydd.fast-drill
+    - studydd.question-bank-engine
+    - studydd.integrations

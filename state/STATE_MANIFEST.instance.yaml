@@ -1,0 +1,10 @@
+---
+# StudyDD domain loading manifest: instance-local overlay.
+#
+# Only the explicitly listed file-entry keys are composable. This overlay is
+# not a generic YAML deep-merge document. LEARNER_PROFILE is intentionally
+# instance-owned and is never generated or replaced.
+files:
+  state/LEARNER_PROFILE.yaml:
+    owner: instance
+    boundary: instance

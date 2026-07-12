@@ -1,0 +1,18 @@
+---
+# StateDD source lock.
+#
+# This file is authoritative for installed template identity and upgrade
+# origin. state/STUDYDD_TEMPLATE_VERSION.yaml is a generated compatibility
+# view for existing StudyDD consumers; edit this file instead.
+formatVersion: statedd.lock/v1
+template:
+  id: studydd
+  version: "0.10.0"
+  sourceRevision: ""
+  sourcePath: ""
+instance:
+  createdFromTemplateVersion: ""
+  createdFromTemplateCommit: ""
+  lastTemplateUpgradeVersion: ""
+  lastTemplateUpgradeCommit: ""
+  upgradeHistory: []
