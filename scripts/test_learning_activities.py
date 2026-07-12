@@ -9,6 +9,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -233,14 +234,15 @@ def test_plan_includes_source_freshness_for_fresh_volatile_target() -> None:
         target_yaml = "---\nid: fresh-source-target\ntype: certification\ntitle: Fresh Source Cert\nvolatility: volatile\nstudy_skill: it_certification\n"
         target = create_temp_instance(tmp, "FreshSourceTest", "fresh-source-target", target_yaml)
 
+        checked_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
         source_state = {
-            "metadata": {"template_version": "0.9.0", "last_updated": "2026-06-27"},
+            "metadata": {"template_version": "0.9.0", "last_updated": checked_at[:10]},
             "sources": [
                 {
                     "id": "fresh-docs",
                     "authority": "official",
                     "target_ids": ["fresh-source-target"],
-                    "last_checked_at": "2026-06-27T10:00:00+00:00",
+                    "last_checked_at": checked_at,
                     "volatility": "volatile",
                 }
             ],
