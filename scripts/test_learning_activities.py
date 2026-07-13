@@ -80,6 +80,10 @@ def create_temp_instance(tmp: str, name: str, target_id: str, target_yaml: str) 
     mode_data["mode"] = "learner_instance"
     mode_data["personalized"] = True
     save_yaml(mode_path, mode_data)
+    instance_path = target / "instance.yaml"
+    instance_data = load_yaml(instance_path)
+    instance_data.setdefault("spec", {})["mode"] = "learner_instance"
+    save_yaml(instance_path, instance_data)
 
     study_state = load_yaml(target / "state" / "STUDY_STATE.yaml")
     study_state["learner"]["name"] = f"{name} Test Learner"
@@ -323,6 +327,10 @@ def test_record_activity_result_on_temp_instance() -> None:
         mode_data["personalized"] = True
         mode_data["public_safe"] = "false_or_review_required"
         save_yaml(mode_path, mode_data)
+        instance_path = target / "instance.yaml"
+        instance_data = load_yaml(instance_path)
+        instance_data.setdefault("spec", {})["mode"] = "learner_instance"
+        save_yaml(instance_path, instance_data)
 
         # Set a learner and active target.
         study_state = load_yaml(target / "state" / "STUDY_STATE.yaml")
@@ -407,6 +415,39 @@ def test_record_activity_result_on_temp_instance() -> None:
         run([sys.executable, "scripts/check_studydd.py"], cwd=target)
 
 
+def test_record_activity_result_refuses_non_instance_before_writing() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-activity-boundary-test-") as tmp:
+        target = Path(tmp) / "StudyDD_BoundaryCopy"
+        run(
+            [
+                sys.executable,
+                "scripts/create_instance.py",
+                "--target",
+                str(target),
+                "--remote",
+                "https://github.com/example/StudyDD_BoundaryCopy.git",
+            ]
+        )
+        state_path = target / "state/ACTIVITY_STATE.yaml"
+        before = state_path.read_bytes()
+        result = run(
+            [
+                sys.executable,
+                "scripts/record_activity_result.py",
+                "--activity-id",
+                "act_should_not_write",
+                "--result",
+                "correct",
+                "--evidence-id",
+                "ev_should_not_write",
+            ],
+            cwd=target,
+            check=False,
+        )
+        assert result.returncode == 2
+        assert state_path.read_bytes() == before
+
+
 def test_full_validator_passes() -> None:
     run([sys.executable, "scripts/check_studydd.py"])
 
@@ -429,6 +470,7 @@ def main() -> int:
         test_context_pack_includes_active_activity,
         test_demo_replay_mentions_non_question_activity,
         test_record_activity_result_on_temp_instance,
+        test_record_activity_result_refuses_non_instance_before_writing,
         test_full_validator_passes,
     ]
 

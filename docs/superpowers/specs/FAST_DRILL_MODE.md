@@ -46,17 +46,21 @@ cleanup leaves the journal and checkpoint in place. Re-running `recover --apply`
 or `end --apply` verifies already-completed writes by hash, finishes pending
 writes, removes the checkpoint, and is safe to repeat.
 
-The reconciler updates only the evidence log, known skill entries, and the
-active-focus portion of study state. It does not rebuild generated views,
-rewrite `NEXT_ACTIONS.md`, or route based on words in a question, concept, or
-answer. Run the normal session-boundary validators after reconciliation.
+The reconciler updates the evidence log, the Fast Drill activity/session audit
+entries, known skill entries, and the active-focus portion of study state. It
+does not rebuild generated views, rewrite `NEXT_ACTIONS.md`, or route based on
+words in a question, concept, or answer. Run the normal session-boundary
+validators after reconciliation. The checkpoint record ID, evidence ID,
+session ID, and checkpoint digest are retained together so an audit can trace
+canonical state changes back to the immutable checkpoint.
 
 ## Mode and settings authority
 
 Mutating operations require `instance.yaml` to declare
 `spec.mode: learner_instance`. Template and bootstrap modes are refused,
-including recovery and reconciliation; `state/STUDYDD_MODE.yaml` is not used
-for this decision because it is a generated compatibility view.
+including recovery and reconciliation. The shared runtime boundary checks the
+generated `state/STUDYDD_MODE.yaml` view for agreement and refuses a write when
+it is stale or conflicting; it never treats that view as a second authority.
 
 `state/LEARNER_PROFILE.yaml` is the instance-owned settings authority. The
 module reads `learner_preferences.fast_drill_mode` and

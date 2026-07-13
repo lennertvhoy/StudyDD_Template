@@ -34,16 +34,13 @@ from check_source_freshness import (  # noqa: E402
     SOURCE_CHECK_OUTCOMES,
     VOLATILITY_MAX_AGE_DAYS,
 )
+from studydd_runtime import RuntimeBoundaryError, repository_mode  # noqa: E402
 
 
 ROOT = SCRIPT_DIR.parent
 SOURCE_STATE_RELATIVE = Path("sources/SOURCE_STATE.yaml")
-MODE_RELATIVE = Path("state/STUDYDD_MODE.yaml")
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 VOLATILITY_VALUES = set(VOLATILITY_MAX_AGE_DAYS) | {"stable"}
-VALID_MODES = {"template", "bootstrap", "learner_instance"}
-
-
 class SourceCheckError(ValueError):
     """Raised for invalid source-check input or state."""
 
@@ -309,9 +306,10 @@ def record_source_check(
             freshness_window_days,
         )
         root = Path(repo_root).resolve() if repo_root else ROOT
-        mode = load_yaml(root / MODE_RELATIVE).get("mode")
-        if mode not in VALID_MODES:
-            raise SourceCheckError(f"unsupported or missing repository mode: {mode!r}")
+        try:
+            mode = repository_mode(root)
+        except RuntimeBoundaryError as exc:
+            raise SourceCheckError(str(exc)) from exc
         state_path = root / SOURCE_STATE_RELATIVE
         state = normalize_state(load_yaml(state_path))
         existing = find_source(state, source_id)

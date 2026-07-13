@@ -34,6 +34,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 import record_source_check
+from studydd_runtime import RuntimeBoundaryError, atomic_write_bytes, require_learner_instance, transition_lock
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -55,7 +56,7 @@ def load_yaml(path: Path) -> dict[str, Any]:
 def save_yaml(path: Path, data: dict[str, Any]) -> None:
     import yaml
 
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    atomic_write_bytes(path, yaml.safe_dump(data, sort_keys=False).encode("utf-8"))
 
 
 def now_iso() -> str:
@@ -117,7 +118,7 @@ def append_activity_log(activity: dict[str, Any], result: str, evidence_id: str,
         text = text.replace(marker, "## Activities" + entry)
     else:
         text += entry
-    ACTIVITY_LOG_PATH.write_text(text, encoding="utf-8")
+    atomic_write_bytes(ACTIVITY_LOG_PATH, text.encode("utf-8"))
 
 
 def append_evidence_log(
@@ -162,7 +163,7 @@ def append_evidence_log(
         text = text.replace(marker, "## Evidence items" + entry)
     else:
         text += entry
-    EVIDENCE_LOG_PATH.write_text(text, encoding="utf-8")
+    atomic_write_bytes(EVIDENCE_LOG_PATH, text.encode("utf-8"))
 
 
 def update_skill_map(skill_id: str, result: str) -> None:
@@ -224,6 +225,14 @@ def schedule_review_if_needed(skill_id: str, evidence_id: str, result: str) -> N
     subprocess.run(cmd, cwd=ROOT, check=False)
 
 
+def _with_transition_lock(func):
+    def wrapped() -> int:
+        with transition_lock(ROOT):
+            return func()
+    return wrapped
+
+
+@_with_transition_lock
 def main() -> int:
     parser = argparse.ArgumentParser(description="Record a StudyDD activity result")
     parser.add_argument("--activity-id", required=True)
@@ -245,6 +254,12 @@ def main() -> int:
     source_usable.add_argument("--source-not-usable-for-questions", dest="source_usable_for_questions", action="store_false")
     parser.set_defaults(source_usable_for_questions=None)
     args = parser.parse_args()
+
+    try:
+        require_learner_instance(ROOT)
+    except RuntimeBoundaryError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
 
     activity = update_activity_state(args.activity_id, args.result, args.evidence_id)
     if activity is None:

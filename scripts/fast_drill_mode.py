@@ -31,6 +31,11 @@ try:
 except ImportError:  # pragma: no cover - requirements.txt supplies PyYAML.
     yaml = None  # type: ignore[assignment]
 
+try:
+    from .studydd_runtime import RuntimeBoundaryError, require_learner_instance, transition_lock
+except ImportError:  # pragma: no cover - direct CLI execution.
+    from studydd_runtime import RuntimeBoundaryError, require_learner_instance, transition_lock
+
 
 ROOT = Path(__file__).resolve().parent.parent
 CHECKPOINT_RELATIVE = Path("state/ACTIVE_DRILL_SESSION.md")
@@ -316,26 +321,11 @@ def _required_id(value: str, label: str) -> str:
     return value
 
 
-def _instance_mode(root: Path) -> str:
-    descriptor = _load_yaml(root / "instance.yaml")
-    spec = descriptor.get("spec")
-    if not isinstance(spec, dict):
-        return "unknown"
-    mode = spec.get("mode")
-    return mode if isinstance(mode, str) else "unknown"
-
-
 def _require_learner_instance(root: Path) -> None:
-    mode = _instance_mode(root)
-    if mode in {"template", "bootstrap"}:
-        raise ModeRefused(
-            f"Fast Drill checkpoint operations are refused in {mode} mode; "
-            "create or activate a learner instance first."
-        )
-    if mode != "learner_instance":
-        raise ModeRefused(
-            "Fast Drill checkpoint operations require instance.yaml spec.mode=learner_instance."
-        )
+    try:
+        require_learner_instance(root)
+    except RuntimeBoundaryError as exc:
+        raise ModeRefused(str(exc)) from exc
 
 
 def load_settings(repo_root: Path | str | None = None) -> FastDrillSettings:
@@ -469,25 +459,26 @@ def start_drill(
 
 
 def _start(operation: StartOperation, root: Path) -> None:
-    _require_learner_instance(root)
-    if not fast_drill_enabled(root):
-        raise CheckpointError(
-            "fast_drill_mode is not enabled in the instance-owned learner profile"
-        )
-    path = checkpoint_path(root)
-    if path.exists():
-        raise CheckpointError("an active checkpoint already exists; recover or end it first")
-    metadata = _checkpoint_metadata(operation)
-    content = render_checkpoint(Checkpoint(metadata=metadata, records=()))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with path.open("x", encoding="utf-8") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        _fsync_directory(path.parent)
-    except FileExistsError as exc:
-        raise CheckpointError("an active checkpoint already exists") from exc
+    with transition_lock(root):
+        _require_learner_instance(root)
+        if not fast_drill_enabled(root):
+            raise CheckpointError(
+                "fast_drill_mode is not enabled in the instance-owned learner profile"
+            )
+        path = checkpoint_path(root)
+        if path.exists():
+            raise CheckpointError("an active checkpoint already exists; recover or end it first")
+        metadata = _checkpoint_metadata(operation)
+        content = render_checkpoint(Checkpoint(metadata=metadata, records=()))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with path.open("x", encoding="utf-8") as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            _fsync_directory(path.parent)
+        except FileExistsError as exc:
+            raise CheckpointError("an active checkpoint already exists") from exc
 
 
 def append_checkpoint(
@@ -521,46 +512,47 @@ def append_checkpoint(
 
 
 def _append(operation: AppendAnswerOperation, root: Path) -> None:
-    _require_learner_instance(root)
-    checkpoint = load_checkpoint(root)
-    record_id = operation.record_id or operation.evidence_marker
-    _required_id(record_id, "record_id")
-    _required_id(operation.question_id, "question_id")
-    _required_id(operation.skill_id, "skill_id")
-    _required_id(operation.concept, "concept")
-    _required_id(operation.evidence_marker, "evidence_marker")
-    try:
-        verdict = Verdict(operation.verdict)
-        confidence = Confidence(operation.confidence)
-    except ValueError as exc:
-        raise CheckpointError(str(exc)) from exc
+    with transition_lock(root):
+        _require_learner_instance(root)
+        checkpoint = load_checkpoint(root)
+        record_id = operation.record_id or operation.evidence_marker
+        _required_id(record_id, "record_id")
+        _required_id(operation.question_id, "question_id")
+        _required_id(operation.skill_id, "skill_id")
+        _required_id(operation.concept, "concept")
+        _required_id(operation.evidence_marker, "evidence_marker")
+        try:
+            verdict = Verdict(operation.verdict)
+            confidence = Confidence(operation.confidence)
+        except ValueError as exc:
+            raise CheckpointError(str(exc)) from exc
 
-    for existing in checkpoint.records:
-        if existing.record_id == record_id:
-            same_content = (
-                existing.question_id == operation.question_id
-                and existing.skill_id == operation.skill_id
-                and existing.concept == operation.concept
-                and existing.answer_summary == operation.answer_summary
-                and existing.verdict == verdict
-                and existing.correction_summary == operation.correction_summary
-                and existing.confidence == confidence
-                and existing.evidence_marker == operation.evidence_marker
-            )
-            if not same_content:
-                raise CheckpointError("record_id already exists with different content")
-            return
-        if existing.evidence_marker == operation.evidence_marker:
-            raise CheckpointError("evidence_marker already exists with different content")
+        for existing in checkpoint.records:
+            if existing.record_id == record_id:
+                same_content = (
+                    existing.question_id == operation.question_id
+                    and existing.skill_id == operation.skill_id
+                    and existing.concept == operation.concept
+                    and existing.answer_summary == operation.answer_summary
+                    and existing.verdict == verdict
+                    and existing.correction_summary == operation.correction_summary
+                    and existing.confidence == confidence
+                    and existing.evidence_marker == operation.evidence_marker
+                )
+                if not same_content:
+                    raise CheckpointError("record_id already exists with different content")
+                return
+            if existing.evidence_marker == operation.evidence_marker:
+                raise CheckpointError("evidence_marker already exists with different content")
 
-    sequence = len(checkpoint.records) + 1
-    record = _make_record(checkpoint, operation, record_id, verdict, confidence, sequence)
-    line = json.dumps(record.to_mapping(), sort_keys=True, separators=(",", ":")) + "\n"
-    path = checkpoint_path(root)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(line)
-        handle.flush()
-        os.fsync(handle.fileno())
+        sequence = len(checkpoint.records) + 1
+        record = _make_record(checkpoint, operation, record_id, verdict, confidence, sequence)
+        line = json.dumps(record.to_mapping(), sort_keys=True, separators=(",", ":")) + "\n"
+        path = checkpoint_path(root)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(line)
+            handle.flush()
+            os.fsync(handle.fileno())
 
 
 def _make_record(
@@ -596,9 +588,12 @@ def _make_record(
 
 def _evidence_items(checkpoint: Checkpoint) -> tuple[dict[str, str], ...]:
     target_id = str(checkpoint.metadata["target_id"])
+    session_id = str(checkpoint.metadata["session_id"])
     return tuple(
         {
             "evidence_id": record.evidence_marker,
+            "session_id": session_id,
+            "record_id": record.record_id,
             "date": record.recorded_at[:10],
             "target_id": target_id,
             "skill_id": record.skill_id,
@@ -686,6 +681,8 @@ def build_reconciliation(repo_root: Path | str | None = None) -> Reconciliation:
 def _evidence_entry(item: dict[str, str]) -> str:
     return (
         f"\n- **Evidence ID:** {item['evidence_id']}\n"
+        f"- **Fast Drill session ID:** {item['session_id']}\n"
+        f"- **Fast Drill record ID:** {item['record_id']}\n"
         f"- **Date:** {item['date']}\n"
         f"- **Target ID:** {item['target_id']}\n"
         f"- **Skill ID:** {item['skill_id']}\n"
@@ -709,6 +706,51 @@ def _evidence_suffix(path: Path, items: tuple[dict[str, str], ...]) -> bytes:
     return "".join(suffix_parts).encode("utf-8")
 
 
+def _audit_entry(checkpoint: Checkpoint, *, kind: str) -> str:
+    session_id = str(checkpoint.metadata["session_id"])
+    target_id = str(checkpoint.metadata["target_id"])
+    evidence_ids = ", ".join(record.evidence_marker for record in checkpoint.records)
+    record_ids = ", ".join(record.record_id for record in checkpoint.records)
+    digest = checkpoint.digest()
+    if kind == "activity":
+        return (
+            f"\n- **Activity ID:** fast-drill-{session_id}\n"
+            f"- **Timestamp:** {now_iso()}\n"
+            f"- **Type:** {checkpoint.metadata['drill_type']}\n"
+            f"- **Target ID:** {target_id}\n"
+            f"- **Status:** completed\n"
+            f"- **Submitted evidence:** {evidence_ids}\n"
+            f"- **Fast Drill session ID:** {session_id}\n"
+            f"- **Fast Drill record IDs:** {record_ids}\n"
+            f"- **Checkpoint digest:** {digest}\n"
+        )
+    return (
+        f"\n- **Date:** {now_iso()[:10]}\n"
+        f"- **Target ID:** {target_id}\n"
+        f"- **Focus:** Fast Drill {session_id}\n"
+        f"- **Questions asked:** {', '.join(record.question_id for record in checkpoint.records)}\n"
+        f"- **Evidence added:** {evidence_ids}\n"
+        f"- **State changes:** SKILL_MAP.yaml and STUDY_STATE.yaml reconciled\n"
+        f"- **Fast Drill session ID:** {session_id}\n"
+        f"- **Fast Drill record IDs:** {record_ids}\n"
+        f"- **Checkpoint digest:** {digest}\n"
+    )
+
+
+def _audit_suffix(path: Path, checkpoint: Checkpoint, *, kind: str) -> bytes:
+    if kind == "activity":
+        default = "# Activity Log\n\n## Activities\n\nNone yet.\n"
+        marker = f"**Activity ID:** fast-drill-{checkpoint.metadata['session_id']}"
+    else:
+        default = "# Session Log\n"
+        marker = f"**Fast Drill session ID:** {checkpoint.metadata['session_id']}"
+    existing = path.read_text(encoding="utf-8") if path.is_file() else default
+    if marker in existing:
+        return b""
+    prefix = "" if path.is_file() else default
+    return (prefix + _audit_entry(checkpoint, kind=kind)).encode("utf-8")
+
+
 def _build_transaction(root: Path, reconciliation: Reconciliation, checkpoint: Checkpoint) -> dict[str, Any]:
     digest = checkpoint.digest()
     tx_dir = transaction_root(root) / digest[:24]
@@ -719,6 +761,14 @@ def _build_transaction(root: Path, reconciliation: Reconciliation, checkpoint: C
     evidence_before = evidence_path.read_bytes() if evidence_path.is_file() else b""
     suffix = _evidence_suffix(evidence_path, reconciliation.evidence_items)
     evidence_after = evidence_before + suffix
+    activity_path = root / "activities/ACTIVITY_LOG.md"
+    activity_before = activity_path.read_bytes() if activity_path.is_file() else b""
+    activity_suffix = _audit_suffix(activity_path, checkpoint, kind="activity")
+    activity_after = activity_before + activity_suffix
+    session_path = root / "sessions/SESSION_LOG.md"
+    session_before = session_path.read_bytes() if session_path.is_file() else b""
+    session_suffix = _audit_suffix(session_path, checkpoint, kind="session")
+    session_after = session_before + session_suffix
     skill_path = root / "state/SKILL_MAP.yaml"
     study_path = root / "state/STUDY_STATE.yaml"
     skill_data = _load_yaml(skill_path)
@@ -732,9 +782,13 @@ def _build_transaction(root: Path, reconciliation: Reconciliation, checkpoint: C
     stage_skill = tx_dir / "SKILL_MAP.yaml.stage"
     stage_study = tx_dir / "STUDY_STATE.yaml.stage"
     stage_evidence = tx_dir / "EVIDENCE_LOG.md.append"
+    stage_activity = tx_dir / "ACTIVITY_LOG.md.append"
+    stage_session = tx_dir / "SESSION_LOG.md.append"
     _write_atomic(stage_skill, _require_yaml().safe_dump(skill_data, sort_keys=False).encode("utf-8"))
     _write_atomic(stage_study, _require_yaml().safe_dump(study_data, sort_keys=False).encode("utf-8"))
     _write_atomic(stage_evidence, suffix)
+    _write_atomic(stage_activity, activity_suffix)
+    _write_atomic(stage_session, session_suffix)
     manifest = {
         "format": TRANSACTION_FORMAT,
         "transaction_id": digest[:24],
@@ -748,6 +802,20 @@ def _build_transaction(root: Path, reconciliation: Reconciliation, checkpoint: C
                 "before_hash": sha256_bytes(evidence_before),
                 "after_hash": sha256_bytes(evidence_after),
                 "stage": stage_evidence.name,
+            },
+            "activity": {
+                "path": "activities/ACTIVITY_LOG.md",
+                "kind": "append",
+                "before_hash": sha256_bytes(activity_before),
+                "after_hash": sha256_bytes(activity_after),
+                "stage": stage_activity.name,
+            },
+            "session": {
+                "path": "sessions/SESSION_LOG.md",
+                "kind": "append",
+                "before_hash": sha256_bytes(session_before),
+                "after_hash": sha256_bytes(session_after),
+                "stage": stage_session.name,
             },
             "skill_map": {
                 "path": "state/SKILL_MAP.yaml",
@@ -836,6 +904,17 @@ def end_drill(
     crash_after: int | None = None,
 ) -> tuple[Reconciliation | None, int]:
     root = _root(repo_root)
+    with transition_lock(root):
+        return _end_drill_locked(apply=apply, repo_root=root, crash_after=crash_after)
+
+
+def _end_drill_locked(
+    apply: bool = False,
+    repo_root: Path | str | None = None,
+    *,
+    crash_after: int | None = None,
+) -> tuple[Reconciliation | None, int]:
+    root = _root(repo_root)
     _require_learner_instance(root)
     transactions = _load_transactions(root)
     active = checkpoint_path(root)
@@ -879,6 +958,16 @@ def _checkpoint_age_hours(checkpoint: Checkpoint) -> float | None:
 
 
 def recover_drill(
+    repo_root: Path | str | None = None,
+    *,
+    apply: bool = False,
+) -> tuple[dict[str, Any] | None, int]:
+    root = _root(repo_root)
+    with transition_lock(root):
+        return _recover_drill_locked(root, apply=apply)
+
+
+def _recover_drill_locked(
     repo_root: Path | str | None = None,
     *,
     apply: bool = False,

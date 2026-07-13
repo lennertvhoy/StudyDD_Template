@@ -35,9 +35,18 @@ def read_yaml(path: Path) -> dict:
 def make_repo(mode: str, sources: list[dict] | None = None) -> Path:
     root = Path(tempfile.mkdtemp(prefix="studydd-source-check-"))
     (root / "scripts").mkdir()
-    for name in ("record_source_check.py", "check_source_freshness.py"):
+    for name in ("record_source_check.py", "check_source_freshness.py", "studydd_runtime.py"):
         shutil.copy(ROOT / "scripts" / name, root / "scripts" / name)
     write_yaml(root / "state/STUDYDD_MODE.yaml", {"mode": mode})
+    write_yaml(
+        root / "instance.yaml",
+        {
+            "apiVersion": "studydd.studydd.io/v1",
+            "kind": "StudyDDInstance",
+            "metadata": {"id": "synthetic-source-check"},
+            "spec": {"mode": mode},
+        },
+    )
     write_yaml(
         root / "sources/SOURCE_STATE.yaml",
         {"metadata": {"template_version": "synthetic"}, "sources": sources or []},
