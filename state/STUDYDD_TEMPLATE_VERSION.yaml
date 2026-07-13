@@ -1,13 +1,24 @@
-# GENERATED FILE — edit .statedd/lock.yaml and regenerate.
+# GENERATED FILE — edit the declared authority and regenerate.
 # Generator: scripts/generate_compatibility_views.py
+# Schema: studydd.compatibility-view/v1
+# View version: 1
+# Source digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
+# View digest: sha256:daefaefdc28394deed8dd22f5959695be32df6b9ae0094e105a058eb4d29ed65
 # Authority: .statedd/lock.yaml
-view_format: studydd.compatibility-view/v1
-source_digest: sha256:b46e81b2c07141a595d181910eef5ad12b0cd7be395c4056b94f5d415104270b
+schema_version: studydd.compatibility-view/v1
+view_version: 1
+source_digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
 template_version: 0.11.0
 template_commit: ''
+template_source_digest: ''
 template_source_path: ''
 instance_created_from_template_version: ''
 instance_created_from_template_commit: ''
+instance_created_from_template_source:
+  origin: ''
+  version: ''
+  commit: ''
+  digest: ''
 last_template_upgrade_version: ''
 last_template_upgrade_commit: ''
 upgrade_history: []

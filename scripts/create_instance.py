@@ -526,28 +526,35 @@ def main() -> int:
     run(["git", "config", "user.email", AGENT_EMAIL], target)
     run(["git", "remote", "add", "origin", remote], target)
 
-    # 5. Switch mode to bootstrap in the new instance.
+    # 5. Switch mode to bootstrap in the new instance. A lifecycle generator
+    # owns the compatibility views and needs to see the copied generated
+    # baseline so it can distinguish a stale view from a manual edit. The
+    # legacy fallback still updates the old views directly when no generator
+    # hook is available.
     print("3. Switching to bootstrap mode")
-    target_mode_path = target / "state" / "STUDYDD_MODE.yaml"
-    target_mode_data = yaml.safe_load(target_mode_path.read_text(encoding="utf-8")) or {}
-    target_mode_data["mode"] = "bootstrap"
-    target_mode_data["template_origin"] = TEMPLATE_ORIGIN
-    target_mode_data["personalized"] = False
-    target_mode_data["public_safe"] = "false_or_review_required"
-    target_mode_path.write_text(yaml.safe_dump(target_mode_data, sort_keys=False), encoding="utf-8")
+    generator_available = _load_optional_hook("generate_compatibility_views") is not None
+    if not generator_available:
+        target_mode_path = target / "state" / "STUDYDD_MODE.yaml"
+        target_mode_data = yaml.safe_load(target_mode_path.read_text(encoding="utf-8")) or {}
+        target_mode_data["mode"] = "bootstrap"
+        target_mode_data["template_origin"] = TEMPLATE_ORIGIN
+        target_mode_data["personalized"] = False
+        target_mode_data["public_safe"] = "false_or_review_required"
+        target_mode_path.write_text(yaml.safe_dump(target_mode_data, sort_keys=False), encoding="utf-8")
 
     # 6. Record source identity and initialize the small lifecycle descriptor.
     print("4. Recording template origin metadata")
     template_version, _ = get_template_version_and_commit(yaml, template_root)
     source_identity = _source_identity(template_root, template_version)
     template_commit = source_identity["commit"] or ""
-    version_path = target / "state" / "STUDYDD_TEMPLATE_VERSION.yaml"
-    version_data = yaml.safe_load(version_path.read_text(encoding="utf-8")) or {}
-    version_data["instance_created_from_template_version"] = template_version
-    version_data["instance_created_from_template_commit"] = template_commit
-    version_data["last_template_upgrade_version"] = template_version
-    version_data["last_template_upgrade_commit"] = template_commit
-    version_path.write_text(yaml.safe_dump(version_data, sort_keys=False), encoding="utf-8")
+    if not generator_available:
+        version_path = target / "state" / "STUDYDD_TEMPLATE_VERSION.yaml"
+        version_data = yaml.safe_load(version_path.read_text(encoding="utf-8")) or {}
+        version_data["instance_created_from_template_version"] = template_version
+        version_data["instance_created_from_template_commit"] = template_commit
+        version_data["last_template_upgrade_version"] = template_version
+        version_data["last_template_upgrade_commit"] = template_commit
+        version_path.write_text(yaml.safe_dump(version_data, sort_keys=False), encoding="utf-8")
 
     _write_instance_descriptor(target, source_identity, mode="bootstrap")
     _write_instance_lock(target, source_identity, mode="bootstrap")

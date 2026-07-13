@@ -1,104 +1,24 @@
-# GENERATED FILE — edit the template base or instance overlay and regenerate.
+# GENERATED FILE — edit the declared authority and regenerate.
 # Generator: scripts/generate_compatibility_views.py
-# Authorities: state/STATE_MANIFEST.template.yaml + state/STATE_MANIFEST.instance.yaml
-view_format: studydd.compatibility-view/v1
-source_digest: sha256:b46e81b2c07141a595d181910eef5ad12b0cd7be395c4056b94f5d415104270b
+# Schema: studydd.compatibility-view/v1
+# View version: 1
+# Source digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
+# View digest: sha256:bddfcf4693d30b828e7db68107b8a91febc67130ed66bccbe92ca8c94570aeb7
+# Authority: state/STATE_MANIFEST.template.yaml + state/STATE_MANIFEST.instance.yaml
+schema_version: studydd.compatibility-view/v1
+view_version: 1
+source_digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
 manifest_version: '1.0'
 last_updated: '2026-06-24'
 generated_by: scripts/generate_compatibility_views.py
 files:
-  state/STUDY_STATE.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: instance
-    boundary: instance
-  state/SKILL_MAP.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: instance
-    boundary: instance
-  reviews/REVIEW_STATE.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: instance
-    boundary: instance
-  state/STUDYDD_MODE.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: generated
-    boundary: generated
-    generated_by: scripts/generate_compatibility_views.py
-  state/STUDYDD_TEMPLATE_VERSION.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: generated
-    boundary: generated
-    generated_by: scripts/generate_compatibility_views.py
-  sources/SOURCE_STATE.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: instance
-    boundary: instance
-  state/LEARNER_PROFILE.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: instance
-    boundary: instance
-  state/EVIDENCE_LOG.md:
-    role: append_only_audit
+  .studydd/context_pack.md:
+    role: generated_context
     load_default: false
-    indexed_by: state/EVIDENCE_INDEX.yaml
-    owner: instance
-    boundary: instance
-  sessions/SESSION_LOG.md:
-    role: append_only_audit
-    load_default: false
-    summarized_by: sessions/SESSION_SUMMARIES.md
-    owner: instance
-    boundary: instance
-  reviews/REVIEW_OVERRIDES.md:
-    role: append_only_audit
-    load_default: false
-    owner: instance
-    boundary: instance
-  state/CURRENT_CONTEXT.md:
-    role: derived_summary
-    load_default: true
+    generated_by: scripts/build_context_pack.py
+    gitignore: true
     owner: generated
     boundary: generated
-    generated_by: scripts/compact_state.py
-  state/EVIDENCE_INDEX.yaml:
-    role: derived_index
-    load_default: true
-    owner: generated
-    boundary: generated
-    generated_by: scripts/compact_state.py
-  sessions/SESSION_SUMMARIES.md:
-    role: derived_summary
-    load_default: true
-    owner: generated
-    boundary: generated
-    generated_by: scripts/compact_state.py
-  state/STATE_MANIFEST.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: generated
-    boundary: generated
-    generated_by: scripts/generate_compatibility_views.py
-  state/ACTIVITY_STATE.yaml:
-    role: canonical
-    load_default: true
-    protected: true
-    owner: instance
-    boundary: instance
   activities/ACTIVITY_LOG.md:
     role: append_only_audit
     load_default: false
@@ -110,10 +30,95 @@ files:
     protected: true
     owner: template
     boundary: template
-  .studydd/context_pack.md:
-    role: generated_context
+  reviews/REVIEW_OVERRIDES.md:
+    role: append_only_audit
     load_default: false
+    owner: instance
+    boundary: instance
+  reviews/REVIEW_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    owner: instance
+    boundary: instance
+  sessions/SESSION_LOG.md:
+    role: append_only_audit
+    load_default: false
+    summarized_by: sessions/SESSION_SUMMARIES.md
+    owner: instance
+    boundary: instance
+  sessions/SESSION_SUMMARIES.md:
+    role: derived_summary
+    load_default: true
+    generated_by: scripts/compact_state.py
     owner: generated
     boundary: generated
-    generated_by: scripts/build_context_pack.py
-    gitignore: true
+  sources/SOURCE_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    owner: instance
+    boundary: instance
+  state/ACTIVITY_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    owner: instance
+    boundary: instance
+  state/CURRENT_CONTEXT.md:
+    role: derived_summary
+    load_default: true
+    generated_by: scripts/compact_state.py
+    owner: generated
+    boundary: generated
+  state/EVIDENCE_INDEX.yaml:
+    role: derived_index
+    load_default: true
+    generated_by: scripts/compact_state.py
+    owner: generated
+    boundary: generated
+  state/EVIDENCE_LOG.md:
+    role: append_only_audit
+    load_default: false
+    indexed_by: state/EVIDENCE_INDEX.yaml
+    owner: instance
+    boundary: instance
+  state/LEARNER_PROFILE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    owner: instance
+    boundary: instance
+  state/SKILL_MAP.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    owner: instance
+    boundary: instance
+  state/STATE_MANIFEST.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    generated_by: scripts/generate_compatibility_views.py
+    owner: generated
+    boundary: generated
+  state/STUDYDD_MODE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    generated_by: scripts/generate_compatibility_views.py
+    owner: generated
+    boundary: generated
+  state/STUDYDD_TEMPLATE_VERSION.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    generated_by: scripts/generate_compatibility_views.py
+    owner: generated
+    boundary: generated
+  state/STUDY_STATE.yaml:
+    role: canonical
+    load_default: true
+    protected: true
+    owner: instance
+    boundary: instance

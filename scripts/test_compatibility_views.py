@@ -35,12 +35,9 @@ def test_template_outputs_are_deterministic_and_public_safe() -> None:
     mode = yaml.safe_load(first[generator.MODE_VIEW])
     version = yaml.safe_load(first[generator.VERSION_VIEW])
     manifest = yaml.safe_load(first[generator.MANIFEST_VIEW])
-    assert mode["view_format"] == generator.VIEW_FORMAT
-    assert mode["source_digest"].startswith("sha256:")
-    assert version["view_format"] == generator.VIEW_FORMAT
-    assert version["source_digest"] == mode["source_digest"]
     assert mode == {
-        "view_format": generator.VIEW_FORMAT,
+        "schema_version": generator.SCHEMA_VERSION,
+        "view_version": generator.VIEW_VERSION,
         "source_digest": mode["source_digest"],
         "mode": "template",
         "template_remote": "https://github.com/lennertvhoy/StudyDD_Template.git",
@@ -54,11 +51,19 @@ def test_template_outputs_are_deterministic_and_public_safe() -> None:
     }
     assert version["template_version"] == "0.11.0"
     assert version["template_commit"] == ""
+    assert version["template_source_digest"] == ""
+    assert version["template_source_path"] == ""
     assert manifest["generated_by"] == generator.SCRIPT_PATH
-    assert manifest["view_format"] == generator.VIEW_FORMAT
-    assert manifest["source_digest"] == mode["source_digest"]
     assert manifest["files"]["state/LEARNER_PROFILE.yaml"]["owner"] == "instance"
     assert manifest["files"]["state/LEARNER_PROFILE.yaml"]["boundary"] == "instance"
+    for relative, content in first.items():
+        assert content.endswith("\n")
+        assert "\r" not in content
+        assert f"# Schema: {generator.SCHEMA_VERSION}\n" in content
+        assert f"# Source digest: {yaml.safe_load(content)['source_digest']}\n" in content
+
+    paths = list(manifest["files"])
+    assert paths == sorted(paths)
 
 
 def test_instance_authority_changes_only_generated_views() -> None:
@@ -107,13 +112,143 @@ def test_instance_authority_changes_only_generated_views() -> None:
         assert profile.read_bytes() == profile_before
 
 
+def test_extensions_are_preserved_and_paths_are_portable() -> None:
+    generator = load_generator()
+    import yaml
+
+    with tempfile.TemporaryDirectory(prefix="studydd-compatibility-extension-") as raw:
+        root = Path(raw)
+        for source in (
+            "instance.yaml",
+            ".statedd/lock.yaml",
+            "state/STATE_MANIFEST.template.yaml",
+            "state/STATE_MANIFEST.instance.yaml",
+        ):
+            target = root / source
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT / source).read_bytes())
+
+        descriptor = yaml.safe_load((root / "instance.yaml").read_text(encoding="utf-8"))
+        descriptor["spec"]["extensions"] = {"com.example.study": {"enabled": True}}
+        (root / "instance.yaml").write_text(yaml.safe_dump(descriptor, sort_keys=False), encoding="utf-8")
+        lock = yaml.safe_load((root / ".statedd/lock.yaml").read_text(encoding="utf-8"))
+        lock["template"]["sourcePath"] = str(root / ".." / "external-template")
+        (root / ".statedd/lock.yaml").write_text(yaml.safe_dump(lock, sort_keys=False), encoding="utf-8")
+        overlay = yaml.safe_load((root / "state/STATE_MANIFEST.instance.yaml").read_text(encoding="utf-8"))
+        overlay["extensions"] = {"com.example.instance": {"keep": "yes"}}
+        (root / "state/STATE_MANIFEST.instance.yaml").write_text(
+            yaml.safe_dump(overlay, sort_keys=False), encoding="utf-8"
+        )
+
+        generator.write_views(root)
+        mode = yaml.safe_load((root / generator.MODE_VIEW).read_text(encoding="utf-8"))
+        version = yaml.safe_load((root / generator.VERSION_VIEW).read_text(encoding="utf-8"))
+        manifest = yaml.safe_load((root / generator.MANIFEST_VIEW).read_text(encoding="utf-8"))
+        assert mode["extensions"]["com.example.study"]["enabled"] is True
+        assert manifest["extensions"]["com.example.instance"]["keep"] == "yes"
+        assert version["template_source_path"] == ""
+        assert not version["template_source_path"].startswith("/")
+        assert generator.source_digest(root).startswith("sha256:")
+
+
+def test_manual_edit_and_extension_conflict_fail_closed_without_partial_output() -> None:
+    generator = load_generator()
+    import yaml
+
+    with tempfile.TemporaryDirectory(prefix="studydd-compatibility-safety-") as raw:
+        root = Path(raw)
+        for source in (
+            "instance.yaml",
+            ".statedd/lock.yaml",
+            "state/STATE_MANIFEST.template.yaml",
+            "state/STATE_MANIFEST.instance.yaml",
+        ):
+            target = root / source
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT / source).read_bytes())
+
+        generator.write_views(root)
+        before = {relative: (root / relative).read_bytes() for relative in generator.VIEW_PATHS}
+        mode_path = root / generator.MODE_VIEW
+        mode_path.write_bytes(mode_path.read_bytes() + b"# manual edit\n")
+        try:
+            generator.write_views(root)
+        except generator.CompatibilityViewError as exc:
+            assert "manual edit" in str(exc)
+        else:
+            raise AssertionError("manual generated-view edit was accepted")
+        assert (root / generator.VERSION_VIEW).read_bytes() == before[generator.VERSION_VIEW]
+        assert (root / generator.MANIFEST_VIEW).read_bytes() == before[generator.MANIFEST_VIEW]
+
+        overlay_path = root / "state/STATE_MANIFEST.instance.yaml"
+        overlay = yaml.safe_load(overlay_path.read_text(encoding="utf-8"))
+        overlay["extensions"] = {"schema_version": "instance override"}
+        overlay_path.write_text(yaml.safe_dump(overlay, sort_keys=False), encoding="utf-8")
+        for relative, content in before.items():
+            (root / relative).write_bytes(content)
+        try:
+            generator.write_views(root)
+        except generator.CompatibilityViewError as exc:
+            assert "conflicts with generated field" in str(exc)
+        else:
+            raise AssertionError("extension conflict was accepted")
+        assert {relative: (root / relative).read_bytes() for relative in generator.VIEW_PATHS} == before
+
+
+def test_regeneration_is_idempotent_and_replacement_rolls_back() -> None:
+    generator = load_generator()
+    import yaml
+
+    with tempfile.TemporaryDirectory(prefix="studydd-compatibility-transaction-") as raw:
+        root = Path(raw)
+        for source in (
+            "instance.yaml",
+            ".statedd/lock.yaml",
+            "state/STATE_MANIFEST.template.yaml",
+            "state/STATE_MANIFEST.instance.yaml",
+        ):
+            target = root / source
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT / source).read_bytes())
+        first = generator.write_views(root)
+        assert len(first) == 3
+        snapshot = {relative: (root / relative).read_bytes() for relative in generator.VIEW_PATHS}
+        assert generator.write_views(root) == []
+        assert {relative: (root / relative).read_bytes() for relative in generator.VIEW_PATHS} == snapshot
+
+        descriptor_path = root / "instance.yaml"
+        descriptor = yaml.safe_load(descriptor_path.read_text(encoding="utf-8"))
+        descriptor["spec"]["mode"] = "bootstrap"
+        descriptor_path.write_text(yaml.safe_dump(descriptor, sort_keys=False), encoding="utf-8")
+        real_replace = generator.os.replace
+        calls = {"count": 0}
+
+        def fail_once(source: str | bytes | Path, target: str | bytes | Path) -> None:
+            calls["count"] += 1
+            if calls["count"] == 4:
+                raise OSError("synthetic transaction failure")
+            real_replace(source, target)
+
+        generator.os.replace = fail_once
+        try:
+            try:
+                generator.write_views(root)
+            except OSError as exc:
+                assert "synthetic transaction failure" in str(exc)
+            else:
+                raise AssertionError("synthetic replacement failure was not surfaced")
+        finally:
+            generator.os.replace = real_replace
+        assert {relative: (root / relative).read_bytes() for relative in generator.VIEW_PATHS} == snapshot
+
+
 def test_manifest_composition_is_explicit_and_rejects_unknown_keys() -> None:
     generator = load_generator()
     import yaml
 
     base = {
         "manifest_version": "1.0",
-        "files": {"state/example.yaml": {"role": "canonical", "owner": "template", "boundary": "template"}},
+        "files": {"state/example.yaml": {"role": "canonical", "owner": "instance", "boundary": "instance"}},
     }
     overlay = {"files": {"state/example.yaml": {"owner": "instance", "boundary": "instance"}}}
     composed = generator.compose_manifest(
@@ -131,63 +266,15 @@ def test_manifest_composition_is_explicit_and_rejects_unknown_keys() -> None:
     else:
         raise AssertionError("generic nested overlay key was accepted")
 
-    conflict = {"files": {"state/example.yaml": {"owner": "template", "boundary": "instance"}}}
-    try:
-        generator.compose_manifest(base, conflict, base_path=Path("base"), overlay_path=Path("overlay"))
-    except generator.CompatibilityViewError as exc:
-        assert "conflicting owner/boundary" in str(exc)
-    else:
-        raise AssertionError("conflicting ownership metadata was accepted")
-
-
-def test_generation_rolls_back_all_views_on_promotion_failure() -> None:
-    generator = load_generator()
-    with tempfile.TemporaryDirectory(prefix="studydd-compatibility-rollback-") as raw:
-        root = Path(raw)
-        for source in (
-            "instance.yaml", ".statedd/lock.yaml",
-            "state/STATE_MANIFEST.template.yaml", "state/STATE_MANIFEST.instance.yaml",
-        ):
-            target = root / source
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes((ROOT / source).read_bytes())
-        generator.write_views(root)
-        before = {path: (root / path).read_bytes() for path in generator.render_views(root)}
-        original_replace = generator.os.replace
-        calls = {"count": 0}
-
-        def fail_second(source, target):
-            calls["count"] += 1
-            if calls["count"] == 2:
-                raise OSError("synthetic promotion failure")
-            return original_replace(source, target)
-
-        generator.os.replace = fail_second
-        try:
-            try:
-                # Change an authoritative input so all views are promoted.
-                (root / "instance.yaml").write_text(
-                    (root / "instance.yaml").read_text(encoding="utf-8").replace(
-                        "public template", "public template changed"
-                    ),
-                    encoding="utf-8",
-                )
-                generator.write_views(root)
-            except OSError as exc:
-                assert "synthetic promotion failure" in str(exc)
-            else:
-                raise AssertionError("synthetic promotion failure was swallowed")
-        finally:
-            generator.os.replace = original_replace
-        assert {path: (root / path).read_bytes() for path in before} == before
-
 
 def main() -> int:
     tests = [
         test_template_outputs_are_deterministic_and_public_safe,
         test_instance_authority_changes_only_generated_views,
+        test_extensions_are_preserved_and_paths_are_portable,
+        test_manual_edit_and_extension_conflict_fail_closed_without_partial_output,
+        test_regeneration_is_idempotent_and_replacement_rolls_back,
         test_manifest_composition_is_explicit_and_rejects_unknown_keys,
-        test_generation_rolls_back_all_views_on_promotion_failure,
     ]
     for test in tests:
         print(f"Running {test.__name__}...")
