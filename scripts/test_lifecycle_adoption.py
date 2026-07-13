@@ -64,6 +64,24 @@ def sha256_file(path: Path) -> str:
 
 def write_stateport_lock(root: Path, source: Path, digest: str) -> None:
     manifest = yaml.safe_load((source / ".statedd/manifest.yaml").read_text(encoding="utf-8"))
+    stateport_root = Path(os.environ["STATEPORT_ROOT"])
+    sys.path.insert(0, str(stateport_root / "packages/statedd-core/src"))
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        from statedd_core.lifecycle import (
+            _all_manifest_files,
+            _tree_digest,
+            _write_yaml,
+            describe_template_source,
+            load_template_manifest,
+        )
+
+        normalized = load_template_manifest(source)
+        all_files = _all_manifest_files(source, normalized)
+        source_descriptor = describe_template_source(source)
+    finally:
+        sys.dont_write_bytecode = previous
     merge = {
         "replace_if_unmodified": "replace",
         "preserve": "preserve",
@@ -71,53 +89,63 @@ def write_stateport_lock(root: Path, source: Path, digest: str) -> None:
         "append_only": "append_only",
     }
     files = []
-    for asset in manifest["assets"]:
-        if asset["kind"] != "file":
-            continue
-        target = root / asset["path"]
+    for path, asset in all_files.items():
+        target = root / path
         files.append(
             {
-                "path": asset["path"],
+                "path": path,
                 "owner": asset["owner"],
-                "merge": merge[asset["updatePolicy"]],
+                "merge": asset["merge"],
                 "required": asset["required"],
                 "sensitivity": asset["sensitivity"],
                 "sourceHash": sha256_file(source / asset["source"]) if asset.get("source") else None,
-                "materializedHash": None if asset["owner"] == "generated" else sha256_file(target),
+                "materializedHash": (
+                    None
+                    if asset["owner"] == "generated" or not target.is_file()
+                    else sha256_file(target)
+                ),
             }
         )
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        trees = []
+        for asset in manifest["assets"]:
+            if asset["kind"] != "tree":
+                continue
+            relative = asset["path"]
+            source_tree = source / relative
+            target_tree = root / relative
+            trees.append(
+                {
+                    "path": relative,
+                    "owner": asset["owner"],
+                    "required": asset["required"],
+                    "sensitivity": asset["sensitivity"],
+                    "updatePolicy": asset["updatePolicy"],
+                    "retirementPolicy": asset.get("retirementPolicy", "retain"),
+                    "baselineHash": _tree_digest(source, relative) if source_tree.is_dir() else None,
+                    "materializedHash": _tree_digest(root, relative) if target_tree.is_dir() else None,
+                }
+            )
+    finally:
+        sys.dont_write_bytecode = previous
     lock = {
         "formatVersion": "statedd.lock/v1",
         "instanceId": "studydd-stateport-proof",
         "template": {
             "id": "studydd",
-            "version": "0.10.0",
-            "sourceRevision": digest,
-            "sourcePath": str(source),
-            "source": {
-                "formatVersion": "statedd.source/v2",
-                "kind": "local_development",
-                "sourceClass": "canonical_source",
-                "productionEligible": True,
-                "checkoutLocation": str(source),
-                "sourceDigest": digest,
-                "resolvedCommit": None,
-            },
+            "version": manifest["template"]["releaseVersion"],
+            "sourceRevision": source_descriptor["sourceDigest"],
+            "sourcePath": source_descriptor["checkoutLocation"],
+            "source": source_descriptor,
         },
         "files": files,
+        "trees": trees,
     }
     # Use StatePort's own deterministic writer for this test-only lock. StudyDD
     # remains a consumer of the StatePort contract and does not copy its parser.
-    stateport_root = Path(os.environ["STATEPORT_ROOT"])
-    sys.path.insert(0, str(stateport_root / "packages/statedd-core/src"))
-    previous = sys.dont_write_bytecode
-    sys.dont_write_bytecode = True
-    try:
-        from statedd_core.lifecycle import _write_yaml
-
-        _write_yaml(root / ".statedd/lock.yaml", lock)
-    finally:
-        sys.dont_write_bytecode = previous
+    _write_yaml(root / ".statedd/lock.yaml", lock)
 
 
 def main() -> int:
@@ -164,6 +192,10 @@ def main() -> int:
             encoding="utf-8",
         )
         profile_before_regeneration = profile.read_bytes()
+        # create_instance generates the compatibility views as part of
+        # bootstrap. Remove one generated view so this proof exercises the
+        # regeneration path instead of asserting that a no-op must mutate.
+        (instance / "state/STUDYDD_MODE.yaml").unlink()
         generated_before = snapshot(instance)
         run([sys.executable, "scripts/generate_compatibility_views.py", "--root", str(instance)], instance)
         generated_after_first = snapshot(instance)
@@ -176,7 +208,10 @@ def main() -> int:
         run([sys.executable, "scripts/check_studydd.py"], instance)
         lock = yaml.safe_load((instance / ".statedd/lock.yaml").read_text(encoding="utf-8"))
         assert lock["template"]["id"] == "studydd"
-        assert lock["template"]["version"] == "0.10.0"
+        expected_version = yaml.safe_load(
+            (source / ".statedd/manifest.yaml").read_text(encoding="utf-8")
+        )["template"]["releaseVersion"]
+        assert lock["template"]["version"] == expected_version
         assert lock["template"]["sourceRevision"].startswith("sha256:")
         assert lock["instance"]["mode"] == "bootstrap"
 
