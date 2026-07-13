@@ -12,18 +12,82 @@ import argparse
 import re
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
-from check_source_freshness import classify_source, VOLATILITY_MAX_AGE_DAYS
+from check_source_freshness import classify_source as _canonical_classify_source
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
 TARGETS_DIR = ROOT / "targets"
 EXAMPLES_DIR = ROOT / "EXAMPLES"
 
+VOLATILITY_MAX_AGE_DAYS = {
+    "stable": 3650,
+    "slow_changing": 730,
+    "moderate": 90,
+    "volatile": 30,
+    "live": 1,
+}
+
 TRANSFER_COGNITIVE_LEVELS = {"apply", "troubleshoot", "choose-best", "explain", "design"}
+
+# This is a deliberately small typed boundary, not the question-bank engine.
+# The engine and module selection remain deferred until an independently
+# accepted implementation exists.
+QUESTION_BANK_API_VERSION = "studydd.question-bank/v1"
+QUESTION_BANK_KIND = "QuestionBank"
+QUESTION_BANK_PROVENANCE_KINDS = {"authored", "imported", "derived", "migrated"}
+STABLE_ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._-]{0,127}$")
+SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
+TYPED_QUESTION_REQUIRED_FIELDS = (
+    "cognitive_level",
+    "difficulty",
+    "public_prompt",
+    "private_answer_key",
+    "rubric",
+    "common_traps",
+    "last_used",
+    "cooldown_days",
+)
+IMPORT_BOUNDARY_FORBIDDEN_KEYS = {
+    "learner",
+    "learner_id",
+    "learner_name",
+    "answer_history",
+    "attempts",
+    "evidence",
+    "readiness",
+    "review_state",
+    "session_log",
+    "state",
+}
+
+
+class QuestionIdentity(TypedDict):
+    """Stable identity for a question inside a typed bank."""
+
+    bank_id: str
+    question_id: str
+
+
+class QuestionBankProvenance(TypedDict, total=False):
+    """Structured origin metadata carried across the import/export boundary."""
+
+    kind: str
+    source: dict[str, Any]
+    recorded_at: str
+
+
+class TypedQuestionBank(TypedDict):
+    """The v1 envelope accepted by the foundation linter."""
+
+    apiVersion: str
+    kind: str
+    metadata: dict[str, Any]
+    provenance: QuestionBankProvenance
+    questions: list[dict[str, Any]]
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -40,6 +104,168 @@ def load_yaml(path: Path) -> dict[str, Any]:
     except Exception as exc:
         print(f"Error reading {path}: {exc}")
         sys.exit(1)
+
+
+def discover_typed_bank_files(bank_path: Path | None = None) -> list[Path]:
+    """Find v1 bank envelopes without treating them as learner-state inputs."""
+    if bank_path is not None:
+        return [bank_path]
+    root = ROOT / "question_banks"
+    if not root.is_dir():
+        return []
+    return sorted(path for path in root.rglob("bank.yaml") if path.is_file())
+
+
+def _stable_id(value: Any) -> bool:
+    return isinstance(value, str) and bool(STABLE_ID_RE.fullmatch(value))
+
+
+def _walk_forbidden_import_keys(value: Any, path: str = "") -> list[str]:
+    """Reject learner-state payloads at the typed import/export boundary."""
+    findings: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            key_text = str(key)
+            child_path = f"{path}.{key_text}" if path else key_text
+            if key_text.lower() in IMPORT_BOUNDARY_FORBIDDEN_KEYS:
+                findings.append(child_path)
+            findings.extend(_walk_forbidden_import_keys(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            findings.extend(_walk_forbidden_import_keys(child, f"{path}[{index}]"))
+    return findings
+
+
+def _parse_timestamp(value: Any) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None
+
+
+def lint_typed_bank_envelope(
+    data: Any,
+    path: Path,
+    seen_bank_ids: set[str],
+    seen_question_identities: set[tuple[str, str]],
+) -> tuple[str, list[str], list[dict[str, Any]]]:
+    """Validate the small typed bank envelope and return its question records."""
+    failures: list[str] = []
+    if not isinstance(data, dict):
+        return path.stem, ["typed question bank must be a YAML mapping"], []
+
+    if data.get("apiVersion") != QUESTION_BANK_API_VERSION:
+        failures.append(
+            f"apiVersion must be {QUESTION_BANK_API_VERSION!r}"
+        )
+    if data.get("kind") != QUESTION_BANK_KIND:
+        failures.append(f"kind must be {QUESTION_BANK_KIND!r}")
+
+    metadata = data.get("metadata")
+    if not isinstance(metadata, dict):
+        failures.append("metadata must be a mapping")
+        metadata = {}
+    bank_id = metadata.get("id")
+    if not bank_id:
+        failures.append("metadata.id is required")
+        bank_id = path.parent.name
+    if not _stable_id(bank_id):
+        failures.append("metadata.id must be a stable ID (letters, digits, '.', '_' or '-')")
+        bank_id = str(bank_id)
+    elif bank_id in seen_bank_ids:
+        failures.append(f"duplicate structured identity for bank '{bank_id}'")
+    else:
+        seen_bank_ids.add(bank_id)
+
+    canonical_root = ROOT / "question_banks"
+    try:
+        is_canonical_path = path.resolve().is_relative_to(canonical_root.resolve())
+    except AttributeError:  # pragma: no cover - Python 3.8 compatibility
+        is_canonical_path = str(path.resolve()).startswith(str(canonical_root.resolve()) + "/")
+    if is_canonical_path and path.parent.name != bank_id:
+        failures.append(
+            f"metadata.id '{bank_id}' must match the question_banks directory name '{path.parent.name}'"
+        )
+    version = metadata.get("version")
+    if not isinstance(version, int) or isinstance(version, bool) or version < 1:
+        failures.append("metadata.version must be a positive integer")
+    if "id" in data:
+        failures.append("top-level id duplicates structured identity; use metadata.id")
+
+    provenance = data.get("provenance")
+    if not isinstance(provenance, dict):
+        failures.append("provenance must be a mapping")
+        provenance = {}
+    if provenance.get("kind") not in QUESTION_BANK_PROVENANCE_KINDS:
+        failures.append(
+            "provenance.kind must be one of: "
+            + ", ".join(sorted(QUESTION_BANK_PROVENANCE_KINDS))
+        )
+    source = provenance.get("source")
+    if not isinstance(source, dict):
+        failures.append("provenance.source must be a mapping")
+    else:
+        if not isinstance(source.get("kind"), str) or not source.get("kind"):
+            failures.append("provenance.source.kind must be a non-empty string")
+        if not isinstance(source.get("ref"), str) or not source.get("ref"):
+            failures.append("provenance.source.ref must be a non-empty string")
+        digest = source.get("digest")
+        if digest is not None and (not isinstance(digest, str) or not SHA256_RE.fullmatch(digest)):
+            failures.append("provenance.source.digest must use sha256:<64 lowercase hex digits>")
+    if not _parse_timestamp(provenance.get("recorded_at")):
+        failures.append("provenance.recorded_at must be an ISO-8601 timestamp with timezone")
+
+    forbidden = _walk_forbidden_import_keys(data)
+    if forbidden:
+        failures.append(
+            "import/export boundary contains learner-state field(s): "
+            + ", ".join(forbidden)
+        )
+
+    questions = data.get("questions")
+    if not isinstance(questions, list):
+        failures.append("questions must be a list")
+        questions = []
+
+    valid_questions: list[dict[str, Any]] = []
+    local_question_ids: set[str] = set()
+    for index, question in enumerate(questions):
+        if not isinstance(question, dict):
+            failures.append(f"questions[{index}] must be a mapping")
+            continue
+        question_id = question.get("id")
+        if not _stable_id(question_id):
+            failures.append(f"questions[{index}].id must be a stable ID")
+            continue
+        identity = (str(bank_id), str(question_id))
+        if question_id in local_question_ids or identity in seen_question_identities:
+            failures.append(
+                f"duplicate structured identity '{bank_id}/{question_id}'"
+            )
+        local_question_ids.add(str(question_id))
+        seen_question_identities.add(identity)
+        if "identity" in question:
+            failures.append(
+                f"question '{question_id}' duplicates structured identity; use bank metadata.id and question id"
+            )
+        for required in ("target_id", "skill_id"):
+            if not _stable_id(question.get(required)):
+                failures.append(f"question '{question_id}' has invalid stable {required}")
+        for required in TYPED_QUESTION_REQUIRED_FIELDS:
+            if required not in question or question[required] in (None, ""):
+                failures.append(f"question '{question_id}' missing required field '{required}'")
+        if not question.get("source_ref") and not (
+            isinstance(question.get("source_ids"), list) and question.get("source_ids")
+        ):
+            failures.append(
+                f"question '{question_id}' requires source_ref or non-empty source_ids"
+            )
+        valid_questions.append(question)
+
+    return str(bank_id), failures, valid_questions
 
 
 def parse_now(value: str | None) -> datetime:
@@ -75,15 +301,21 @@ def read_target_volatility(target_id: str, target_root: Path) -> str:
         return "moderate"
     data = load_yaml(target_yaml)
     volatility = data.get("volatility")
-    if volatility in VOLATILITY_MAX_AGE_DAYS or volatility == "stable":
+    if volatility in VOLATILITY_MAX_AGE_DAYS:
         return str(volatility)
     return "moderate"
 
 
+def classify_source(
+    source: dict[str, Any], now: datetime, target_volatility: str
+) -> tuple[str, str | None]:
+    """Delegate freshness classification to the canonical source policy."""
+    return _canonical_classify_source(source, now, target_volatility)
+
 
 def question_volatility(question: dict[str, Any], target_volatility: str) -> str:
     volatility = question.get("volatility")
-    if volatility in VOLATILITY_MAX_AGE_DAYS or volatility == "stable":
+    if volatility in VOLATILITY_MAX_AGE_DAYS:
         return str(volatility)
     return target_volatility
 
@@ -450,6 +682,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Lint StudyDD question files")
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
     parser.add_argument("--target-id", help="Limit lint to a single target ID")
+    parser.add_argument(
+        "--bank-path",
+        type=Path,
+        help="Validate one typed QuestionBank v1 envelope in addition to discovered records",
+    )
     parser.add_argument("--now", default=None, help="ISO 8601 timestamp with timezone for deterministic checks")
     args = parser.parse_args()
 
@@ -459,6 +696,45 @@ def main() -> int:
 
     per_question_results: list[tuple[str, list[str], list[str]]] = []
     loaded_questions: list[tuple[dict[str, Any], str, Path]] = []
+    loaded_question_result_indexes: list[int] = []
+
+    # Typed bank envelopes are linted as a boundary document. They are not
+    # imported, exported, materialised, or selected as a runtime module here.
+    seen_bank_ids: set[str] = set()
+    seen_question_identities: set[tuple[str, str]] = set()
+    for bank_file in discover_typed_bank_files(args.bank_path):
+        if not bank_file.is_file():
+            per_question_results.append(
+                (bank_file.stem, [f"typed bank path does not exist: {bank_file}"], [])
+            )
+            continue
+        try:
+            bank = load_yaml(bank_file)
+        except Exception as exc:
+            per_question_results.append((bank_file.stem, [f"could not parse YAML: {exc}"], []))
+            continue
+        bank_id, bank_failures, bank_questions = lint_typed_bank_envelope(
+            bank, bank_file, seen_bank_ids, seen_question_identities
+        )
+        bank_warnings: list[str] = []
+        source_root = ROOT / "targets"
+        typed_question_count = 0
+        sources = read_source_state(source_root)
+        for question in bank_questions:
+            question_id = str(question.get("id", "<unknown>"))
+            target_id = question.get("target_id") or "<unknown>"
+            if args.target_id and target_id != args.target_id:
+                continue
+            failures, warnings = lint_question(
+                question, target_id, source_root, sources, now
+            )
+            bank_failures.extend(f"question '{question_id}': {message}" for message in failures)
+            bank_warnings.extend(f"question '{question_id}': {message}" for message in warnings)
+            loaded_questions.append((question, target_id, source_root))
+            typed_question_count += 1
+        bank_result_index = len(per_question_results)
+        per_question_results.append((f"bank:{bank_id}", bank_failures, bank_warnings))
+        loaded_question_result_indexes.extend([bank_result_index] * typed_question_count)
 
     for question_file, target_root in question_files:
         try:
@@ -479,6 +755,7 @@ def main() -> int:
         failures, warnings = lint_question(question, target_id, target_root, sources, now)
         per_question_results.append((qid, failures, warnings))
         loaded_questions.append((question, target_id, target_root))
+        loaded_question_result_indexes.append(len(per_question_results) - 1)
 
     # Cross-question heuristics.
     recall_warnings = check_skill_question_balance(loaded_questions)
@@ -491,10 +768,11 @@ def main() -> int:
         if not skill_id or skill_id in skill_seen:
             continue
         skill_seen.add(skill_id)
-        qid, failures, warnings = per_question_results[idx]
+        result_index = loaded_question_result_indexes[idx]
+        qid, failures, warnings = per_question_results[result_index]
         warnings.extend(recall_warnings.get(skill_id, []))
         warnings.extend(position_warnings.get(skill_id, []))
-        per_question_results[idx] = (qid, failures, warnings)
+        per_question_results[result_index] = (qid, failures, warnings)
 
     total_failures = sum(1 for _, failures, _ in per_question_results if failures)
     total_warnings = sum(1 for _, failures, warnings in per_question_results if warnings and not failures)

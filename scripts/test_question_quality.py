@@ -19,14 +19,11 @@ SCRIPT_SRC = ROOT / "scripts" / "lint_questions.py"
 
 
 def run_script(tmp_root: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    """Copy the linter and its local dependencies into tmp_root."""
+    """Copy the linter script into tmp_root so ROOT resolves to tmp_root."""
     script_dst = tmp_root / "scripts" / "lint_questions.py"
     script_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(SCRIPT_SRC, script_dst)
-    shutil.copy(
-        ROOT / "scripts" / "check_source_freshness.py",
-        script_dst.parent / "check_source_freshness.py",
-    )
+    shutil.copy(ROOT / "scripts" / "check_source_freshness.py", tmp_root / "scripts" / "check_source_freshness.py")
     return subprocess.run(
         [sys.executable, str(script_dst), *args],
         cwd=tmp_root,
@@ -106,6 +103,115 @@ def write_mode(tmp_root: Path, mode: str) -> None:
         tmp_root / "state" / "STUDYDD_MODE.yaml",
         {"mode": mode, "public_safe": mode == "template", "personalized": False},
     )
+
+
+def typed_question(question_id: str = "q-synthetic-001") -> dict[str, Any]:
+    return {
+        "id": question_id,
+        "target_id": "synthetic-target",
+        "skill_id": "synthetic-skill",
+        "cognitive_level": "explain",
+        "difficulty": 2,
+        "volatility": "stable",
+        "source_ref": "synthetic-authoring",
+        "public_prompt": "Explain the synthetic concept in one sentence.",
+        "private_answer_key": "A synthetic answer grounded in the local fixture.",
+        "rubric": ["States the synthetic concept"],
+        "common_traps": ["Repeats the prompt"],
+        "last_used": "2026-07-12",
+        "cooldown_days": 7,
+    }
+
+
+def write_typed_bank(
+    tmp_root: Path,
+    bank_id: str = "synthetic-bank",
+    questions: list[dict[str, Any]] | None = None,
+    overrides: dict[str, Any] | None = None,
+    path: Path | None = None,
+) -> Path:
+    bank_path = path or (tmp_root / "question_banks" / bank_id / "bank.yaml")
+    data: dict[str, Any] = {
+        "apiVersion": "studydd.question-bank/v1",
+        "kind": "QuestionBank",
+        "metadata": {"id": bank_id, "version": 1},
+        "provenance": {
+            "kind": "authored",
+            "source": {"kind": "fixture", "ref": "synthetic-authoring"},
+            "recorded_at": "2026-07-12T12:00:00+00:00",
+        },
+        "questions": questions or [typed_question()],
+    }
+    if overrides:
+        data.update(overrides)
+    write_yaml(bank_path, data)
+    return bank_path
+
+
+def test_typed_question_bank_v1_passes() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-typed-bank-") as tmp:
+        tmp_root = Path(tmp)
+        write_mode(tmp_root, "template")
+        write_source_state(tmp_root, [])
+        write_typed_bank(tmp_root)
+
+        result = run_script(tmp_root)
+        print("--- test_typed_question_bank_v1_passes stdout ---")
+        print(result.stdout)
+        if result.stderr:
+            print("stderr:", result.stderr)
+        assert result.returncode == 0, f"Expected exit 0, got {result.returncode}"
+        assert "bank:synthetic-bank: pass" in result.stdout
+
+
+def test_typed_question_bank_rejects_duplicate_structured_identity() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-typed-bank-") as tmp:
+        tmp_root = Path(tmp)
+        write_mode(tmp_root, "template")
+        write_source_state(tmp_root, [])
+        write_typed_bank(
+            tmp_root,
+            questions=[typed_question(), typed_question()],
+        )
+
+        result = run_script(tmp_root)
+        print("--- test_typed_question_bank_rejects_duplicate_structured_identity stdout ---")
+        print(result.stdout)
+        assert result.returncode != 0
+        assert "duplicate structured identity 'synthetic-bank/q-synthetic-001'" in result.stdout
+
+
+def test_typed_question_bank_rejects_learner_state_at_boundary() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-typed-bank-") as tmp:
+        tmp_root = Path(tmp)
+        write_mode(tmp_root, "template")
+        write_source_state(tmp_root, [])
+        bank_path = tmp_root / "imports" / "bank.yaml"
+        write_typed_bank(
+            tmp_root,
+            path=bank_path,
+            overrides={"learner": {"name": "synthetic-only-placeholder"}},
+        )
+
+        result = run_script(tmp_root, "--bank-path", str(bank_path))
+        print("--- test_typed_question_bank_rejects_learner_state_at_boundary stdout ---")
+        print(result.stdout)
+        assert result.returncode != 0
+        assert "import/export boundary contains learner-state field(s): learner" in result.stdout
+
+
+def test_typed_question_bank_requires_structured_provenance() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-typed-bank-") as tmp:
+        tmp_root = Path(tmp)
+        write_mode(tmp_root, "template")
+        write_source_state(tmp_root, [])
+        write_typed_bank(tmp_root, overrides={"provenance": {"kind": "authored"}})
+
+        result = run_script(tmp_root)
+        print("--- test_typed_question_bank_requires_structured_provenance stdout ---")
+        print(result.stdout)
+        assert result.returncode != 0
+        assert "provenance.source must be a mapping" in result.stdout
 
 
 def test_volatile_no_source_fails() -> None:
@@ -204,6 +310,7 @@ def test_authoritative_current_stale_source_fails_quality_gate() -> None:
                     "authority": "official",
                     "usable_for_questions": True,
                     "last_checked_at": "2026-05-01T10:00:00+00:00",
+                    "last_check": {"outcome": "stale"},
                 }
             ],
         )
@@ -338,7 +445,7 @@ def test_question_volatility_overrides_target() -> None:
         tmp_root = Path(tmp)
         target_id = "override-target"
         write_mode(tmp_root, "learner_instance")
-        # Target says moderate (30 days); question says live (1 day).
+        # Target says moderate (90 days); question says live (1 day).
         write_target(tmp_root, target_id, volatility="moderate")
         write_source_state(
             tmp_root,
@@ -499,6 +606,10 @@ def test_generated_from_memory_false_with_fresh_source_passes() -> None:
 
 def main() -> int:
     tests = [
+        test_typed_question_bank_v1_passes,
+        test_typed_question_bank_rejects_duplicate_structured_identity,
+        test_typed_question_bank_rejects_learner_state_at_boundary,
+        test_typed_question_bank_requires_structured_provenance,
         test_volatile_no_source_fails,
         test_answer_key_leakage_caught,
         test_legacy_source_ref_warns_for_volatile,

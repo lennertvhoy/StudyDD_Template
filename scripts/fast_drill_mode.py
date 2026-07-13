@@ -23,7 +23,7 @@ import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Literal, Union
 
 try:
@@ -844,16 +844,67 @@ def _load_transactions(root: Path) -> list[tuple[Path, dict[str, Any]]]:
     result: list[tuple[Path, dict[str, Any]]] = []
     for tx_dir in sorted(directory.iterdir()):
         manifest_path = tx_dir / "transaction.json"
-        if not tx_dir.is_dir() or not manifest_path.is_file():
+        if tx_dir.is_symlink() or not tx_dir.is_dir() or manifest_path.is_symlink() or not manifest_path.is_file():
             continue
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("format") != TRANSACTION_FORMAT:
             raise CheckpointError("unsupported Fast Drill transaction format")
+        _validate_transaction_manifest(root, tx_dir, manifest)
         result.append((tx_dir, manifest))
     return result
 
 
+_TRANSACTION_TARGETS = {
+    "state/EVIDENCE_LOG.md",
+    "activities/ACTIVITY_LOG.md",
+    "sessions/SESSION_LOG.md",
+    "state/SKILL_MAP.yaml",
+    "state/STUDY_STATE.yaml",
+}
+
+
+def _safe_transaction_path(root: Path, value: Any, label: str) -> Path:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise CheckpointError(f"{label} is not a safe relative path")
+    relative = PurePosixPath(value)
+    if relative.is_absolute() or any(part in {"", ".", ".."} for part in relative.parts):
+        raise CheckpointError(f"{label} is not a safe relative path")
+    candidate = root.joinpath(*relative.parts)
+    current = root
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            raise CheckpointError(f"{label} traverses a symlink")
+    if not candidate.resolve().is_relative_to(root.resolve()):
+        raise CheckpointError(f"{label} escapes the learner instance")
+    return candidate
+
+
+def _validate_transaction_manifest(root: Path, tx_dir: Path, manifest: dict[str, Any]) -> None:
+    files = manifest.get("files")
+    if not isinstance(files, dict) or not files:
+        raise CheckpointError("Fast Drill transaction files are missing")
+    for entry in files.values():
+        if not isinstance(entry, dict):
+            raise CheckpointError("Fast Drill transaction entry is invalid")
+        target = _safe_transaction_path(root, entry.get("path"), "transaction target")
+        if entry["path"] not in _TRANSACTION_TARGETS:
+            raise CheckpointError("Fast Drill transaction target is outside the canonical write set")
+        stage = _safe_transaction_path(tx_dir, entry.get("stage"), "transaction stage")
+        if stage.parent != tx_dir or stage.is_symlink() or not stage.is_file():
+            raise CheckpointError("Fast Drill transaction stage is unsafe")
+        if entry.get("kind") not in {"append", "replace"}:
+            raise CheckpointError("Fast Drill transaction operation is unsupported")
+        for hash_name in ("before_hash", "after_hash"):
+            value = entry.get(hash_name)
+            if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+                raise CheckpointError(f"Fast Drill transaction {hash_name} is invalid")
+        if target.is_symlink():
+            raise CheckpointError("Fast Drill transaction target is a symlink")
+
+
 def _commit_transaction(root: Path, tx_dir: Path, manifest: dict[str, Any], crash_after: int | None = None) -> None:
+    _validate_transaction_manifest(root, tx_dir, manifest)
     manifest["phase"] = "committing"
     _write_json_atomic(tx_dir / "transaction.json", manifest)
     applied = 0
