@@ -315,7 +315,7 @@ def test_target_freshness_summary_fresh_inside_window() -> None:
 
 def test_target_freshness_summary_stale_outside_window() -> None:
     summary = target_freshness_summary(
-        "target", "volatile", _state(_src(checked_offset_days=10.0)), NOW
+        "target", "volatile", _state(_src(checked_offset_days=35.0)), NOW
     )
     assert summary.status == "stale"
     assert not summary.has_fresh_usable
@@ -360,26 +360,26 @@ def test_live_target_window_one_day() -> None:
     assert stale.status == "stale"
 
 
-def test_volatile_target_window_seven_days() -> None:
-    assert VOLATILITY_MAX_AGE_DAYS["volatile"] == 7
+def test_volatile_target_window_thirty_days() -> None:
+    assert VOLATILITY_MAX_AGE_DAYS["volatile"] == 30
     fresh = target_freshness_summary(
         "target", "volatile", _state(_src(checked_offset_days=3.0)), NOW
     )
     assert fresh.status == "fresh"
     stale = target_freshness_summary(
-        "target", "volatile", _state(_src(checked_offset_days=10.0)), NOW
+        "target", "volatile", _state(_src(checked_offset_days=35.0)), NOW
     )
     assert stale.status == "stale"
 
 
-def test_moderate_target_window_thirty_days() -> None:
-    assert VOLATILITY_MAX_AGE_DAYS["moderate"] == 30
+def test_moderate_target_window_ninety_days() -> None:
+    assert VOLATILITY_MAX_AGE_DAYS["moderate"] == 90
     fresh = target_freshness_summary(
         "target", "moderate", _state(_src(checked_offset_days=15.0)), NOW
     )
     assert fresh.status == "fresh"
     stale = target_freshness_summary(
-        "target", "moderate", _state(_src(checked_offset_days=35.0)), NOW
+        "target", "moderate", _state(_src(checked_offset_days=95.0)), NOW
     )
     assert stale.status == "stale"
 
@@ -405,7 +405,7 @@ def test_target_freshness_summary_multiple_sources_aggregate() -> None:
         "volatile",
         _state(
             _src(source_id="fresh-official", checked_offset_days=1.0, authority="official"),
-            _src(source_id="stale-blog", checked_offset_days=14.0, authority="unverified"),
+            _src(source_id="stale-blog", checked_offset_days=35.0, authority="unverified"),
             _src(source_id="not-usable", checked_offset_days=1.0, usable_for_questions=False),
             {"id": "no-ts", "target_ids": ["target"]},
             {"id": "bad-ts", "target_ids": ["target"], "last_checked_at": "oops"},
@@ -433,6 +433,19 @@ def test_usable_for_questions_false_counts_unverified() -> None:
     assert summary.status == "unverified"
     assert summary.unverified_count == 1
     assert summary.fresh_count == 0
+    assert not summary.has_fresh_usable
+
+
+def test_fresh_learner_notes_do_not_authorize_current_questions() -> None:
+    summary = target_freshness_summary(
+        "target",
+        "volatile",
+        _state(_src(checked_offset_days=1.0, authority="learner_notes")),
+        NOW,
+    )
+    assert summary.status == "unverified"
+    assert summary.fresh_count == 1
+    assert summary.authoritative_fresh_count == 0
     assert not summary.has_fresh_usable
 
 
@@ -472,11 +485,12 @@ def main() -> int:
         test_target_freshness_summary_stable_no_sources,
         test_target_freshness_summary_stable_with_valid_source,
         test_live_target_window_one_day,
-        test_volatile_target_window_seven_days,
-        test_moderate_target_window_thirty_days,
+        test_volatile_target_window_thirty_days,
+        test_moderate_target_window_ninety_days,
         test_freshness_window_days_override,
         test_target_freshness_summary_multiple_sources_aggregate,
         test_usable_for_questions_false_counts_unverified,
+        test_fresh_learner_notes_do_not_authorize_current_questions,
         test_expires_at_overrides_window,
     ]
 

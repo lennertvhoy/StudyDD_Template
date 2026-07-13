@@ -6,6 +6,11 @@
 
 Every tutoring turn should produce exactly one canonical update and exactly one audit append. Do not rewrite large files unless you are closing a session or repairing state.
 
+All generic mutating scripts must pass through `scripts/studydd_runtime.py` for
+the authoritative `instance.yaml` mode boundary, compatibility-view agreement
+check, transition lock, and atomic file replacement. A generated compatibility
+view is evidence of lifecycle state, not a second write authority.
+
 ## Before updating state
 
 1. Identify the touched files for this operation.

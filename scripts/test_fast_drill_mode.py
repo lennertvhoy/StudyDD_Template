@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import copy
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
 from pathlib import Path
@@ -91,6 +92,30 @@ def test_typed_operations_and_invalid_record_are_rejected() -> None:
         raise AssertionError("invalid typed verdict was accepted")
 
 
+def test_concurrent_appends_preserve_one_valid_checkpoint() -> None:
+    root = synthetic_instance()
+    assert fdm.start_drill("s-concurrent", "target-1", repo_root=root) == 0
+
+    def append(index: int) -> int:
+        return fdm.append_checkpoint(
+            question_id=f"q-{index}",
+            skill_id="skill-a",
+            concept=f"concept-{index}",
+            answer_summary=f"answer-{index}",
+            verdict="correct",
+            correction_summary="",
+            confidence="medium",
+            evidence_marker=f"ev-{index}",
+            repo_root=root,
+            record_id=f"record-{index}",
+        )
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(append, range(8)))
+    assert results == [0] * 8
+    assert len(fdm.load_checkpoint(root).records) == 8
+
+
 def test_template_and_bootstrap_refusal_does_not_touch_settings() -> None:
     for mode in ("template", "bootstrap"):
         root = synthetic_instance(mode)
@@ -120,6 +145,8 @@ def test_transactional_reconciliation_recovers_after_synthetic_crash() -> None:
     assert not (root / fdm.CHECKPOINT_RELATIVE).exists()
     evidence = (root / "state/EVIDENCE_LOG.md").read_text(encoding="utf-8")
     assert evidence.count("**Evidence ID:** ev-crash") == 1
+    assert "**Fast Drill session ID:** s-crash" in (root / "sessions/SESSION_LOG.md").read_text(encoding="utf-8")
+    assert "fast-drill-s-crash" in (root / "activities/ACTIVITY_LOG.md").read_text(encoding="utf-8")
     skills = yaml.safe_load((root / "state/SKILL_MAP.yaml").read_text(encoding="utf-8"))
     assert skills["skills"][0]["status"] == "practiced"
     assert (root / "state/LEARNER_PROFILE.yaml").read_bytes() == before_profile
@@ -140,12 +167,22 @@ def test_end_without_apply_is_a_proposal_only() -> None:
     assert (root / fdm.CHECKPOINT_RELATIVE).exists()
 
 
+def test_incompatible_generated_mode_view_refuses_all_fast_drill_writes() -> None:
+    root = synthetic_instance()
+    write_yaml(root / "state/STUDYDD_MODE.yaml", {"mode": "template"})
+    before = (root / "state/LEARNER_PROFILE.yaml").read_bytes()
+    assert fdm.start_drill("s-mismatch", "target-1", repo_root=root) == 2
+    assert (root / "state/LEARNER_PROFILE.yaml").read_bytes() == before
+
+
 def main() -> int:
     test_versioned_append_only_and_idempotent_append()
     test_typed_operations_and_invalid_record_are_rejected()
+    test_concurrent_appends_preserve_one_valid_checkpoint()
     test_template_and_bootstrap_refusal_does_not_touch_settings()
     test_transactional_reconciliation_recovers_after_synthetic_crash()
     test_end_without_apply_is_a_proposal_only()
+    test_incompatible_generated_mode_view_refuses_all_fast_drill_writes()
     print("Fast Drill checkpoint contract tests passed.")
     print("- versioned hash-linked append-only records")
     print("- typed operation validation and settings authority")

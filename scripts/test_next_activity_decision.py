@@ -137,7 +137,7 @@ def test_stale_source_triggers_recent_info_check() -> None:
     decision = decide(
         target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
         study_skill="it_certification",
-        source_state=_source_state(_source(checked_offset_days=10, target_id="cert")),
+        source_state=_source_state(_source(checked_offset_days=35, target_id="cert")),
     )
     assert decision.activity_type == "recent_info_check"
     assert decision.rule_id == "source_freshness_stale"
@@ -251,7 +251,7 @@ def test_stable_with_requires_recent_info_and_stale_source_triggers_recent_info_
             "requires_recent_info_check": True,
         },
         study_skill="it_certification",
-        source_state=_source_state(_source(checked_offset_days=35, target_id="cert")),
+        source_state=_source_state(_source(checked_offset_days=95, target_id="cert")),
     )
     assert decision.activity_type == "recent_info_check"
     assert decision.rule_id == "source_freshness_stale"
@@ -292,7 +292,7 @@ def test_source_freshness_signals_populated() -> None:
         study_skill="it_certification",
         source_state=_source_state(
             _source(checked_offset_days=1, target_id="cert"),
-            _source(checked_offset_days=10, target_id="cert", id="src2"),
+            _source(checked_offset_days=35, target_id="cert", id="src2"),
         ),
     )
     assert decision.signals.get("source_freshness_checked") is True
@@ -306,7 +306,7 @@ def test_reason_starts_with_rule() -> None:
     decision = decide(
         target={"id": "cert", "type": "certification", "title": "Volatile Cert", "volatility": "volatile"},
         study_skill="it_certification",
-        source_state=_source_state(_source(checked_offset_days=10, target_id="cert")),
+        source_state=_source_state(_source(checked_offset_days=35, target_id="cert")),
     )
     assert decision.reason.startswith("Rule:")
 
