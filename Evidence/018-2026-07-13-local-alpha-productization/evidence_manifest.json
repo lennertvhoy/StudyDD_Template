@@ -1,0 +1,10 @@
+{
+  "formatVersion": "studydd.evidence-manifest/v1",
+  "slice": "STATEPORT-LOCAL-ALPHA-MEGA-001",
+  "candidateCommit": "65edbf3258b7f2269079dd0a7635719c21c32d3c",
+  "candidateTree": "c3e9681a9359f9591666513cd6892e492a3dff3e",
+  "publicSafe": true,
+  "syntheticOnly": true,
+  "learnerDataIncluded": false,
+  "files": ["README.md", "cto_handoff.md", "local-alpha-journey.md", "lifecycle-identity.md", "module-status.md", "StatePack-policy.md", "demo-fixtures.md", "backup-restore-result.md", "validation.md", "privacy-review.md", "known-limits.md"]
+}
