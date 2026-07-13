@@ -136,6 +136,8 @@ modules:
     selfTests:
       - id: fast-drill-checkpoint-contract
         command: python3 scripts/test_fast_drill_mode.py
+      - id: fast-drill-settings-migration
+        command: python3 scripts/test_migrate_fast_drill_settings.py
     order: 40
 
 selectedModules:
