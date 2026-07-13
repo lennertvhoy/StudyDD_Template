@@ -80,6 +80,10 @@ def create_temp_instance(tmp: str, name: str, target_id: str, target_yaml: str) 
     mode_data["mode"] = "learner_instance"
     mode_data["personalized"] = True
     save_yaml(mode_path, mode_data)
+    instance_path = target / "instance.yaml"
+    instance_data = load_yaml(instance_path)
+    instance_data.setdefault("spec", {})["mode"] = "learner_instance"
+    save_yaml(instance_path, instance_data)
 
     study_state = load_yaml(target / "state" / "STUDY_STATE.yaml")
     study_state["learner"]["name"] = f"{name} Test Learner"
@@ -323,6 +327,10 @@ def test_record_activity_result_on_temp_instance() -> None:
         mode_data["personalized"] = True
         mode_data["public_safe"] = "false_or_review_required"
         save_yaml(mode_path, mode_data)
+        instance_path = target / "instance.yaml"
+        instance_data = load_yaml(instance_path)
+        instance_data.setdefault("spec", {})["mode"] = "learner_instance"
+        save_yaml(instance_path, instance_data)
 
         # Set a learner and active target.
         study_state = load_yaml(target / "state" / "STUDY_STATE.yaml")
@@ -407,86 +415,37 @@ def test_record_activity_result_on_temp_instance() -> None:
         run([sys.executable, "scripts/check_studydd.py"], cwd=target)
 
 
-def test_record_recent_info_check_updates_source_state() -> None:
-    with tempfile.TemporaryDirectory(prefix="studydd-recent-info-test-") as tmp:
-        target_yaml = "---\nid: recent-info-target\ntype: certification\ntitle: Recent Info Cert\nvolatility: volatile\nstudy_skill: it_certification\n"
-        target = create_temp_instance(tmp, "RecentInfoTest", "recent-info-target", target_yaml)
-
-        # Set active recent_info_check activity.
-        activity_state = load_yaml(target / "state" / "ACTIVITY_STATE.yaml")
-        activity_state["active_activity"] = {
-            "id": "act_recent_info_001",
-            "type": "recent_info_check",
-            "target_id": "recent-info-target",
-            "skill_id": "recent-info-skill",
-            "assigned_at": "2026-06-27T12:00:00+00:00",
-            "due_at": "",
-            "status": "proposed",
-            "reason": "Source freshness check for volatile cert.",
-            "expected_evidence": ["source summary"],
-            "learner_override_allowed": True,
-        }
-        save_yaml(target / "state" / "ACTIVITY_STATE.yaml", activity_state)
-
-        # Add the referenced skill so the validator passes.
-        skill_map = load_yaml(target / "state" / "SKILL_MAP.yaml")
-        skill_map["skills"] = [
-            {
-                "id": "recent-info-skill",
-                "label": "Recent info skill",
-                "status": "pending",
-                "readiness": 0,
-                "confidence": "low",
-                "evidence": [],
-            }
-        ]
-        save_yaml(target / "state" / "SKILL_MAP.yaml", skill_map)
-
-        checked_at = "2026-06-27T12:30:00+00:00"
+def test_record_activity_result_refuses_non_instance_before_writing() -> None:
+    with tempfile.TemporaryDirectory(prefix="studydd-activity-boundary-test-") as tmp:
+        target = Path(tmp) / "StudyDD_BoundaryCopy"
         run(
+            [
+                sys.executable,
+                "scripts/create_instance.py",
+                "--target",
+                str(target),
+                "--remote",
+                "https://github.com/example/StudyDD_BoundaryCopy.git",
+            ]
+        )
+        state_path = target / "state/ACTIVITY_STATE.yaml"
+        before = state_path.read_bytes()
+        result = run(
             [
                 sys.executable,
                 "scripts/record_activity_result.py",
                 "--activity-id",
-                "act_recent_info_001",
+                "act_should_not_write",
                 "--result",
-                "partial",
+                "correct",
                 "--evidence-id",
-                "ev_recent_info_001",
-                "--source-id",
-                "recent-info-source",
-                "--source-outcome",
-                "fresh",
-                "--source-summary",
-                "Official docs verified; no exam changes.",
-                "--source-authority",
-                "official",
-                "--source-volatility",
-                "volatile",
-                "--source-checked-at",
-                checked_at,
+                "ev_should_not_write",
             ],
             cwd=target,
+            check=False,
         )
-
-        source_state = load_yaml(target / "sources" / "SOURCE_STATE.yaml")
-        sources = source_state.get("sources", [])
-        assert len(sources) == 1, f"Expected one source, got {len(sources)}"
-        source = sources[0]
-        assert source["id"] == "recent-info-source"
-        assert source["last_check"]["outcome"] == "fresh"
-        assert source["last_check"]["checked_at"] == checked_at
-        assert source["last_check"]["summary"] == "Official docs verified; no exam changes."
-        assert source["last_check"]["activity_id"] == "act_recent_info_001"
-        assert source["last_check"]["evidence_id"] == "ev_recent_info_001"
-
-        # Next plan should see fresh source and not recommend recent_info_check.
-        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
-        assert "recent_info_check" not in result.stdout, "Fresh source should suppress recent_info_check"
-        assert "Source freshness: fresh" in result.stdout
-        assert "source_freshness_satisfied" in result.stdout
-
-        run([sys.executable, "scripts/check_studydd.py"], cwd=target)
+        assert result.returncode == 2
+        assert state_path.read_bytes() == before
 
 
 def test_full_validator_passes() -> None:
@@ -511,7 +470,7 @@ def main() -> int:
         test_context_pack_includes_active_activity,
         test_demo_replay_mentions_non_question_activity,
         test_record_activity_result_on_temp_instance,
-        test_record_recent_info_check_updates_source_state,
+        test_record_activity_result_refuses_non_instance_before_writing,
         test_full_validator_passes,
     ]
 

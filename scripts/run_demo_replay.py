@@ -63,6 +63,10 @@ def switch_to_learner_instance(target: Path) -> None:
     mode_data["personalized"] = True
     mode_data["public_safe"] = "false_or_review_required"
     save_yaml(mode_path, mode_data)
+    instance_path = target / "instance.yaml"
+    instance_data = load_yaml(instance_path)
+    instance_data.setdefault("spec", {})["mode"] = "learner_instance"
+    save_yaml(instance_path, instance_data)
 
 
 def initialize_learner_profile(target: Path) -> None:

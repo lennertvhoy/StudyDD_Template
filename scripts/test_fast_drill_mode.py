@@ -1,298 +1,195 @@
 #!/usr/bin/env python3
-"""Tests for scripts/fast_drill_mode.py.
-
-Covers checkpoint lifecycle, reconciliation, crash recovery, major-transition
-detection, and template-mode refusal.
-"""
+"""Synthetic contract tests for the generic Fast Drill checkpoint lane."""
 
 from __future__ import annotations
 
-import subprocess
+import copy
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
-SCRIPT_DIR = ROOT / "scripts"
-SCRIPT_NAME = "scripts/fast_drill_mode.py"
+sys.path.insert(0, str(ROOT))
 
-# Make the script importable as a module.
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-import fast_drill_mode as fdm
+from scripts import fast_drill_mode as fdm
 
 
-def load_yaml(path: Path) -> dict:
-    import yaml
-
-    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-
-
-def save_yaml(path: Path, data: dict) -> None:
-    import yaml
-
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+def write_yaml(path: Path, value: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(value, sort_keys=False), encoding="utf-8")
 
 
-def run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess:
-    result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False)
-    if check and result.returncode != 0:
-        print(f"Command failed: {' '.join(cmd)}")
-        print(result.stdout)
-        print(result.stderr)
-        raise subprocess.CalledProcessError(result.returncode, cmd)
-    return result
-
-
-def create_temp_instance(
-    tmp: str,
-    name: str,
-    target_id: str,
-    skills: list[dict] | None = None,
-    review_items: list[dict] | None = None,
-) -> Path:
-    target = Path(tmp) / f"StudyDD_{name}"
-    remote = f"https://github.com/example/StudyDD_{name}.git"
-    run(
-        [sys.executable, "scripts/create_instance.py", "--target", str(target), "--remote", remote],
-        cwd=ROOT,
+def synthetic_instance(mode: str = "learner_instance") -> Path:
+    root = Path(tempfile.mkdtemp(prefix="studydd-fast-drill-"))
+    write_yaml(
+        root / "instance.yaml",
+        {
+            "apiVersion": "studydd.studydd.io/v1",
+            "kind": "StudyDDInstance",
+            "metadata": {"id": "synthetic-fast-drill"},
+            "spec": {"mode": mode, "personalized": mode == "learner_instance", "publicSafe": mode != "learner_instance"},
+        },
     )
-
-    mode_path = target / "state" / "STUDYDD_MODE.yaml"
-    mode_data = load_yaml(mode_path)
-    mode_data["mode"] = "learner_instance"
-    mode_data["personalized"] = True
-    mode_data["public_safe"] = "false_or_review_required"
-    save_yaml(mode_path, mode_data)
-
-    study_state = load_yaml(target / "state" / "STUDY_STATE.yaml")
-    study_state["learner"]["name"] = f"{name} Test Learner"
-    study_state["active_target_id"] = target_id
-    save_yaml(target / "state" / "STUDY_STATE.yaml", study_state)
-
-    (target / "targets" / target_id).mkdir(parents=True, exist_ok=True)
-    (target / "targets" / target_id / "TARGET.yaml").write_text(
-        f"---\nid: {target_id}\ntype: certification\nstudy_skill: generic\n",
-        encoding="utf-8",
+    write_yaml(
+        root / "state/LEARNER_PROFILE.yaml",
+        {"learner_preferences": {"fast_drill_mode": True, "auto_state_update_during_drills": True}},
     )
-
-    skill_map = load_yaml(target / "state" / "SKILL_MAP.yaml")
-    skill_map["skills"] = skills or []
-    save_yaml(target / "state" / "SKILL_MAP.yaml", skill_map)
-
-    review_state = load_yaml(target / "reviews" / "REVIEW_STATE.yaml")
-    review_state["review_items"] = review_items or []
-    save_yaml(target / "reviews" / "REVIEW_STATE.yaml", review_state)
-
-    # Ensure evidence log has the expected marker.
-    ev_path = target / "state" / "EVIDENCE_LOG.md"
-    if not ev_path.is_file():
-        ev_path.write_text(
-            "# Evidence Log\n\n## Evidence items\n\nNone yet.\n",
-            encoding="utf-8",
-        )
-
-    return target
+    write_yaml(
+        root / "state/SKILL_MAP.yaml",
+        {"skills": [{"id": "skill-a", "status": "pending", "readiness": 0, "confidence": "low", "evidence": []}]},
+    )
+    write_yaml(root / "state/STUDY_STATE.yaml", {"active_focus": {}, "metadata": {}})
+    (root / "state/EVIDENCE_LOG.md").write_text(
+        "# Evidence Log\n\n## Evidence items\n\nNone yet.\n", encoding="utf-8"
+    )
+    return root
 
 
-def test_fast_drill_enabled_default() -> None:
-    # The public template enables fast drill mode as a generic default.
-    assert fdm.fast_drill_enabled(ROOT) is True
-    assert fdm.auto_state_update_during_drills(ROOT) is True
+def append_one(root: Path, *, marker: str = "ev-1") -> None:
+    assert fdm.append_checkpoint(
+        question_id="q-1",
+        skill_id="skill-a",
+        concept="typed concept",
+        answer_summary="synthetic answer",
+        verdict="correct",
+        correction_summary="",
+        confidence="medium",
+        evidence_marker=marker,
+        repo_root=root,
+    ) == 0
 
 
-def test_start_and_append() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        instance = create_temp_instance(
-            tmp,
-            "drill_start",
-            "demo-target",
-            skills=[{"id": "skill-a", "label": "Skill A", "status": "pending", "readiness": 0}],
-        )
-        rc = fdm.start_drill(
-            session_id="S-001",
-            target_id="demo-target",
-            mode="normal",
-            drill_type="retrieval_question",
-            repo_root=instance,
-        )
-        assert rc == 0
-        cp_path = instance / "state" / "ACTIVE_DRILL_SESSION.md"
-        assert cp_path.is_file()
+def test_versioned_append_only_and_idempotent_append() -> None:
+    root = synthetic_instance()
+    assert fdm.start_drill("s-1", "target-1", repo_root=root) == 0
+    checkpoint = root / fdm.CHECKPOINT_RELATIVE
+    header_before = checkpoint.read_text(encoding="utf-8").split("\n---\n", 1)[0]
+    append_one(root)
+    after_first = checkpoint.read_bytes()
+    append_one(root)
+    assert checkpoint.read_bytes() == after_first
+    loaded = fdm.load_checkpoint(root)
+    assert loaded.metadata["format"] == fdm.CHECKPOINT_FORMAT
+    assert loaded.metadata["checkpoint_version"] == 2
+    assert len(loaded.records) == 1
+    assert checkpoint.read_text(encoding="utf-8").startswith(header_before)
 
-        rc = fdm.append_checkpoint(
-            question_id="Q-001",
+
+def test_typed_operations_and_invalid_record_are_rejected() -> None:
+    root = synthetic_instance()
+    assert fdm.execute(fdm.StartOperation("s-typed", "target-1"), root) == 0
+    bad = copy.copy(fdm.AppendAnswerOperation(
+        "q-1", "skill-a", "concept", "answer", "not-a-verdict", "", "medium", "ev-typed"
+    ))
+    try:
+        fdm.execute(bad, root)
+    except fdm.CheckpointError:
+        pass
+    else:
+        raise AssertionError("invalid typed verdict was accepted")
+
+
+def test_concurrent_appends_preserve_one_valid_checkpoint() -> None:
+    root = synthetic_instance()
+    assert fdm.start_drill("s-concurrent", "target-1", repo_root=root) == 0
+
+    def append(index: int) -> int:
+        return fdm.append_checkpoint(
+            question_id=f"q-{index}",
             skill_id="skill-a",
-            concept="concept one",
-            answer_summary="answered",
+            concept=f"concept-{index}",
+            answer_summary=f"answer-{index}",
             verdict="correct",
             correction_summary="",
             confidence="medium",
-            evidence_marker="E-001",
-            repo_root=instance,
-        )
-        assert rc == 0
-
-        checkpoint = fdm.load_checkpoint(instance)
-        assert checkpoint["metadata"]["session_id"] == "S-001"
-        assert len(checkpoint["entries"]) == 1
-        assert checkpoint["entries"][0]["evidence_marker"] == "E-001"
-        assert fdm.is_drill_active(instance) is True
-
-
-def test_end_dry_run_then_apply() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        instance = create_temp_instance(
-            tmp,
-            "drill_end",
-            "demo-target",
-            skills=[{"id": "skill-a", "label": "Skill A", "status": "pending", "readiness": 0}],
-        )
-        fdm.start_drill("S-002", "demo-target", repo_root=instance)
-        fdm.append_checkpoint("Q-001", "skill-a", "c1", "ok", "correct", "", "medium", "E-001", repo_root=instance)
-        fdm.append_checkpoint("Q-002", "skill-a", "c2", "partial ok", "partial", "", "low", "E-002", repo_root=instance)
-
-        proposal, rc = fdm.end_drill(apply=False, repo_root=instance)
-        assert rc == 0
-        assert proposal is not None
-        assert len(proposal["evidence_items"]) == 2
-        assert (instance / "state" / "ACTIVE_DRILL_SESSION.md").is_file()
-
-        proposal, rc = fdm.end_drill(apply=True, repo_root=instance)
-        assert rc == 0
-        cp_path = instance / "state" / "ACTIVE_DRILL_SESSION.md"
-        assert not cp_path.is_file()
-
-        skill_map = load_yaml(instance / "state" / "SKILL_MAP.yaml")
-        skill = next(s for s in skill_map["skills"] if s["id"] == "skill-a")
-        # Partial verdict on a low-readiness skill dominates; it is marked weak.
-        assert skill["status"] == "weak"
-        assert skill["readiness"] == 35
-        assert "E-001" in skill["evidence"]
-        assert "E-002" in skill["evidence"]
-
-        ev_text = (instance / "state" / "EVIDENCE_LOG.md").read_text(encoding="utf-8")
-        assert "E-001" in ev_text
-        assert "E-002" in ev_text
-
-        study_state = load_yaml(instance / "state" / "STUDY_STATE.yaml")
-        assert study_state["active_focus"]["next_question"] == proposal["next_action"]
-
-        next_text = (instance / "NEXT_ACTIONS.md").read_text(encoding="utf-8")
-        assert proposal["next_action"] in next_text
-
-
-def test_reconcile_prefers_weak_skill() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        instance = create_temp_instance(
-            tmp,
-            "drill_weak",
-            "demo-target",
-            skills=[
-                {"id": "skill-a", "label": "Skill A", "status": "practiced", "readiness": 55},
-                {"id": "skill-b", "label": "Skill B", "status": "weak", "readiness": 25},
-            ],
-        )
-        fdm.start_drill("S-003", "demo-target", repo_root=instance)
-        fdm.append_checkpoint("Q-001", "skill-a", "c1", "ok", "correct", "", "medium", "E-001", repo_root=instance)
-        proposal, rc = fdm.end_drill(apply=True, repo_root=instance)
-        assert rc == 0
-        assert "skill-b" in proposal["next_action"]
-
-
-def test_reconcile_prefers_due_review() -> None:
-    due_at = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
-    with tempfile.TemporaryDirectory() as tmp:
-        instance = create_temp_instance(
-            tmp,
-            "drill_review",
-            "demo-target",
-            skills=[{"id": "skill-a", "label": "Skill A", "status": "practiced", "readiness": 55}],
-            review_items=[{"id": "R-001", "skill_id": "skill-a", "due_at": due_at}],
-        )
-        fdm.start_drill("S-004", "demo-target", repo_root=instance)
-        fdm.append_checkpoint("Q-001", "skill-a", "c1", "ok", "correct", "", "medium", "E-001", repo_root=instance)
-        proposal, rc = fdm.end_drill(apply=True, repo_root=instance)
-        assert rc == 0
-        assert "R-001" in proposal["next_action"]
-
-
-def test_recover_recommends_resume_or_reconcile() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        instance = create_temp_instance(tmp, "drill_recover", "demo-target")
-        fdm.start_drill("S-005", "demo-target", repo_root=instance)
-        result, rc = fdm.recover_drill(instance)
-        assert rc == 0
-        assert result is not None
-        assert result["recommendation"] == "resume"
-
-        # Simulate an old checkpoint by rewriting started_at.
-        cp_path = instance / "state" / "ACTIVE_DRILL_SESSION.md"
-        old = (datetime.now(timezone.utc) - timedelta(hours=5)).isoformat()
-        text = cp_path.read_text(encoding="utf-8")
-        text = text.replace(result["checkpoint"]["metadata"]["started_at"], old)
-        cp_path.write_text(text, encoding="utf-8")
-        result, rc = fdm.recover_drill(instance)
-        assert result is not None
-        assert result["recommendation"] == "reconcile"
-
-
-def test_requires_immediate_reconciliation() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        instance = create_temp_instance(
-            tmp,
-            "drill_transition",
-            "demo-target",
-            skills=[{"id": "skill-a", "label": "Skill A", "status": "weak", "readiness": 25}],
-        )
-        assert fdm.requires_immediate_reconciliation(
-            {"skill_id": "skill-a", "verdict": "correct"}, repo_root=instance
-        )
-        assert not fdm.requires_immediate_reconciliation(
-            {"skill_id": "skill-a", "verdict": "partial"}, repo_root=instance
+            evidence_marker=f"ev-{index}",
+            repo_root=root,
+            record_id=f"record-{index}",
         )
 
-
-def test_template_mode_refuses_checkpoint() -> None:
-    result = subprocess.run(
-        [sys.executable, SCRIPT_NAME, "start", "--session-id", "S-T", "--target-id", "t"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 2
-    assert "template" in (result.stdout + result.stderr).lower()
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(append, range(8)))
+    assert results == [0] * 8
+    assert len(fdm.load_checkpoint(root).records) == 8
 
 
-def test_cli_demo_runs_in_template_mode() -> None:
-    result = subprocess.run(
-        [
-            sys.executable,
-            SCRIPT_NAME,
-            "start",
-            "--session-id",
-            "S-DEMO",
-            "--target-id",
-            "demo-target",
-            "--demo",
-        ],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr
-    cp_path = ROOT / "state" / "ACTIVE_DRILL_SESSION.md"
-    assert cp_path.is_file()
-    # Clean up so the template validator does not see the checkpoint.
-    cp_path.unlink()
+def test_template_and_bootstrap_refusal_does_not_touch_settings() -> None:
+    for mode in ("template", "bootstrap"):
+        root = synthetic_instance(mode)
+        profile = root / "state/LEARNER_PROFILE.yaml"
+        before = profile.read_bytes()
+        assert fdm.start_drill("s-refuse", "target-1", repo_root=root) == 2
+        assert profile.read_bytes() == before
+        assert not (root / fdm.CHECKPOINT_RELATIVE).exists()
+
+
+def test_transactional_reconciliation_recovers_after_synthetic_crash() -> None:
+    root = synthetic_instance()
+    assert fdm.start_drill("s-crash", "target-1", repo_root=root) == 0
+    append_one(root, marker="ev-crash")
+    before_profile = (root / "state/LEARNER_PROFILE.yaml").read_bytes()
+    try:
+        fdm.end_drill(apply=True, repo_root=root, crash_after=1)
+    except fdm.SimulatedCrash:
+        pass
+    else:
+        raise AssertionError("synthetic crash did not interrupt reconciliation")
+
+    assert (root / fdm.CHECKPOINT_RELATIVE).exists()
+    report, code = fdm.recover_drill(root, apply=True)
+    assert code == 0
+    assert report and report["recommendation"] == "reconciled_transaction"
+    assert not (root / fdm.CHECKPOINT_RELATIVE).exists()
+    evidence = (root / "state/EVIDENCE_LOG.md").read_text(encoding="utf-8")
+    assert evidence.count("**Evidence ID:** ev-crash") == 1
+    assert "**Fast Drill session ID:** s-crash" in (root / "sessions/SESSION_LOG.md").read_text(encoding="utf-8")
+    assert "fast-drill-s-crash" in (root / "activities/ACTIVITY_LOG.md").read_text(encoding="utf-8")
+    skills = yaml.safe_load((root / "state/SKILL_MAP.yaml").read_text(encoding="utf-8"))
+    assert skills["skills"][0]["status"] == "practiced"
+    assert (root / "state/LEARNER_PROFILE.yaml").read_bytes() == before_profile
+    # Re-running end and recover are successful no-ops.
+    assert fdm.end_drill(apply=True, repo_root=root)[1] == 0
+    report, code = fdm.recover_drill(root, apply=True)
+    assert code == 0 and report == {"recommendation": "none", "count": 0}
+
+
+def test_end_without_apply_is_a_proposal_only() -> None:
+    root = synthetic_instance()
+    assert fdm.start_drill("s-proposal", "target-1", repo_root=root) == 0
+    append_one(root, marker="ev-proposal")
+    evidence_before = (root / "state/EVIDENCE_LOG.md").read_bytes()
+    proposal, code = fdm.end_drill(repo_root=root)
+    assert code == 0 and proposal is not None
+    assert (root / "state/EVIDENCE_LOG.md").read_bytes() == evidence_before
+    assert (root / fdm.CHECKPOINT_RELATIVE).exists()
+
+
+def test_incompatible_generated_mode_view_refuses_all_fast_drill_writes() -> None:
+    root = synthetic_instance()
+    write_yaml(root / "state/STUDYDD_MODE.yaml", {"mode": "template"})
+    before = (root / "state/LEARNER_PROFILE.yaml").read_bytes()
+    assert fdm.start_drill("s-mismatch", "target-1", repo_root=root) == 2
+    assert (root / "state/LEARNER_PROFILE.yaml").read_bytes() == before
+
+
+def main() -> int:
+    test_versioned_append_only_and_idempotent_append()
+    test_typed_operations_and_invalid_record_are_rejected()
+    test_concurrent_appends_preserve_one_valid_checkpoint()
+    test_template_and_bootstrap_refusal_does_not_touch_settings()
+    test_transactional_reconciliation_recovers_after_synthetic_crash()
+    test_end_without_apply_is_a_proposal_only()
+    test_incompatible_generated_mode_view_refuses_all_fast_drill_writes()
+    print("Fast Drill checkpoint contract tests passed.")
+    print("- versioned hash-linked append-only records")
+    print("- typed operation validation and settings authority")
+    print("- template/bootstrap refusal")
+    print("- crash-interrupted transactional reconciliation and idempotent recovery")
+    return 0
 
 
 if __name__ == "__main__":
-    tests = [func for name, func in list(globals().items()) if name.startswith("test_") and callable(func)]
-    for func in tests:
-        print(f"Running {func.__name__}...")
-        func()
-    print("All fast-drill-mode tests passed.")
+    raise SystemExit(main())

@@ -8,6 +8,11 @@ This policy defines how fresh a source must be for a given study topic, and how 
 
 ## Volatility Classes
 
+`scripts/check_source_freshness.py` is the single freshness classifier. Its
+`VOLATILITY_MAX_AGE_DAYS` values and `target_freshness_summary` are the
+machine-readable policy consumed by routing and validation; other writers do
+not implement a second age policy.
+
 ```yaml
 volatility_classes:
   stable:

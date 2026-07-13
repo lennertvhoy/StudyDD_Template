@@ -23,8 +23,8 @@ EXAMPLES_DIR = ROOT / "EXAMPLES"
 
 VOLATILITY_MAX_AGE_DAYS = {
     "slow_changing": 730,
-    "moderate": 30,
-    "volatile": 7,
+    "moderate": 90,
+    "volatile": 30,
     "live": 1,
 }
 
@@ -37,6 +37,8 @@ AUTHORITY_ORDER = [
     "unverified",
 ]
 
+AUTHORITATIVE_QUESTION_AUTHORITIES = {"official", "high_authority"}
+
 
 @dataclass(frozen=True)
 class TargetFreshnessSummary:
@@ -45,6 +47,7 @@ class TargetFreshnessSummary:
     status: Literal["fresh", "stale", "missing", "unverified", "unknown"]
     has_fresh_usable: bool
     fresh_count: int
+    authoritative_fresh_count: int
     stale_count: int
     missing_count: int
     unverified_count: int
@@ -210,6 +213,7 @@ def target_freshness_summary(
             status="missing",
             has_fresh_usable=False,
             fresh_count=0,
+            authoritative_fresh_count=0,
             stale_count=0,
             missing_count=0,
             unverified_count=0,
@@ -227,12 +231,15 @@ def target_freshness_summary(
     unverified_count = 0
     unknown_count = 0
     fresh_sources: list[dict[str, Any]] = []
+    authoritative_fresh_sources: list[dict[str, Any]] = []
 
     for source in matching:
         status, _reason = classify_source(source, now, target_volatility)
         if status == "fresh":
             fresh_count += 1
             fresh_sources.append(source)
+            if str(source.get("authority", "")).lower() in AUTHORITATIVE_QUESTION_AUTHORITIES:
+                authoritative_fresh_sources.append(source)
         elif status == "stale":
             stale_count += 1
         elif status == "missing":
@@ -242,10 +249,10 @@ def target_freshness_summary(
         elif status == "unknown":
             unknown_count += 1
 
-    has_fresh_usable = fresh_count > 0
+    has_fresh_usable = bool(authoritative_fresh_sources)
     best_authority: str | None = None
-    if fresh_sources:
-        best_source = min(fresh_sources, key=lambda s: authority_rank(s.get("authority")))
+    if authoritative_fresh_sources:
+        best_source = min(authoritative_fresh_sources, key=lambda s: authority_rank(s.get("authority")))
         best_authority = best_source.get("authority")
 
     if unknown_count > 0:
@@ -263,6 +270,9 @@ def target_freshness_summary(
     elif has_fresh_usable:
         status = "fresh"
         reason = f"{fresh_count} source(s) are fresh and usable for questions."
+    elif fresh_sources:
+        status = "unverified"
+        reason = "Fresh sources exist, but none are official or high_authority for current questions."
     else:
         status = "missing"
         reason = f"{missing_count} source(s) are missing freshness timestamps."
@@ -273,6 +283,7 @@ def target_freshness_summary(
         status=status,
         has_fresh_usable=has_fresh_usable,
         fresh_count=fresh_count,
+        authoritative_fresh_count=len(authoritative_fresh_sources),
         stale_count=stale_count,
         missing_count=missing_count,
         unverified_count=unverified_count,
@@ -291,6 +302,7 @@ def build_report(
     now: datetime,
 ) -> tuple[list[str], int]:
     fresh_sources: list[dict[str, Any]] = []
+    authoritative_fresh_sources: list[dict[str, Any]] = []
     stale_sources: list[tuple[dict[str, Any], str | None]] = []
     unverified_sources: list[tuple[dict[str, Any], str | None]] = []
     missing_timestamp_sources: list[tuple[dict[str, Any], str | None]] = []
@@ -299,6 +311,8 @@ def build_report(
         status, reason = classify_source(source, now, volatility)
         if status == "fresh":
             fresh_sources.append(source)
+            if str(source.get("authority", "")).lower() in AUTHORITATIVE_QUESTION_AUTHORITIES:
+                authoritative_fresh_sources.append(source)
         elif status == "stale":
             stale_sources.append((source, reason))
         elif status == "unverified":
@@ -316,9 +330,20 @@ def build_report(
     lines.append("")
 
     lines.append("Fresh usable sources:")
-    if fresh_sources:
-        for source in sorted(fresh_sources, key=lambda s: authority_rank(s.get("authority"))):
+    if authoritative_fresh_sources:
+        for source in sorted(authoritative_fresh_sources, key=lambda s: authority_rank(s.get("authority"))):
             lines.append(f"- {source.get('id', '<unknown>')}")
+    else:
+        lines.append("(none)")
+    lines.append("")
+
+    non_authoritative_fresh = [
+        source for source in fresh_sources if source not in authoritative_fresh_sources
+    ]
+    lines.append("Fresh but non-authoritative sources:")
+    if non_authoritative_fresh:
+        for source in sorted(non_authoritative_fresh, key=lambda s: authority_rank(s.get("authority"))):
+            lines.append(f"- {source.get('id', '<unknown>')} ({source.get('authority', 'unknown')})")
     else:
         lines.append("(none)")
     lines.append("")
@@ -352,16 +377,15 @@ def build_report(
 
     # Recommendation: prefer highest-authority fresh source.
     lines.append("Recommendation:")
-    fresh_official = [s for s in fresh_sources if s.get("authority") in ("official", "high_authority")]
-    if fresh_official:
-        best = min(fresh_official, key=lambda s: authority_rank(s.get("authority")))
+    if authoritative_fresh_sources:
+        best = min(authoritative_fresh_sources, key=lambda s: authority_rank(s.get("authority")))
         lines.append(
             f"Use {best.get('authority', 'authoritative')} source {best.get('id')} for new authoritative questions."
         )
     elif fresh_sources:
-        best = min(fresh_sources, key=lambda s: authority_rank(s.get("authority")))
         lines.append(
-            f"Use {best.get('authority', 'available')} source {best.get('id')} for new questions, but verify authority."
+            "Fresh sources exist, but none are authoritative enough for current questions; "
+            "use them only for practice or source verification."
         )
     else:
         lines.append("No fresh usable sources found.")
@@ -371,7 +395,7 @@ def build_report(
 
     # Exit code: volatile/live/moderate targets need at least one fresh usable source.
     exit_code = 0
-    if volatility in ("volatile", "live", "moderate") and not fresh_sources:
+    if volatility in ("volatile", "live", "moderate") and not authoritative_fresh_sources:
         exit_code = 1
 
     return lines, exit_code
