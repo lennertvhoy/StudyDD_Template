@@ -7,6 +7,7 @@ expected artifacts, transcript, and validation result.
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -79,6 +80,17 @@ def main() -> int:
         return 1
 
     print("Demo replay test passed.")
+
+    machine = run([sys.executable, "scripts/run_demo_replay.py", "--json"], ROOT, check=False)
+    if machine.returncode != 0:
+        print(machine.stderr)
+        return 1
+    evidence = json.loads(machine.stdout)
+    assert evidence["formatVersion"] == "studydd.local-alpha-demo/v1"
+    assert evidence["publicSafe"] is True
+    assert evidence["syntheticOnly"] is True
+    assert evidence["providerContacted"] is False
+    assert evidence["credentialsUsed"] is False
     return 0
 
 

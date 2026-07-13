@@ -11,9 +11,13 @@ This script does not call AI. All learner data is fake and public-safe.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
+import json
 import subprocess
 import sys
 import tempfile
+from contextlib import nullcontext, redirect_stdout
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -511,6 +515,57 @@ def copy_fixture(source: Path, destination: Path) -> None:
         shutil.rmtree(copied_git)
 
 
+def _tree_digest(root: Path) -> str:
+    """Return a deterministic digest of the synthetic runtime instance.
+
+    The digest is evidence about the generated run, not a substitute for the
+    instance's canonical files.  File contents are never printed in JSON
+    mode; only names, sizes, and the aggregate digest are emitted.
+    """
+    digest = hashlib.sha256()
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or ".git" in path.parts or ".studydd" in path.parts:
+            continue
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        data = path.read_bytes()
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(len(data).to_bytes(8, "big"))
+        digest.update(data)
+    return "sha256:" + digest.hexdigest()
+
+
+def _json_evidence(target: Path, review_id: str) -> dict[str, object]:
+    """Build a public-safe, machine-readable summary of the demo run."""
+    files = []
+    for path in sorted(target.rglob("*")):
+        if not path.is_file() or ".git" in path.parts or ".studydd" in path.parts:
+            continue
+        files.append(path.relative_to(target).as_posix())
+    return {
+        "formatVersion": "studydd.local-alpha-demo/v1",
+        "publicSafe": True,
+        "syntheticOnly": True,
+        "providerContacted": False,
+        "credentialsUsed": False,
+        "instance": {
+            "mode": "learner_instance",
+            "templateId": "studydd",
+            "targetId": "demo-ai-search-exam",
+            "reviewId": review_id,
+            "fileCount": len(files),
+            "treeDigest": _tree_digest(target),
+        },
+        "artifacts": {
+            "contextPack": ".studydd/context_pack.md",
+            "syntheticEvidence": "state/EVIDENCE_LOG.md",
+            "reviewState": "reviews/REVIEW_STATE.yaml",
+            "overrideLog": "reviews/REVIEW_OVERRIDES.md",
+        },
+        "excludedFromSummary": ["learner content", "raw session logs", "provider credentials"],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the StudyDD public demo replay")
     parser.add_argument(
@@ -519,6 +574,11 @@ def main() -> int:
         dest="dump_fixture",
         default=None,
         help="Copy the final demo instance to this path (e.g. EXAMPLES/demo_ai_search_exam)",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit only a public-safe machine-readable evidence summary",
     )
     args = parser.parse_args()
 
@@ -531,33 +591,40 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="studydd-demo-") as tmp:
         target = Path(tmp) / "StudyDD_Demo"
         remote = "https://github.com/example/StudyDD_Demo.git"
+        output_context = redirect_stdout(io.StringIO()) if args.json else nullcontext()
+        with output_context:
+            create_instance(target, remote)
+            switch_to_learner_instance(target)
+            initialize_learner_profile(target)
+            initialize_sources(target)
+            initialize_target(target)
+            print_source_freshness_check()
+            check_source_freshness(target, "2026-06-24T12:00:00+00:00")
+            build_and_show_context_pack(target)
+            record_evidence(target)
+            print_learner_adaptation()
+            plan_and_record_activity(target)
+            review_id = schedule_review(target)
 
-        create_instance(target, remote)
-        switch_to_learner_instance(target)
-        initialize_learner_profile(target)
-        initialize_sources(target)
-        initialize_target(target)
-        print_source_freshness_check()
-        check_source_freshness(target, "2026-06-24T12:00:00+00:00")
-        build_and_show_context_pack(target)
-        record_evidence(target)
-        print_learner_adaptation()
-        plan_and_record_activity(target)
-        review_id = schedule_review(target)
+            before_due = select_next_action(target, "2026-06-24T12:00:00+00:00")
+            when_due = select_next_action(target, "2026-06-25T12:00:00+00:00")
 
-        before_due = select_next_action(target, "2026-06-24T12:00:00+00:00")
-        when_due = select_next_action(target, "2026-06-25T12:00:00+00:00")
+            record_override(target, review_id)
+            update_session_and_next_action(target, review_id)
+            compact_state(target)
+            validate(target)
 
-        record_override(target, review_id)
-        update_session_and_next_action(target, review_id)
-        compact_state(target)
-        validate(target)
-        print_transcript(review_id, before_due, when_due)
+            if args.dump_fixture:
+                fixture_path = Path(args.dump_fixture).resolve()
+                copy_fixture(target, fixture_path)
+                print(f"\nDemo fixture copied to: {fixture_path}")
 
-        if args.dump_fixture:
-            fixture_path = Path(args.dump_fixture).resolve()
-            copy_fixture(target, fixture_path)
-            print(f"\nDemo fixture copied to: {fixture_path}")
+        if args.json:
+            print(json.dumps(_json_evidence(target, review_id), sort_keys=True))
+        else:
+            print_transcript(review_id, before_due, when_due)
+            if args.dump_fixture:
+                print(f"\nDemo fixture copied to: {Path(args.dump_fixture).resolve()}")
 
     return 0
 
