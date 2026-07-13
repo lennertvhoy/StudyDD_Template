@@ -9,6 +9,7 @@ instanceLayoutContract: studydd.instance-layout/v1
 template:
   id: studydd
   releaseVersion: "0.11.0"
+  releaseStatus: candidate
   stateddSpecVersion: statedd-template-v5
   instanceSchemaVersion: studydd.instance-layout/v1
 
@@ -21,10 +22,8 @@ source:
   resolvedTree: null
   # The resolver, not this upstream manifest, supplies immutable resolution.
 
-# These modules are complete on origin/main. The proposed fast-drill,
-# question-bank-engine, and integrations modules are intentionally not
-# selected until their independently testable implementation is present on
-# origin/main.
+# These modules are complete on origin/main or are independently testable in
+# this template checkout. Deferred modules remain unselected.
 modules:
   - id: studydd.core
     contractVersion: "1.0"
@@ -74,6 +73,7 @@ modules:
       - state-study-state
       - state-study-status
       - generated-context-pack
+      - question-banks
     selfTests:
       - id: core-health
         command: python3 scripts/check_studydd.py
@@ -119,10 +119,32 @@ modules:
         command: python3 scripts/test_next_activity_decision.py
     order: 30
 
+  - id: studydd.fast-drill
+    contractVersion: "1.0"
+    dependencies:
+      - studydd.core
+    conflicts: []
+    capabilities:
+      - read_state
+      - write_state
+      - append_audit
+    assets:
+      - scripts
+      - generic-docs
+      - fast-drill-checkpoint
+      - fast-drill-transactions
+    selfTests:
+      - id: fast-drill-checkpoint-contract
+        command: python3 scripts/test_fast_drill_mode.py
+      - id: fast-drill-settings-migration
+        command: python3 scripts/test_migrate_fast_drill_settings.py
+    order: 40
+
 selectedModules:
   - studydd.core
   - studydd.activities
   - studydd.source-freshness
+  - studydd.fast-drill
 
 assets:
   # Lifecycle assets are StatePort-managed and are not origin/main content.
@@ -347,6 +369,7 @@ assets:
     sensitivity: public
     selectingModules:
       - studydd.core
+      - studydd.fast-drill
   - id: prompts
     path: PROMPTS
     kind: tree
@@ -383,6 +406,7 @@ assets:
     sensitivity: public
     selectingModules:
       - studydd.core
+      - studydd.fast-drill
   - id: study-skills
     path: study_skills
     kind: tree
@@ -393,6 +417,19 @@ assets:
     required: true
     schema: null
     sensitivity: public
+    selectingModules:
+      - studydd.core
+
+  - id: question-banks
+    path: question_banks
+    kind: tree
+    owner: instance
+    role: private_question_bank_boundary
+    provisionPolicy: create_if_missing
+    updatePolicy: preserve
+    required: false
+    schema: studydd.question-bank/v1
+    sensitivity: private
     selectingModules:
       - studydd.core
 
@@ -664,6 +701,31 @@ assets:
     sensitivity: private
     selectingModules:
       - studydd.core
+
+  - id: fast-drill-checkpoint
+    path: state/ACTIVE_DRILL_SESSION.md
+    kind: file
+    owner: instance
+    role: fast_drill_checkpoint
+    provisionPolicy: create_if_missing
+    updatePolicy: append_only
+    required: false
+    schema: studydd.fast-drill-checkpoint/v2
+    sensitivity: private
+    selectingModules:
+      - studydd.fast-drill
+  - id: fast-drill-transactions
+    path: .fast_drill
+    kind: tree
+    owner: instance
+    role: fast_drill_transaction_journal
+    provisionPolicy: create_if_missing
+    updatePolicy: append_only
+    required: false
+    schema: studydd.fast-drill-transaction/v1
+    sensitivity: private
+    selectingModules:
+      - studydd.fast-drill
 
   # build_context_pack.py writes this ignored generated view after checkout.
   - id: generated-context-pack
