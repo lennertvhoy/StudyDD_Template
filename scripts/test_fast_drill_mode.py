@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import copy
 from concurrent.futures import ThreadPoolExecutor
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -154,6 +155,34 @@ def test_transactional_reconciliation_recovers_after_synthetic_crash() -> None:
     assert fdm.end_drill(apply=True, repo_root=root)[1] == 0
     report, code = fdm.recover_drill(root, apply=True)
     assert code == 0 and report == {"recommendation": "none", "count": 0}
+
+
+def test_tampered_transaction_path_is_rejected_without_escape() -> None:
+    root = synthetic_instance()
+    assert fdm.start_drill("s-tamper", "target-1", repo_root=root) == 0
+    append_one(root, marker="ev-tamper")
+    try:
+        fdm.end_drill(apply=True, repo_root=root, crash_after=1)
+    except fdm.SimulatedCrash:
+        pass
+    else:
+        raise AssertionError("synthetic crash did not leave a transaction journal")
+    transaction = next((root / fdm.TRANSACTION_RELATIVE).iterdir())
+    manifest_path = transaction / "transaction.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    first = next(iter(manifest["files"].values()))
+    first["path"] = "../escaped-audit.md"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    before = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    try:
+        fdm.end_drill(apply=True, repo_root=root)
+    except fdm.CheckpointError as exc:
+        assert "safe relative path" in str(exc) or "outside the canonical write set" in str(exc)
+    else:
+        raise AssertionError("tampered transaction path was accepted")
+    assert not (root.parent / "escaped-audit.md").exists()
+    after = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    assert after == before
 
 
 def test_end_without_apply_is_a_proposal_only() -> None:

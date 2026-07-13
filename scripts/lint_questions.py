@@ -16,6 +16,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, TypedDict
 
+from check_source_freshness import classify_source as _canonical_classify_source
+
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
 TARGETS_DIR = ROOT / "targets"
@@ -307,46 +309,8 @@ def read_target_volatility(target_id: str, target_root: Path) -> str:
 def classify_source(
     source: dict[str, Any], now: datetime, target_volatility: str
 ) -> tuple[str, str | None]:
-    """Return (freshness_status, reason).
-
-    Statuses:
-        fresh              — usable and within freshness window.
-        stale              — usable but expired or beyond max age.
-        unverified         — explicitly marked unusable for questions.
-        missing_timestamp  — no expiry or check timestamp available.
-    """
-    if source.get("usable_for_questions") is False:
-        return "unverified", "usable_for_questions is false"
-
-    expires_at = source.get("expires_at")
-    if expires_at:
-        try:
-            expiry = datetime.fromisoformat(str(expires_at))
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-            if now <= expiry:
-                return "fresh", None
-            return "stale", f"expired at {expires_at}"
-        except Exception as exc:
-            return "missing_timestamp", f"invalid expires_at: {exc}"
-
-    last_checked_at = source.get("last_checked_at")
-    if last_checked_at:
-        try:
-            checked = datetime.fromisoformat(str(last_checked_at))
-            if checked.tzinfo is None:
-                checked = checked.replace(tzinfo=timezone.utc)
-        except Exception as exc:
-            return "missing_timestamp", f"invalid last_checked_at: {exc}"
-
-        volatility = source.get("volatility") or target_volatility
-        max_age_days = VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
-        expiry = checked + timedelta(days=max_age_days)
-        if now <= expiry:
-            return "fresh", None
-        return "stale", f"last checked {last_checked_at}; volatility {volatility} max age {max_age_days} days"
-
-    return "missing_timestamp", "no expires_at or last_checked_at"
+    """Delegate freshness classification to the canonical source policy."""
+    return _canonical_classify_source(source, now, target_volatility)
 
 
 def question_volatility(question: dict[str, Any], target_volatility: str) -> str:

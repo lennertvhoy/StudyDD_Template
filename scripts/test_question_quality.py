@@ -23,6 +23,7 @@ def run_script(tmp_root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     script_dst = tmp_root / "scripts" / "lint_questions.py"
     script_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(SCRIPT_SRC, script_dst)
+    shutil.copy(ROOT / "scripts" / "check_source_freshness.py", tmp_root / "scripts" / "check_source_freshness.py")
     return subprocess.run(
         [sys.executable, str(script_dst), *args],
         cwd=tmp_root,
@@ -309,6 +310,7 @@ def test_authoritative_current_stale_source_fails_quality_gate() -> None:
                     "authority": "official",
                     "usable_for_questions": True,
                     "last_checked_at": "2026-05-01T10:00:00+00:00",
+                    "last_check": {"outcome": "stale"},
                 }
             ],
         )
