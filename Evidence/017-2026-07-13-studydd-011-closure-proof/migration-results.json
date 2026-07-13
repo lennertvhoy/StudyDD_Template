@@ -1,0 +1,1 @@
+{"migrationId":"studydd.fast-drill.settings.v1","firstLegacyLocation":"state/FAST_DRILL_SETTINGS.yaml","secondLegacyLocation":".fast_drill/settings.yaml","canonicalLocation":"state/LEARNER_PROFILE.yaml","equalValues":"accepted","contradictoryValues":"failed-closed","missingValues":"no-op","alreadyMigrated":"idempotent","rerun":"idempotent"}
