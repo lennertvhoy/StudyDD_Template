@@ -185,6 +185,23 @@ def test_tampered_transaction_path_is_rejected_without_escape() -> None:
     assert after == before
 
 
+def test_symlinked_transaction_root_is_rejected_without_external_journal() -> None:
+    root = synthetic_instance()
+    external = Path(tempfile.mkdtemp(prefix="studydd-fast-drill-external-"))
+    (root / fdm.TRANSACTION_RELATIVE).symlink_to(external, target_is_directory=True)
+    assert fdm.start_drill("s-root-link", "target-1", repo_root=root) == 0
+    append_one(root, marker="ev-root-link")
+    before = (root / fdm.CHECKPOINT_RELATIVE).read_bytes()
+    try:
+        fdm.end_drill(apply=True, repo_root=root)
+    except fdm.CheckpointError as exc:
+        assert "transaction root" in str(exc)
+    else:
+        raise AssertionError("symlinked Fast Drill transaction root was accepted")
+    assert (root / fdm.CHECKPOINT_RELATIVE).read_bytes() == before
+    assert not any(external.iterdir())
+
+
 def test_end_without_apply_is_a_proposal_only() -> None:
     root = synthetic_instance()
     assert fdm.start_drill("s-proposal", "target-1", repo_root=root) == 0
