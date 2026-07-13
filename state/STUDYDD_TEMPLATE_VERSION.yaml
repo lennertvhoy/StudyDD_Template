@@ -1,6 +1,8 @@
 # GENERATED FILE — edit .statedd/lock.yaml and regenerate.
 # Generator: scripts/generate_compatibility_views.py
 # Authority: .statedd/lock.yaml
+view_format: studydd.compatibility-view/v1
+source_digest: sha256:b46e81b2c07141a595d181910eef5ad12b0cd7be395c4056b94f5d415104270b
 template_version: 0.11.0
 template_commit: ''
 template_source_path: ''

@@ -1,6 +1,8 @@
 # GENERATED FILE — edit instance.yaml and regenerate.
 # Generator: scripts/generate_compatibility_views.py
 # Authority: instance.yaml
+view_format: studydd.compatibility-view/v1
+source_digest: sha256:b46e81b2c07141a595d181910eef5ad12b0cd7be395c4056b94f5d415104270b
 mode: template
 template_remote: https://github.com/lennertvhoy/StudyDD_Template.git
 personalized: false

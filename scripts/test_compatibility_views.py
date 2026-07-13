@@ -35,7 +35,13 @@ def test_template_outputs_are_deterministic_and_public_safe() -> None:
     mode = yaml.safe_load(first[generator.MODE_VIEW])
     version = yaml.safe_load(first[generator.VERSION_VIEW])
     manifest = yaml.safe_load(first[generator.MANIFEST_VIEW])
+    assert mode["view_format"] == generator.VIEW_FORMAT
+    assert mode["source_digest"].startswith("sha256:")
+    assert version["view_format"] == generator.VIEW_FORMAT
+    assert version["source_digest"] == mode["source_digest"]
     assert mode == {
+        "view_format": generator.VIEW_FORMAT,
+        "source_digest": mode["source_digest"],
         "mode": "template",
         "template_remote": "https://github.com/lennertvhoy/StudyDD_Template.git",
         "personalized": False,
@@ -49,6 +55,8 @@ def test_template_outputs_are_deterministic_and_public_safe() -> None:
     assert version["template_version"] == "0.11.0"
     assert version["template_commit"] == ""
     assert manifest["generated_by"] == generator.SCRIPT_PATH
+    assert manifest["view_format"] == generator.VIEW_FORMAT
+    assert manifest["source_digest"] == mode["source_digest"]
     assert manifest["files"]["state/LEARNER_PROFILE.yaml"]["owner"] == "instance"
     assert manifest["files"]["state/LEARNER_PROFILE.yaml"]["boundary"] == "instance"
 
@@ -123,12 +131,63 @@ def test_manifest_composition_is_explicit_and_rejects_unknown_keys() -> None:
     else:
         raise AssertionError("generic nested overlay key was accepted")
 
+    conflict = {"files": {"state/example.yaml": {"owner": "template", "boundary": "instance"}}}
+    try:
+        generator.compose_manifest(base, conflict, base_path=Path("base"), overlay_path=Path("overlay"))
+    except generator.CompatibilityViewError as exc:
+        assert "conflicting owner/boundary" in str(exc)
+    else:
+        raise AssertionError("conflicting ownership metadata was accepted")
+
+
+def test_generation_rolls_back_all_views_on_promotion_failure() -> None:
+    generator = load_generator()
+    with tempfile.TemporaryDirectory(prefix="studydd-compatibility-rollback-") as raw:
+        root = Path(raw)
+        for source in (
+            "instance.yaml", ".statedd/lock.yaml",
+            "state/STATE_MANIFEST.template.yaml", "state/STATE_MANIFEST.instance.yaml",
+        ):
+            target = root / source
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((ROOT / source).read_bytes())
+        generator.write_views(root)
+        before = {path: (root / path).read_bytes() for path in generator.render_views(root)}
+        original_replace = generator.os.replace
+        calls = {"count": 0}
+
+        def fail_second(source, target):
+            calls["count"] += 1
+            if calls["count"] == 2:
+                raise OSError("synthetic promotion failure")
+            return original_replace(source, target)
+
+        generator.os.replace = fail_second
+        try:
+            try:
+                # Change an authoritative input so all views are promoted.
+                (root / "instance.yaml").write_text(
+                    (root / "instance.yaml").read_text(encoding="utf-8").replace(
+                        "public template", "public template changed"
+                    ),
+                    encoding="utf-8",
+                )
+                generator.write_views(root)
+            except OSError as exc:
+                assert "synthetic promotion failure" in str(exc)
+            else:
+                raise AssertionError("synthetic promotion failure was swallowed")
+        finally:
+            generator.os.replace = original_replace
+        assert {path: (root / path).read_bytes() for path in before} == before
+
 
 def main() -> int:
     tests = [
         test_template_outputs_are_deterministic_and_public_safe,
         test_instance_authority_changes_only_generated_views,
         test_manifest_composition_is_explicit_and_rejects_unknown_keys,
+        test_generation_rolls_back_all_views_on_promotion_failure,
     ]
     for test in tests:
         print(f"Running {test.__name__}...")

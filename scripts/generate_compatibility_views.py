@@ -15,7 +15,11 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
+import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +52,8 @@ MANIFEST_ENTRY_KEYS = {
 }
 MANIFEST_BOUNDARIES = {"template", "instance", "generated"}
 MANIFEST_OWNERS = MANIFEST_BOUNDARIES
+VIEW_FORMAT = "studydd.compatibility-view/v1"
+SOURCE_INPUTS = (INSTANCE_PATH, LOCK_PATH, MANIFEST_BASE, MANIFEST_OVERLAY)
 
 
 class CompatibilityViewError(ValueError):
@@ -92,6 +98,23 @@ def _optional_string(parent: dict[str, Any], key: str, path: Path) -> str:
     if not isinstance(value, str):
         raise CompatibilityViewError(f"{path}: {key!r} must be a string when present")
     return value
+
+
+def _source_digest(root: Path) -> str:
+    """Hash canonical inputs by portable relative name and bytes only."""
+    records: list[dict[str, str]] = []
+    for relative in SOURCE_INPUTS:
+        try:
+            content = (root / relative).read_bytes()
+        except OSError as exc:
+            raise CompatibilityViewError(f"could not read source input {relative}: {exc}") from exc
+        records.append({"path": relative.as_posix(), "sha256": hashlib.sha256(content).hexdigest()})
+    encoded = json.dumps(records, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
+
+
+def _view_metadata(source_digest: str) -> dict[str, str]:
+    return {"view_format": VIEW_FORMAT, "source_digest": source_digest}
 
 
 def _descriptor_view(data: dict[str, Any], path: Path) -> dict[str, Any]:
@@ -169,6 +192,14 @@ def _validate_manifest_entry(path: str, entry: Any, *, source: Path) -> dict[str
             raise CompatibilityViewError(
                 f"{source}: files[{path!r}].{field} has unsupported value {result[field]!r}"
             )
+    if "owner" in result and "boundary" in result and result["owner"] != result["boundary"]:
+        raise CompatibilityViewError(
+            f"{source}: files[{path!r}] has conflicting owner/boundary values"
+        )
+    if "generated_by" in result and result.get("boundary") != "generated":
+        raise CompatibilityViewError(
+            f"{source}: files[{path!r}].generated_by requires boundary: generated"
+        )
     return result
 
 
@@ -244,6 +275,10 @@ def render_views(root: Path) -> dict[Path, str]:
         base_path=MANIFEST_BASE,
         overlay_path=MANIFEST_OVERLAY,
     )
+    source_digest = _source_digest(root)
+    mode = {**_view_metadata(source_digest), **mode}
+    version = {**_view_metadata(source_digest), **version}
+    manifest = {**_view_metadata(source_digest), **manifest}
     return {
         MODE_VIEW: _dump(
             mode,
@@ -281,9 +316,51 @@ def write_views(root: Path, *, check: bool = False) -> list[Path]:
         current = target.read_text(encoding="utf-8") if target.is_file() else None
         if current != content:
             changed.append(relative)
-            if not check:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(content, encoding="utf-8")
+    if check or not changed:
+        return changed
+
+    # Promote all generated views as one filesystem transaction. A failed
+    # promotion restores every prior byte, including previously absent views.
+    originals: dict[Path, bytes | None] = {
+        relative: (root / relative).read_bytes() if (root / relative).is_file() else None
+        for relative in changed
+    }
+    temporary: dict[Path, Path] = {}
+    promoted: list[Path] = []
+    try:
+        for relative in changed:
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            handle = tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", newline="", dir=target.parent,
+                prefix=f".{target.name}.", suffix=".tmp", delete=False,
+            )
+            temporary[relative] = Path(handle.name)
+            with handle:
+                handle.write(rendered[relative])
+                handle.flush()
+                os.fsync(handle.fileno())
+        for relative in changed:
+            os.replace(temporary[relative], root / relative)
+            promoted.append(relative)
+    except Exception:
+        for relative in reversed(promoted):
+            target = root / relative
+            prior = originals[relative]
+            if prior is None:
+                try:
+                    target.unlink()
+                except FileNotFoundError:
+                    pass
+            else:
+                target.write_bytes(prior)
+        raise
+    finally:
+        for path in temporary.values():
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
     return changed
 
 
