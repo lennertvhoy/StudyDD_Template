@@ -9,6 +9,7 @@ instanceLayoutContract: studydd.instance-layout/v1
 template:
   id: studydd
   releaseVersion: "0.11.0"
+  releaseStatus: candidate
   stateddSpecVersion: statedd-template-v5
   instanceSchemaVersion: studydd.instance-layout/v1
 

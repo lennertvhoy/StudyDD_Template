@@ -2,12 +2,12 @@
 # Generator: scripts/generate_compatibility_views.py
 # Schema: studydd.compatibility-view/v1
 # View version: 1
-# Source digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
-# View digest: sha256:daefaefdc28394deed8dd22f5959695be32df6b9ae0094e105a058eb4d29ed65
+# Source digest: sha256:24536b8478af3649893de093173816a859152cd705ec58e8b597d1a2406744a8
+# View digest: sha256:d768f651e4fa953278a0cc0c80dac8e5eb1560e515f62e59262f2d1cca9b4bb7
 # Authority: .statedd/lock.yaml
 schema_version: studydd.compatibility-view/v1
 view_version: 1
-source_digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
+source_digest: sha256:24536b8478af3649893de093173816a859152cd705ec58e8b597d1a2406744a8
 template_version: 0.11.0
 template_commit: ''
 template_source_digest: ''
@@ -22,3 +22,4 @@ instance_created_from_template_source:
 last_template_upgrade_version: ''
 last_template_upgrade_commit: ''
 upgrade_history: []
+release_status: candidate

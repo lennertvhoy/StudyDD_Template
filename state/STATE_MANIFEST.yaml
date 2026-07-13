@@ -2,12 +2,12 @@
 # Generator: scripts/generate_compatibility_views.py
 # Schema: studydd.compatibility-view/v1
 # View version: 1
-# Source digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
-# View digest: sha256:bddfcf4693d30b828e7db68107b8a91febc67130ed66bccbe92ca8c94570aeb7
+# Source digest: sha256:24536b8478af3649893de093173816a859152cd705ec58e8b597d1a2406744a8
+# View digest: sha256:382dde7a5c349e692a924e4999a3880f8dd273e5fc81e8aaa167d7c8b7dead3e
 # Authority: state/STATE_MANIFEST.template.yaml + state/STATE_MANIFEST.instance.yaml
 schema_version: studydd.compatibility-view/v1
 view_version: 1
-source_digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
+source_digest: sha256:24536b8478af3649893de093173816a859152cd705ec58e8b597d1a2406744a8
 manifest_version: '1.0'
 last_updated: '2026-06-24'
 generated_by: scripts/generate_compatibility_views.py

@@ -181,6 +181,8 @@ def validate(data: dict[str, Any], origin_ref: str = "origin/main") -> list[str]
         raise ValidationError("template.id must be 'studydd'")
     if template.get("releaseVersion") != "0.11.0":
         raise ValidationError("releaseVersion must match the 0.11.0 release candidate")
+    if template.get("releaseStatus") != "candidate":
+        raise ValidationError("releaseStatus must be 'candidate' until public release")
     source = data.get("source")
     if not isinstance(source, dict) or source.get("class") != "canonical_source":
         raise ValidationError("source must identify a canonical_source")
@@ -191,6 +193,20 @@ def validate(data: dict[str, Any], origin_ref: str = "origin/main") -> list[str]
     if source.get("requestedRef") != "main" or source.get("resolvedCommit") is not None:
         raise ValidationError("manifest may request main but may not invent immutable commit metadata")
     modules, selected = _validate_modules(data)
+    lock_path = ROOT / ".statedd" / "lock.yaml"
+    try:
+        lock_data = yaml.safe_load(lock_path.read_text(encoding="utf-8")) or {}
+    except OSError as exc:
+        raise ValidationError(f"cannot read lifecycle lock: {exc}") from exc
+    lock_template = lock_data.get("template") if isinstance(lock_data, dict) else None
+    if not isinstance(lock_template, dict):
+        raise ValidationError(".statedd/lock.yaml template must be a mapping")
+    if lock_template.get("version") != template["releaseVersion"]:
+        raise ValidationError("manifest and lock release versions disagree")
+    if lock_template.get("releaseStatus") != template["releaseStatus"]:
+        raise ValidationError("manifest and lock release statuses disagree")
+    if lock_template.get("selectedModules") != data.get("selectedModules"):
+        raise ValidationError("manifest and lock selected modules disagree")
     for module_id in selected:
         pending = list(modules[module_id]["dependencies"])
         seen: set[str] = set()

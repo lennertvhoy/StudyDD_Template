@@ -333,4 +333,7 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.11.0-rc1 — lifecycle upgrade proof release candidate; preserves the v0.10.0 public template surface while adding a deterministic template-owned activity metadata marker.
+v0.11.0 candidate — StateDD lifecycle-adoption candidate with deterministic
+compatibility views, source-freshness routing, and Fast Drill contracts. This
+is not a final public release; the release status remains machine-readable as
+`candidate` in the manifest, lock, and generated views.

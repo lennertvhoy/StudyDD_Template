@@ -9,6 +9,7 @@ instanceId: studydd-template
 template:
   id: studydd
   version: "0.11.0"
+  releaseStatus: candidate
   sourceRevision: ""
   sourceCommit: ""
   sourcePath: ""
@@ -19,6 +20,7 @@ template:
     - studydd.core
     - studydd.activities
     - studydd.source-freshness
+    - studydd.fast-drill
 instance:
   createdFromTemplateVersion: ""
   createdFromTemplateCommit: ""

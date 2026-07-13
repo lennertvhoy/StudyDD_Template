@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import json
 import os
 import re
 import sys
@@ -193,23 +194,15 @@ def _digest_value(value: Any, *, root: Path, key: str = "") -> Any:
 
 def _canonical_digest(values: list[tuple[str, Any]], *, source: Path, root: Path) -> str:
     """Hash normalized source values and names, independent of checkout path."""
-    parser = _require_yaml()
-    digest = hashlib.sha256()
-    for name, value in sorted(values):
-        canonical = parser.safe_dump(
-            _digest_value(_stable_value(value, source=source, label=name), root=root),
-            sort_keys=False,
-            allow_unicode=False,
-            default_flow_style=False,
-            width=4096,
-        ).replace("\r\n", "\n").rstrip("\n") + "\n"
-        name_bytes = name.encode("utf-8")
-        data = canonical.encode("utf-8")
-        digest.update(len(name_bytes).to_bytes(8, "big"))
-        digest.update(name_bytes)
-        digest.update(len(data).to_bytes(8, "big"))
-        digest.update(data)
-    return "sha256:" + digest.hexdigest()
+    payload = [
+        {
+            "path": name,
+            "value": _digest_value(_stable_value(value, source=source, label=name), root=root),
+        }
+        for name, value in sorted(values)
+    ]
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
 def source_digest(root: Path) -> str:
@@ -296,6 +289,7 @@ def _lock_view(data: dict[str, Any], path: Path, *, root: Path) -> dict[str, Any
     if not isinstance(instance, dict):
         raise CompatibilityViewError(f"{path}: instance must be a mapping")
     version = _required_string(template, "version", path)
+    release_status = _optional_string(template, "releaseStatus", path)
     source_revision = _optional_string(template, "sourceRevision", path)
     source_path = _optional_string(template, "sourcePath", path)
     source_commit = _optional_string(template, "sourceCommit", path)
@@ -327,7 +321,7 @@ def _lock_view(data: dict[str, Any], path: Path, *, root: Path) -> dict[str, Any
         "commit": created_commit,
         "digest": source_revision or descriptor_digest,
     }
-    return {
+    result = {
         "template_version": version,
         "template_commit": source_commit or source_revision,
         "template_source_digest": source_revision or descriptor_digest,
@@ -339,6 +333,9 @@ def _lock_view(data: dict[str, Any], path: Path, *, root: Path) -> dict[str, Any
         "last_template_upgrade_commit": instance_value("lastTemplateUpgradeCommit"),
         "upgrade_history": _stable_value(history, source=path, label="upgradeHistory"),
     }
+    if release_status:
+        result["release_status"] = release_status
+    return result
 
 
 def _validate_manifest_entry(path: str, entry: Any, *, source: Path) -> dict[str, Any]:

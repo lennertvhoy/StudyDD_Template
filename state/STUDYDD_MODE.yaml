@@ -2,12 +2,12 @@
 # Generator: scripts/generate_compatibility_views.py
 # Schema: studydd.compatibility-view/v1
 # View version: 1
-# Source digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
-# View digest: sha256:cc50a1693234dcb3639c8f5d6468dfd1a89cf63c540a2dd0c02a6b52d31cb824
+# Source digest: sha256:24536b8478af3649893de093173816a859152cd705ec58e8b597d1a2406744a8
+# View digest: sha256:960021046f271ddb3ed23e9c06939074cdbc3ed459e533473e1d52a95ea1e290
 # Authority: instance.yaml
 schema_version: studydd.compatibility-view/v1
 view_version: 1
-source_digest: sha256:798995b2f62c52de58f8ed5a54bfa367a5e40338fc5e99a218bbe3d38c4a9da0
+source_digest: sha256:24536b8478af3649893de093173816a859152cd705ec58e8b597d1a2406744a8
 mode: template
 template_remote: https://github.com/lennertvhoy/StudyDD_Template.git
 personalized: false
