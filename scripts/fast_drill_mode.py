@@ -259,7 +259,11 @@ def checkpoint_path(repo_root: Path | str | None = None) -> Path:
 
 
 def transaction_root(repo_root: Path | str | None = None) -> Path:
-    return _root(repo_root) / TRANSACTION_RELATIVE
+    root = _root(repo_root)
+    path = root / TRANSACTION_RELATIVE
+    if path.is_symlink() or (path.exists() and not path.is_dir()):
+        raise CheckpointError("Fast Drill transaction root is not a real directory")
+    return path
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
