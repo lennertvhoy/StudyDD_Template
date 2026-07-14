@@ -22,6 +22,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from next_activity_decision import choose_activity_decision, count_due_reviews, find_weakest_skill, recent_activity_types  # noqa: E402
+from studydd_runtime import atomic_write_bytes, require_learner_instance, transition_lock  # noqa: E402
 
 FORMAT = "studydd.action-result/v1"
 PROPOSAL_FORMAT = "studydd.state-change-proposal/v1"
@@ -41,8 +42,9 @@ def digest_bytes(value: bytes) -> str:
 def state_digest(root: Path) -> str:
     files: dict[str, str] = {}
     for path in sorted(root.rglob("*")):
-        if path.is_file() and not path.is_symlink() and path.relative_to(root).as_posix().startswith(("state/", "reviews/", "activities/", "sessions/", "sources/", "targets/")):
-            files[path.relative_to(root).as_posix()] = digest_bytes(path.read_bytes())
+        relative = path.relative_to(root).as_posix()
+        if path.is_file() and not path.is_symlink() and (relative in {"instance.yaml", ".statedd/lock.yaml"} or relative.startswith(("state/", "reviews/", "activities/", "sessions/", "sources/", "targets/"))):
+            files[relative] = digest_bytes(path.read_bytes())
     encoded = json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
     return digest_bytes(encoded)
 
@@ -99,7 +101,23 @@ def action_plan(root: Path, inputs: dict[str, Any]) -> dict[str, Any]:
         "validation": {"command": "python3 scripts/portable_actions.py --validate-proposal"},
     }
     if inputs.get("includeFastDrillProposal"):
-        proposal["operations"] = [{"type": "set_active_activity", "path": "state/ACTIVITY_STATE.yaml", "activity": {"type": "fast_drill", "status": "proposed", "target_id": target_id, "reason": "Requested as an optional bounded proposal."}}]
+        proposal["operations"] = [{
+            "type": "set_active_activity",
+            "path": "state/ACTIVITY_STATE.yaml",
+            "activity": {
+                "id": "act_portable_" + hashlib.sha256((target_id + state_digest(root)).encode()).hexdigest()[:16],
+                "type": "fast_drill",
+                "status": "proposed",
+                "target_id": target_id,
+                "skill_id": weakest.get("id", "") if weakest else "",
+                "assigned_at": "portable-proposal",
+                "due_at": "",
+                "reason": "Requested as an optional bounded proposal.",
+                "expected_evidence": ["typed_answer"],
+                "rule_id": decision.rule_id,
+                "learner_override_allowed": True,
+            },
+        }]
     return {
         "formatVersion": FORMAT,
         "actionId": "studydd.plan-next-session/v1",
@@ -142,44 +160,44 @@ def validate_proposal(value: Any) -> None:
     for operation in value.get("operations", []):
         if not isinstance(operation, dict) or operation.get("type") != "set_active_activity" or operation.get("path") != "state/ACTIVITY_STATE.yaml":
             raise ValueError("unsupported StudyDD proposal operation")
+        activity = operation.get("activity")
+        if not isinstance(activity, dict) or not isinstance(activity.get("id"), str) or not activity["id"].strip():
+            raise ValueError("activity proposal must include a stable activity id")
 
 
 def apply_proposal(root: Path, proposal: dict[str, Any]) -> dict[str, Any]:
     """Apply only the typed activity operation, with byte restoration on failure."""
-    validate_proposal(proposal)
-    current_digest = state_digest(root)
-    if current_digest != proposal.get("preStateDigest"):
-        raise ValueError("proposal pre-state digest does not match the current instance")
-    target = root / "state/ACTIVITY_STATE.yaml"
-    before = target.read_bytes() if target.is_file() else None
-    activity_state = load_yaml(target)
-    operations = proposal.get("operations") or []
-    if len(operations) != 1:
-        raise ValueError("exactly one typed activity operation is required")
-    activity = dict(operations[0].get("activity") or {})
-    activity.setdefault("assigned_at", datetime.now(timezone.utc).isoformat())
-    recent = list(activity_state.get("recent_activities") or [])
-    current = activity_state.get("active_activity")
-    if isinstance(current, dict) and current.get("id"):
-        recent.insert(0, current)
-    activity_state["active_activity"] = activity
-    activity_state["recent_activities"] = recent[:10]
-    activity_state.setdefault("metadata", {})["last_updated"] = datetime.now(timezone.utc).isoformat()
-    encoded = yaml.safe_dump(activity_state, sort_keys=False).encode("utf-8")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".activity.", delete=False) as handle:
-        handle.write(encoded)
-        temporary = Path(handle.name)
     try:
-        temporary.replace(target)
-        check = subprocess.run(["python3", "scripts/check_studydd.py"], cwd=root, capture_output=True, text=True, timeout=30)
-        if check.returncode != 0:
-            raise ValueError("StudyDD validation failed after proposal apply")
+        require_learner_instance(root)
+        with transition_lock(root):
+            validate_proposal(proposal)
+            current_digest = state_digest(root)
+            if current_digest != proposal.get("preStateDigest"):
+                raise ValueError("proposal pre-state digest does not match the current instance")
+            target = root / "state/ACTIVITY_STATE.yaml"
+            before = target.read_bytes() if target.is_file() else None
+            activity_state = load_yaml(target)
+            operations = proposal.get("operations") or []
+            if len(operations) != 1:
+                raise ValueError("exactly one typed activity operation is required")
+            activity = dict(operations[0].get("activity") or {})
+            recent = list(activity_state.get("recent_activities") or [])
+            current = activity_state.get("active_activity")
+            if isinstance(current, dict) and current.get("id"):
+                recent.insert(0, current)
+            activity_state["active_activity"] = activity
+            activity_state["recent_activities"] = recent[:20]
+            activity_state.setdefault("metadata", {})["last_updated"] = datetime.now(timezone.utc).isoformat()
+            encoded = yaml.safe_dump(activity_state, sort_keys=False).encode("utf-8")
+            atomic_write_bytes(target, encoded)
+            check = subprocess.run(["python3", "scripts/check_studydd.py"], cwd=root, capture_output=True, text=True, timeout=30)
+            if check.returncode != 0:
+                if before is None:
+                    target.unlink(missing_ok=True)
+                else:
+                    atomic_write_bytes(target, before)
+                raise ValueError("StudyDD validation failed after proposal apply")
     except Exception:
-        if before is None:
-            target.unlink(missing_ok=True)
-        else:
-            target.write_bytes(before)
         raise
     return {"formatVersion": "studydd.state-change-receipt/v1", "proposalId": proposal.get("proposalId"), "preStateDigest": current_digest, "postStateDigest": state_digest(root), "appliedOperation": "set_active_activity", "validation": "passed", "appliedAt": datetime.now(timezone.utc).isoformat()}
 
