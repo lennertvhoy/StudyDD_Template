@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused tests for shared StudyDD next-activity decision rules."""
+"""Focused tests for shared StudyState next-activity decision rules."""
 
 from __future__ import annotations
 

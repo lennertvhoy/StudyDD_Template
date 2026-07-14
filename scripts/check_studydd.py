@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""StudyDD repo health and educational-drift validator.
+"""StudyState repo health and educational-drift validator.
 
 Supports the agent workflow by checking that required files exist,
 YAML parses, required keys are present, and common educational drift
@@ -467,7 +467,7 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
     if mode == "template":
         if has_remote and not is_template_remote:
             errors.append(
-                "Template mode should use the StudyDD_Template remote. "
+                "Template mode should use the StudyState Template compatibility remote. "
                 "If this is a new learner instance, switch mode to bootstrap first."
             )
         if is_template_remote and not mode_data.get("public_safe", True):
@@ -493,7 +493,7 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
     elif mode == "bootstrap":
         if is_template_remote:
             errors.append(
-                "Bootstrap mode cannot use the StudyDD_Template remote. "
+                "Bootstrap mode cannot use the StudyState Template compatibility remote. "
                 "Set the learner's remote before leaving bootstrap."
             )
         if mode_data.get("personalized", False):
@@ -512,7 +512,7 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
     elif mode == "learner_instance":
         if is_template_remote:
             errors.append(
-                "Learner instance mode cannot use the StudyDD_Template remote. "
+                "Learner instance mode cannot use the StudyState Template compatibility remote. "
                 "Set a new remote for the learner instance."
             )
         if not mode_data.get("personalized", False):
@@ -1996,7 +1996,7 @@ def check_stale_practice_overrides(yaml: object) -> list[str]:
 
 
 def main() -> int:
-    print("StudyDD validation")
+    print("StudyState validation")
     print("==================")
 
     errors = check_files()
@@ -2066,7 +2066,7 @@ def main() -> int:
     print("\nAll required files present.")
     print("YAML validation passed.")
     print("No forbidden mentions found.")
-    print("StudyDD state looks healthy.")
+    print("StudyState state looks healthy.")
     return 0
 
 

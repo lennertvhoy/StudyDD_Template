@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test the public StudyDD demo replay.
+"""Test the public StudyState demo replay.
 
 Runs scripts/run_demo_replay.py and asserts the demo flow produces the
 expected artifacts, transcript, and validation result.
@@ -25,7 +25,7 @@ def run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedPr
 
 
 def main() -> int:
-    print("StudyDD demo replay test")
+    print("StudyState demo replay test")
     print("========================")
 
     result = run([sys.executable, "scripts/run_demo_replay.py"], ROOT, check=False)
@@ -38,7 +38,7 @@ def main() -> int:
     stdout = result.stdout
 
     required_transcript_fragments = [
-        "StudyDD demo replay",
+        "StudyState demo replay",
         "Created learner instance",
         "Initialized learner profile: Demo Learner",
         "Initialized target: AI Search Fundamentals Demo",
@@ -57,11 +57,11 @@ def main() -> int:
         "completed the activity",
         "submitted the result",
         "reviewed the submitted evidence",
-        "StudyDD checks source freshness before generating product-current questions",
+        "StudyState checks source freshness before generating product-current questions",
         "The demo uses a demo official source marked fresh",
         "The agent does not search the web because the cached source is fresh enough",
-        "If the source were stale, StudyDD would ask to refresh or choose a stable review instead",
-        "StudyDD suggestion:",
+        "If the source were stale, StudyState would ask to refresh or choose a stable review instead",
+        "StudyState suggestion:",
         "You missed a scenario tradeoff. Next time, use a short comparison drill.",
         "Learner control:",
         "You can accept, modify, or override this.",

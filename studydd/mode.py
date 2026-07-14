@@ -115,7 +115,10 @@ def validate_mode_remote(repo_root: Path, mode: RepoMode) -> None:
     actual = normalized_remote(remote)
     template = normalized_remote(TEMPLATE_REMOTE)
     if mode is RepoMode.TEMPLATE and actual != template:
-        raise ModeViolation("MODE_REMOTE_MISMATCH", "Template mode requires the exact StudyDD_Template remote.")
+        raise ModeViolation(
+            "MODE_REMOTE_MISMATCH",
+            "Template mode requires the exact StudyState Template compatibility remote.",
+        )
     if mode is not RepoMode.TEMPLATE and actual == template:
         raise ModeViolation("MODE_REMOTE_MISMATCH", "Bootstrap and learner-instance modes require a non-template remote.")
 

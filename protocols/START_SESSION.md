@@ -1,6 +1,6 @@
 # START_SESSION — Agent Session Startup
 
-> **Agent action.** Run this protocol at the start of every StudyDD session.
+> **Agent action.** Run this protocol at the start of every StudyState session.
 
 This is a **session-boundary** operation: compaction and full validation are appropriate here.
 
@@ -9,7 +9,7 @@ This is a **session-boundary** operation: compaction and full validation are app
 1. **Verify repo path.**
    - `pwd`
    - `git rev-parse --show-toplevel`
-   - Confirm the repo root is the expected StudyDD root.
+   - Confirm the repo root is the expected StudyState root.
    - If it is not, stop and tell the learner.
 
 2. **Verify remote.**
@@ -55,5 +55,5 @@ This is a **session-boundary** operation: compaction and full validation are app
 
 9. **Confirm the first action with the learner.**
    - State the proposed next action.
-   - If a review is due, say: "Recommended by StudyDD: review first. You can override, but this is the highest-retention move."
+   - If a review is due, say: "Recommended by StudyState: review first. You can override, but this is the highest-retention move."
    - Wait for confirmation before asking the first question.

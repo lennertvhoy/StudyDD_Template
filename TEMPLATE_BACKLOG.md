@@ -1,6 +1,6 @@
 # TEMPLATE_BACKLOG — Template Engineering Roadmap
 
-> This file belongs to the public StudyDD mold. It is copied neither to learner
+> This file belongs to the public StudyState mold. It is copied neither to learner
 > instances nor into learner next-action state. The approved program and plan
 > remain the authoritative design references below.
 
@@ -108,6 +108,11 @@ directory-for-directory.
 
 ## Done
 
+- 2026-07-14 — **public naming compatibility:** Adopted StudyState, StateSpec,
+  and State-Centric Engineering in current public and operator surfaces while
+  preserving repository names, paths, schemas, environment variables, history,
+  and other machine identifiers as compatibility contracts. Added an explicit
+  migration boundary; no learner instance or private learner data was touched.
 - 2026-07-10 — **TH-01 Slice A:** Added the shared mode/remote guard,
   template learner-operation refusal, temporary-instance demo path coverage,
   and the template/learner planning split. Required Slice A acceptance checks

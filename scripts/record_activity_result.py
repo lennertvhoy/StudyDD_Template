@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record the result of a StudyDD learning activity.
+"""Record the result of a StudyState learning activity.
 
 Updates the activity state, activity log, evidence log, skill map, and review
 state. Keeps readiness upgrades conservative.
@@ -278,7 +278,7 @@ def record_source_check_from_activity(activity: dict[str, Any], args: argparse.N
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Record a StudyDD activity result")
+    parser = argparse.ArgumentParser(description="Record a StudyState activity result")
     parser.add_argument("--activity-id", required=True)
     parser.add_argument("--result", required=True, choices=sorted(VALID_RESULTS))
     parser.add_argument("--evidence-id", required=True)

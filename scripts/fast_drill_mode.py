@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast Drill Mode checkpoint helper for StudyDD.
+"""Fast Drill Mode checkpoint helper for StudyState.
 
 Lightweight speed layer for active question drills. Canonical state is reconciled
 at session end; during the drill only a single append-only checkpoint is updated.
@@ -650,7 +650,7 @@ def requires_immediate_reconciliation(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Fast Drill Mode checkpoint helper for StudyDD")
+    parser = argparse.ArgumentParser(description="Fast Drill Mode checkpoint helper for StudyState")
     sub = parser.add_subparsers(dest="command", required=True)
 
     start_p = sub.add_parser("start", help="Start a new drill checkpoint")

@@ -1,4 +1,4 @@
-# StudyDD Skill: Generic
+# StudyState Skill: Generic
 
 ## Use when
 

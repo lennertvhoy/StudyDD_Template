@@ -1,11 +1,11 @@
 # Grade An Answer And Update State
 
-Use this prompt when the learner has just answered a StudyDD question and you need to grade and update state.
+Use this prompt when the learner has just answered a StudyState question and you need to grade and update state.
 
 ## Path Verification
 
 1. Run `pwd` and `git rev-parse --show-toplevel`. Confirm the repo root.
-2. Run `git remote -v` and confirm it matches the learner's StudyDD repo.
+2. Run `git remote -v` and confirm it matches the learner's StudyState repo.
 3. Run `python3 scripts/check_studydd.py`.
 
 ## Inputs

@@ -1,5 +1,5 @@
 ---
-# StudyDD State Manifest
+# StudyState State Manifest
 #
 # Declares the role of important state files so agents and validators know
 # whether a file is canonical truth, append-only audit, or derived summary.

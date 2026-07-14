@@ -186,7 +186,7 @@ def test_template_planning_split_and_instance_creation() -> None:
 
 
 def main() -> int:
-    print("StudyDD mode guard tests")
+    print("StudyState mode guard tests")
     print("========================")
     with tempfile.TemporaryDirectory(prefix="studydd-mode-unit-") as raw:
         test_mode_contract(Path(raw))

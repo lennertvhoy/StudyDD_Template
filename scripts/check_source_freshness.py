@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Source freshness gate for StudyDD targets.
+"""Source freshness gate for StudyState targets.
 
 Reads sources/SOURCE_STATE.yaml, computes freshness per source for a target,
 and reports whether new authoritative questions can be generated.
@@ -379,7 +379,7 @@ def build_report(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Check source freshness for StudyDD targets"
+        description="Check source freshness for StudyState targets"
     )
     parser.add_argument("--target-id", help="Target ID to check")
     parser.add_argument("--question-id", help="Question ID whose target should be checked")

@@ -1,4 +1,4 @@
-"""CLI adapter for the shared StudyDD mode precondition."""
+"""CLI adapter for the shared StudyState mode precondition."""
 
 from __future__ import annotations
 

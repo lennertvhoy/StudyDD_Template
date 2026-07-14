@@ -1,6 +1,7 @@
-# Upgrade A StudyDD Learner Instance From The Template
+# Upgrade A StudyState Learner Instance From The Template
 
-You are applying a generic StudyDD_Template upgrade to an existing learner
+You are applying a generic StudyState Template upgrade from the compatibility
+repository `StudyDD_Template` to an existing learner
 instance. Do not touch learner state.
 
 ## Before you start
@@ -70,7 +71,7 @@ Commit only when instructed:
 
 ```bash
 git add <generic files>
-git commit -m "chore: upgrade StudyDD generic files from template vX.Y.Z"
+git commit -m "chore: upgrade StudyState generic files from template vX.Y.Z"
 ```
 
 Push only when the learner explicitly asks.

@@ -1,8 +1,8 @@
 ---
-# StudyDD performance budget.
+# StudyState performance budget.
 #
 # Defines how much state an agent may load and write in each execution mode.
-# This keeps StudyDD fast during real tutoring sessions while preserving
+# This keeps StudyState fast during real tutoring sessions while preserving
 # full auditability on demand.
 
 budget_version: "1.0"

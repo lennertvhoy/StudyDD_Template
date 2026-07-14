@@ -1,6 +1,6 @@
 # TUTOR_PROTOCOL — Ask, Grade, Repair, Update
 
-> **Agent-maintained.** This protocol governs how coding agents and tutor agents ask questions, grade answers, and update StudyDD state.
+> **Agent-maintained.** This protocol governs how coding agents and tutor agents ask questions, grade answers, and update StudyState state.
 
 ## Active Question Tracking
 

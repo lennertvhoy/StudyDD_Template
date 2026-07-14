@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create or update a StudyDD review item with a simple, transparent schedule.
+"""Create or update a StudyState review item with a simple, transparent schedule.
 
 Usage:
     python3 scripts/schedule_review.py \
@@ -141,7 +141,7 @@ def add_to_queue(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Schedule a StudyDD review item")
+    parser = argparse.ArgumentParser(description="Schedule a StudyState review item")
     parser.add_argument("--skill-id", required=True)
     parser.add_argument("--evidence-id", default=None)
     parser.add_argument("--target-id", default=None)

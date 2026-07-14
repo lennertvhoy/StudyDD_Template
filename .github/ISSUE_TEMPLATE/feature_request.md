@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement for StudyDD_Template
+about: Suggest an improvement for the StudyState Template
 title: "[FEATURE] "
 labels: enhancement
 ---
@@ -9,8 +9,8 @@ labels: enhancement
 
 ## What should change?
 
-## Does this keep StudyDD agent-native?
+## Does this keep StudyState agent-native?
 
-StudyDD avoids web apps, databases, hosted services, and beginner CLI apps. Explain how your idea stays consistent with that.
+StudyState avoids web apps, databases, hosted services, and beginner CLI apps. Explain how your idea stays consistent with that.
 
 ## Anything else?

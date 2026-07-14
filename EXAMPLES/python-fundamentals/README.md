@@ -1,6 +1,6 @@
 # Python Fundamentals — Generic Example
 
-A public-safe example of a StudyDD learner instance for Python language proficiency.
+A public-safe example of a StudyState learner instance for Python language proficiency.
 
 Demonstrates:
 - One target with four Python skills: data structures, OOP, concurrency, and typing

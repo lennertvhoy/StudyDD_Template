@@ -1,6 +1,6 @@
 # Agent-Native Quickstart
 
-StudyDD is easiest when you use it with a coding agent. You do not need to edit YAML by hand.
+StudyState is easiest when you use it with a coding agent. You do not need to edit YAML by hand.
 
 ## What You Need
 
@@ -26,7 +26,7 @@ StudyDD is easiest when you use it with a coding agent. You do not need to edit 
 
    Example:
 
-   > Initialize this StudyDD copy for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
+   > Initialize this StudyState copy for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
 
 5. **Let the agent build the first target.**
 

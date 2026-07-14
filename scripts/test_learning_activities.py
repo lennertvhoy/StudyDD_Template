@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test StudyDD learning activity and evidence intake orchestration.
+"""Test StudyState learning activity and evidence intake orchestration.
 
 Validates new files, helper scripts, demo output, and context-pack integration.
 """
@@ -258,7 +258,7 @@ def test_plan_includes_source_freshness_for_fresh_volatile_target() -> None:
 def test_plan_learning_activity_demo() -> None:
     result = run([sys.executable, "scripts/plan_learning_activity.py", "--demo"])
     stdout = result.stdout
-    assert "StudyDD recommendation:" in stdout, "Demo must contain a recommendation"
+    assert "StudyState recommendation:" in stdout, "Demo must contain a recommendation"
     assert "Reason:" in stdout, "Demo must contain a reason"
     assert "Task:" in stdout, "Demo must contain a task"
     assert "Expected evidence:" in stdout, "Demo must contain expected evidence"

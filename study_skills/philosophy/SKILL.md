@@ -1,4 +1,4 @@
-# StudyDD Skill: Philosophy
+# StudyState Skill: Philosophy
 
 ## Use when
 

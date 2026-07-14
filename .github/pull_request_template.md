@@ -8,6 +8,6 @@
 - [ ] YAML files are valid
 - [ ] No unrelated changes
 
-## Does this keep StudyDD agent-native?
+## Does this keep StudyState agent-native?
 
-StudyDD avoids web apps, databases, hosted services, and beginner CLI apps.
+StudyState avoids web apps, databases, hosted services, and beginner CLI apps.

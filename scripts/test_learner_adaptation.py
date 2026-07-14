@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for scripts/suggest_study_adjustment.py.
 
-Creates temporary StudyDD state fixtures and invokes the suggestion script via
+Creates temporary StudyState state fixtures and invokes the suggestion script via
 subprocess. No learner state is modified.
 """
 

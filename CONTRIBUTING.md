@@ -1,6 +1,6 @@
-# Contributing to StudyDD_Template
+# Contributing to the StudyState Template
 
-Thank you for helping improve StudyDD.
+Thank you for helping improve StudyState.
 
 ## What fits
 

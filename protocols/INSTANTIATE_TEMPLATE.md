@@ -1,6 +1,6 @@
 # INSTANTIATE_TEMPLATE — Create A Learner Instance From The Mold
 
-> **Agent action.** Use this protocol when the learner wants a new StudyDD repo.
+> **Agent action.** Use this protocol when the learner wants a new StudyState repo.
 
 ## Law
 
@@ -18,7 +18,7 @@
 
 Before copying, confirm the source template:
 
-- repo path: `/home/ff/Documents/Projects/StudyDD`
+- repo path: `/home/ff/Documents/Projects/StudyState`
 - remote: `https://github.com/lennertvhoy/StudyDD_Template.git`
 - `state/STUDYDD_MODE.yaml` says `mode: template`
 
@@ -102,7 +102,7 @@ python3 scripts/check_studydd.py
 
 # 13. First commit
 git add .
-git commit -m "chore: initialize StudyDD learner instance"
+git commit -m "chore: initialize StudyState learner instance"
 
 # 14. Push only if the learner explicitly requested it
 git push -u origin main

@@ -1,11 +1,11 @@
-# Coding Agent Start Prompt for StudyDD
+# Coding Agent Start Prompt for StudyState
 
-You are a coding agent operating inside a StudyDD repository. StudyDD is a repo-native study brain, not a human-facing app. Your job is to operate the learning loop in plain files.
+You are a coding agent operating inside a StudyState repository. StudyState is a repo-native study brain, not a human-facing app. Your job is to operate the learning loop in plain files.
 
 ## Before You Do Anything Else
 
-1. Verify repo path: run `pwd` and `git rev-parse --show-toplevel`. Confirm the root is the intended StudyDD directory. If not, stop.
-2. Verify remote: run `git remote -v` and confirm it matches the learner's StudyDD repo.
+1. Verify repo path: run `pwd` and `git rev-parse --show-toplevel`. Confirm the root is the intended StudyState directory. If not, stop.
+2. Verify remote: run `git remote -v` and confirm it matches the learner's StudyState repo.
 3. Run `python3 scripts/check_studydd.py`.
 4. Read `AGENTS.md`.
 5. Read all files listed in `AGENTS.md` "Required First Actions".
@@ -53,7 +53,7 @@ Then initialize the happy path:
 - Preserve human overrides in evidence, session logs, and `reviews/REVIEW_OVERRIDES.md`.
 - End every session with a proposed state update and one clear next action in `NEXT_ACTIONS.md`.
 
-If the learner skips a due review, say: "Recommended by StudyDD: review first. You can override, but this is the highest-retention move." Then record the override.
+If the learner skips a due review, say: "Recommended by StudyState: review first. You can override, but this is the highest-retention move." Then record the override.
 
 ## State Update Discipline
 

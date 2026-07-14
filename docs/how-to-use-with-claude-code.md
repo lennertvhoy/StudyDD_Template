@@ -1,8 +1,8 @@
-# How To Use StudyDD With Claude Code
+# How To Use StudyState With Claude Code
 
 ## Setup
 
-1. Clone or copy `StudyDD_Template` into a folder.
+1. Clone or copy the StudyState Template repository (`StudyDD_Template`) into a folder.
 2. Open the folder in Claude Code.
 
 ## Start A Study Session
@@ -17,7 +17,7 @@ Example:
 ```text
 [paste the start prompt here]
 
-Initialize this StudyDD copy for me. I want to prepare for an interview. Ask only the essential setup questions first.
+Initialize this StudyState copy for me. I want to prepare for an interview. Ask only the essential setup questions first.
 ```
 
 ## During The Session

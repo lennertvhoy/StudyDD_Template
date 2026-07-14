@@ -1,6 +1,6 @@
-# StudyDD Principles
+# StudyState Principles
 
-StudyDD applies StateDD principles to learning.
+StudyState applies StateSpec principles to learning.
 
 ## 1. One Happy Path
 

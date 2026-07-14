@@ -4,7 +4,7 @@ template_remote: "https://github.com/lennertvhoy/StudyDD_Template.git"
 personalized: false
 public_safe: true
 
-# StudyDD mode lifecycle
+# StudyState mode lifecycle
 #
 # Allowed values:
 #   - template          : reusable public mold. Must remain generic and public-safe.

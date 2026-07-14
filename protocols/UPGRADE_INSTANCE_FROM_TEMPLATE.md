@@ -1,7 +1,8 @@
 # UPGRADE_INSTANCE_FROM_TEMPLATE — Apply Template Improvements Safely
 
 > **Agent action.** Use this protocol when a learner wants generic
-> StudyDD_Template improvements copied into their personal instance.
+> StudyState Template improvements copied from the compatibility repository
+> `StudyDD_Template` into their personal instance.
 
 ## Law
 
@@ -63,7 +64,7 @@ Copy or merge from the template only when the template version is newer:
 8. Commit the upgrade separately from any study-session changes:
    ```bash
    git add <generic files>
-   git commit -m "chore: upgrade StudyDD generic files from template vX.Y.Z"
+   git commit -m "chore: upgrade StudyState generic files from template vX.Y.Z"
    ```
 9. Push only if the learner explicitly requests it.
 

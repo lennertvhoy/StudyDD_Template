@@ -5,7 +5,7 @@ Use this prompt when state files seem missing, contradictory, or out of sync.
 ## Path Verification
 
 1. Run `pwd` and `git rev-parse --show-toplevel`. Confirm the repo root.
-2. Run `git remote -v` and confirm it matches the learner's StudyDD repo.
+2. Run `git remote -v` and confirm it matches the learner's StudyState repo.
 3. Run `python3 scripts/check_studydd.py`.
 4. Run `python3 scripts/agent_consistency_check.py`.
 5. Run `python3 scripts/agent_evidence_check.py`.

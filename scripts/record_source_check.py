@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record the result of a source freshness check for a StudyDD target.
+"""Record the result of a source freshness check for a StudyState target.
 
 Updates sources/SOURCE_STATE.yaml with a deterministic, public-safe record of
 the checked source metadata so future next-activity decisions can suppress
@@ -485,7 +485,7 @@ def main() -> int:
     parser.add_argument(
         "--repo-root",
         default=None,
-        help="Path to the StudyDD repo root (default: parent of this script)",
+        help="Path to the StudyState repo root (default: parent of this script)",
     )
     args = parser.parse_args()
 

@@ -1,6 +1,6 @@
 # GIT_PROVENANCE — Agent Git Identity And History Rules
 
-Agents must inspect Git provenance before making commits in a StudyDD repo.
+Agents must inspect Git provenance before making commits in a StudyState repo.
 
 ## Required checks
 
@@ -23,7 +23,7 @@ Set a repo-local identity so the agent does not leak the operator's personal
 Git config into the learner repo:
 
 ```bash
-git config user.name "StudyDD Agent"
+git config user.name "StudyState Agent"
 git config user.email "studydd-agent@example.invalid"
 ```
 

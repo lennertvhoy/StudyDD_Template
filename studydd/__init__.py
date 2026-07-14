@@ -1,4 +1,4 @@
-"""Small, dependency-light StudyDD runtime helpers."""
+"""Small, dependency-light StudyState compatibility runtime helpers."""
 
 from .atomic import atomic_write_text
 from .mode import (

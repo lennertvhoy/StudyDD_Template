@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evidence reference sanity check for StudyDD.
+"""Evidence reference sanity check for StudyState.
 
 Checks that evidence IDs referenced in skill maps and review queues have
 corresponding entries in the evidence log where the log format allows.
@@ -61,7 +61,7 @@ def collect_logged_ids() -> set[str]:
 
 
 def main() -> int:
-    print("StudyDD Evidence Check")
+    print("StudyState Evidence Check")
     print("======================")
     print("Limitation: Markdown evidence logs are not strictly parseable.")
     print("This check uses simple ID matching and may miss malformed entries.\n")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke test for the StudyDD template -> bootstrap -> learner_instance lifecycle.
+"""Smoke test for the StudyState template -> bootstrap -> learner_instance lifecycle.
 
 This script creates a temporary copy of the current repo, removes the template
 Git history, reinitializes Git, runs through bootstrap validation, simulates
@@ -31,7 +31,7 @@ def run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess:
 
 
 def main() -> int:
-    print("StudyDD instantiation smoke test")
+    print("StudyState instantiation smoke test")
     print("================================")
 
     try:
@@ -159,7 +159,7 @@ def main() -> int:
 
         # 8. Verify a first commit can be created.
         print("8. Creating first commit")
-        result = run(["git", "config", "user.name", "StudyDD Smoke Test"], instance)
+        result = run(["git", "config", "user.name", "StudyState Smoke Test"], instance)
         if result.returncode != 0:
             print(result.stderr)
             return 1
@@ -171,7 +171,7 @@ def main() -> int:
         if result.returncode != 0:
             print(result.stderr)
             return 1
-        result = run(["git", "commit", "-m", "chore: initialize StudyDD learner instance"], instance)
+        result = run(["git", "commit", "-m", "chore: initialize StudyState learner instance"], instance)
         if result.returncode != 0:
             print(result.stderr)
             return 1

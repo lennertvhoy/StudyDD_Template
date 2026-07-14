@@ -1,6 +1,6 @@
 # System Design Skills — Generic Example
 
-A public-safe example of a StudyDD learner instance for a self-guided system design study track.
+A public-safe example of a StudyState learner instance for a self-guided system design study track.
 
 Demonstrates:
 - One target with five skills spanning distributed systems topics

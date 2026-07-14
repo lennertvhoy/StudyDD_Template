@@ -1,5 +1,5 @@
 ---
-# StudyDD activity orchestrator state.
+# StudyState activity orchestrator state.
 #
 # Tracks the active learning activity and recent activity history.
 # Template mode keeps this generic/empty; learner instances populate it.

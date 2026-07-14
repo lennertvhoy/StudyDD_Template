@@ -1,20 +1,20 @@
-# StudyDD Five-Minute Demo Walkthrough
+# StudyState Five-Minute Demo Walkthrough
 
-> **Run one command and watch the StudyDD learning loop happen.**
+> **Run one command and watch the StudyState learning loop happen.**
 
 ```bash
 python3 scripts/run_demo_replay.py
 ```
 
-This guide is for students, teachers, hiring managers, and anyone who wants to understand what StudyDD does without reading the full agent protocol.
+This guide is for students, teachers, hiring managers, and anyone who wants to understand what StudyState does without reading the full agent protocol.
 
 ---
 
-## 1. What StudyDD is
+## 1. What StudyState is
 
-StudyDD is a GitHub template that turns a coding agent into a disciplined tutor.
+StudyState is a GitHub template that turns a coding agent into a disciplined tutor.
 
-Instead of keeping your learning history inside a chat app or a proprietary database, StudyDD keeps it in plain files inside a Git repo:
+Instead of keeping your learning history inside a chat app or a proprietary database, StudyState keeps it in plain files inside a Git repo:
 
 - `state/` — your current skills, readiness, and focus
 - `targets/` — one folder per exam, certification, interview, or skill you are studying
@@ -31,7 +31,7 @@ You own the files. You can inspect, diff, override, or move them anywhere.
 
 Most AI tutors forget what you already know, inflate your confidence after one easy answer, and lose track of your weak areas.
 
-StudyDD fixes that by making learning state explicit:
+StudyState fixes that by making learning state explicit:
 
 - **Evidence, not encouragement.** A skill is only marked strong when there is concrete evidence in `state/EVIDENCE_LOG.md`.
 - **Honest grading.** The agent grades what you actually said, not what it hoped you would say.
@@ -60,11 +60,11 @@ This:
 4. switches the mode from `template` to `bootstrap`
 5. records the template origin for future upgrades
 
-Then open the new folder in your coding agent and say: **"Start a StudyDD session."**
+Then open the new folder in your coding agent and say: **"Start a StudyState session."**
 
 ---
 
-## 4. How to start a StudyDD session
+## 4. How to start a StudyState session
 
 When you ask for a session, the agent:
 
@@ -99,7 +99,7 @@ You can read any of these files to see exactly how the agent reasoned about your
 
 ## 6. How spaced repetition works
 
-StudyDD treats due reviews as learning debt. At the start of every session, the agent runs:
+StudyState treats due reviews as learning debt. At the start of every session, the agent runs:
 
 ```bash
 python3 scripts/select_next_study_action.py
@@ -107,7 +107,7 @@ python3 scripts/select_next_study_action.py
 
 If a review is due or overdue, the agent says:
 
-> **Recommended by StudyDD: review first.** You can override, but this is the highest-retention move.
+> **Recommended by StudyState: review first.** You can override, but this is the highest-retention move.
 
 The scheduler uses a simple, transparent interval map:
 

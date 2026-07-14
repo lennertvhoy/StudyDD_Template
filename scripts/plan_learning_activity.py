@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan the next StudyDD learning activity.
+"""Plan the next StudyState learning activity.
 
 Inspects current state, reviews, learner profile, and study skill, then
 recommends one activity with a reason, expected evidence, and learner-control
@@ -41,7 +41,7 @@ MODE_PATH = ROOT / "state" / "STUDYDD_MODE.yaml"
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
 TARGETS_DIR = ROOT / "targets"
 
-DEMO_OUTPUT = """StudyDD recommendation: paper exercise.
+DEMO_OUTPUT = """StudyState recommendation: paper exercise.
 
 Reason:
 The learner has missed this skill twice and answered too quickly. A short written exercise is more useful than another chat question.
@@ -171,7 +171,7 @@ def plan_activity(
     }.get(activity_type, "Complete the suggested learning activity.")
 
     output = (
-        f"StudyDD recommendation: {activity_type}.\n\n"
+        f"StudyState recommendation: {activity_type}.\n\n"
         f"Reason:\n{reason}\n\n"
         f"Source freshness: {freshness_status}\n"
         f"Rule ID: {freshness_rule_id}\n\n"
@@ -215,7 +215,7 @@ def update_activity_state(proposed_activity: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Plan the next StudyDD learning activity")
+    parser = argparse.ArgumentParser(description="Plan the next StudyState learning activity")
     parser.add_argument("--task", default="start_session", help="Agent task context")
     parser.add_argument("--skill-id", help="Focus on a specific skill ID")
     parser.add_argument("--low-energy", action="store_true", help="Plan a low-energy activity")

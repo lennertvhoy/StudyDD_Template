@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check whether the current environment can run StudyDD.
+"""Check whether the current environment can run StudyState.
 
 Prints OS, Python version, package status, virtualenv status, Git status, and
 repo-root status. Exits with a non-zero code if required dependencies are
@@ -93,7 +93,7 @@ def read_template_version() -> str:
 
 
 def main() -> int:
-    print("StudyDD environment check")
+    print("StudyState environment check")
     print("=========================")
     print("")
 
@@ -120,7 +120,7 @@ def main() -> int:
     print(f"Git available: {'yes' if git_available() else 'no'}")
     print(f"Repo root: {'yes' if in_repo_root() else 'no'}")
     if git_remote_includes_template():
-        print("Git remote: StudyDD_Template detected")
+        print("Git remote: StudyState Template compatibility repository detected")
     print(f"Template version: {read_template_version()}")
 
     print("")
@@ -145,17 +145,17 @@ def main() -> int:
 
     if not in_repo_root():
         print("Next steps:")
-        print(f"  - Run this script from the StudyDD repo root ({ROOT}).")
+        print(f"  - Run this script from the StudyState repo root ({ROOT}).")
         return 1
 
     if not in_virtual_environment():
         print("Warning: you are not inside a virtual environment.")
-        print("StudyDD works best in a local venv. To create one:")
+        print("StudyState works best in a local venv. To create one:")
         print("  Linux/macOS: python3 -m venv .venv && source .venv/bin/activate")
         print("  Windows PS:  py -m venv .venv && .\\.venv\\Scripts\\Activate.ps1")
         print("")
 
-    print("Environment check passed. StudyDD should run.")
+    print("Environment check passed. StudyState should run.")
     print("Run validation: python scripts/check_studydd.py")
     print("Run demo:       python scripts/run_demo_replay.py")
     return 0

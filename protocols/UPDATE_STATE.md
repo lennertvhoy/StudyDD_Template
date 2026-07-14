@@ -59,7 +59,7 @@ Leave these for session close unless the learner explicitly requests otherwise:
 - A persistent confusion marks the skill `blocked`.
 - `confirmed` requires strong or varied evidence.
 - Apply the active study skill's readiness rules in addition to the general readiness policy.
-- If the study skill conflicts with general StudyDD policy, the stricter anti-inflation rule wins.
+- If the study skill conflicts with general StudyState policy, the stricter anti-inflation rule wins.
 - Update timestamps and `updated_by` in YAML metadata.
 
 ## After Updating

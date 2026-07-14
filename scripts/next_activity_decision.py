@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared next-activity decision logic for StudyDD.
+"""Shared next-activity decision logic for StudyState.
 
 The planner and context-pack builder both use this module so the activity type,
 auditable rule reason, and expected evidence cannot drift between surfaces.

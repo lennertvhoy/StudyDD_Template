@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test StudyDD study skills.
+"""Test StudyState study skills.
 
 Verifies required skill files exist, target-declared skills resolve correctly,
 unknown skills fail validation in learner instance mode, and the context pack
@@ -87,7 +87,7 @@ def make_instance(skill: str | None) -> Path:
 
 
 def main() -> int:
-    print("StudyDD study skills test")
+    print("StudyState study skills test")
     print("=========================")
 
     print("\nTest: every required skill has a SKILL.md")

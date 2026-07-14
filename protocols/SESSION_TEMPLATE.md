@@ -1,6 +1,6 @@
 # SESSION_TEMPLATE — Standard Study Session Structure
 
-> **Agent-maintained.** Use this structure for every StudyDD session.
+> **Agent-maintained.** Use this structure for every StudyState session.
 
 ## Before The Session
 

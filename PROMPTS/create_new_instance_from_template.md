@@ -1,6 +1,6 @@
-# Create A New StudyDD Instance From The Template
+# Create A New StudyState Instance From The Template
 
-You are creating a new StudyDD learner instance from the public template. **Do not personalize the template repo itself.** Personalization happens only inside the target repo after it has been cloned, detached from the template Git history, and reinitialized.
+You are creating a new StudyState learner instance from the public template. **Do not personalize the template repo itself.** Personalization happens only inside the target repo after it has been cloned, detached from the template Git history, and reinitialized.
 
 ## Hard Rules
 
@@ -12,7 +12,7 @@ You are creating a new StudyDD learner instance from the public template. **Do n
 ## Before You Start
 
 1. Confirm the source template:
-   - repo path: `/home/ff/Documents/Projects/StudyDD`
+   - repo path: `/home/ff/Documents/Projects/StudyState`
    - remote: `https://github.com/lennertvhoy/StudyDD_Template.git`
    - `state/STUDYDD_MODE.yaml` says `mode: template`
 2. Ask the learner for the new instance directory and remote.
@@ -88,7 +88,7 @@ python3 scripts/check_studydd.py
 
 ```bash
 git add .
-git commit -m "chore: initialize StudyDD learner instance"
+git commit -m "chore: initialize StudyState learner instance"
 ```
 
 Push only if the learner explicitly requests it:

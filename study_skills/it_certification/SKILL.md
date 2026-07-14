@@ -1,4 +1,4 @@
-# StudyDD Skill: IT Certification
+# StudyState Skill: IT Certification
 
 ## Use when
 

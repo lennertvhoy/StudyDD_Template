@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a deterministic StudyDD learner instance from the public template.
+"""Create a deterministic StudyState learner instance from the public template.
 
 Usage:
     python3 scripts/create_instance.py \
@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from studydd.mode import ModeViolation, RepoMode, normalized_remote, require_mode
 
-AGENT_NAME = "StudyDD Agent"
+AGENT_NAME = "StudyState Agent"
 AGENT_EMAIL = "studydd-agent@example.invalid"
 TEMPLATE_ORIGIN = "https://github.com/lennertvhoy/StudyDD_Template.git"
 
@@ -66,7 +66,7 @@ def get_template_version_and_commit(yaml: object) -> tuple[str, str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create a StudyDD learner instance")
+    parser = argparse.ArgumentParser(description="Create a StudyState learner instance")
     parser.add_argument("--target", required=True, help="Target directory for the instance")
     parser.add_argument("--remote", required=True, help="Git remote URL for the instance")
     args = parser.parse_args()
@@ -74,7 +74,7 @@ def main() -> int:
     target = Path(args.target).resolve()
     remote = args.remote
 
-    print("StudyDD create-instance")
+    print("StudyState create-instance")
     print("=======================")
 
     try:

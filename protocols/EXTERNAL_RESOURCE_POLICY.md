@@ -9,7 +9,7 @@ One good resource, with a reason.
 Prefer official or high-authority sources for volatile topics.
 ```
 
-StudyDD can assign videos, readings, documentation pages, exercises on other platforms, or any trusted external resource as a learning activity. The agent must choose deliberately and explain why the resource helps.
+StudyState can assign videos, readings, documentation pages, exercises on other platforms, or any trusted external resource as a learning activity. The agent must choose deliberately and explain why the resource helps.
 
 ## When to recommend an external resource
 
@@ -25,7 +25,7 @@ Do not recommend an external resource when:
 
 - a short agent explanation or question is sufficient,
 - the topic is volatile and no fresh authoritative source exists,
-- the only goal is to send the learner away from StudyDD tracking.
+- the only goal is to send the learner away from StudyState tracking.
 
 ## Source authority and freshness
 
@@ -50,7 +50,7 @@ Use one of these plain explanations:
 - **better visualization** — the resource shows the concept in a way text cannot.
 - **worked examples** — the resource walks through examples step by step.
 - **official explanation** — the resource is authoritative for this topic.
-- **practice density** — the resource provides more practice items than StudyDD can generate here.
+- **practice density** — the resource provides more practice items than StudyState can generate here.
 - **different teaching style** — the resource explains the idea from a different angle.
 
 ## One resource at a time
@@ -63,4 +63,4 @@ If the learner declines the resource or chooses a different one, record the over
 
 ## No live web search in this slice
 
-This policy covers state and decision support only. It does not add live web search to StudyDD. The agent may recommend known trusted resources or ask the learner to supply a resource link for review.
+This policy covers state and decision support only. It does not add live web search to StudyState. The agent may recommend known trusted resources or ask the learner to supply a resource link for review.

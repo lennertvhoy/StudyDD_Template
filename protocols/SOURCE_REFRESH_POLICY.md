@@ -1,6 +1,6 @@
 # SOURCE_REFRESH_POLICY — Source Refresh Rules
 
-This policy governs when and how agents refresh source material for StudyDD.
+This policy governs when and how agents refresh source material for StudyState.
 
 ## Rules
 

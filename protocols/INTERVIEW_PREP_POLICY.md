@@ -12,7 +12,7 @@ Interview prep is not about writing perfect answers in a chat. It is about pract
 
 ## Tracked state
 
-StudyDD tracks interview prep state in `state/ACTIVITY_STATE.yaml` and `activities/ACTIVITY_LOG.md`. The canonical structure is:
+StudyState tracks interview prep state in `state/ACTIVITY_STATE.yaml` and `activities/ACTIVITY_LOG.md`. The canonical structure is:
 
 ```yaml
 interview_prep_state:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Practical privacy scan for a StudyDD learner instance.
+"""Practical privacy scan for a StudyState learner instance.
 
 Warns by default. Run before pushing a learner instance to a public or shared
 remote. The template repo itself may contain generic placeholder emails; those
@@ -86,7 +86,7 @@ def check_file(path: Path) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Privacy scan for StudyDD")
+    parser = argparse.ArgumentParser(description="Privacy scan for StudyState")
     parser.add_argument(
         "--fail",
         action="store_true",
@@ -94,7 +94,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    print("StudyDD privacy check")
+    print("StudyState privacy check")
     print("=====================")
 
     all_warnings: list[str] = []

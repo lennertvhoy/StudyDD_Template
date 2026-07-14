@@ -1,6 +1,6 @@
 # Close A Session Cleanly
 
-Use this prompt at the end of any StudyDD session.
+Use this prompt at the end of any StudyState session.
 
 ## Path Verification
 

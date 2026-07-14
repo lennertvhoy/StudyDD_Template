@@ -1,6 +1,6 @@
 # CLOSE_SESSION — End The Session Cleanly
 
-> **Agent action.** Run this protocol at the end of every StudyDD session.
+> **Agent action.** Run this protocol at the end of every StudyState session.
 
 This is a **session-boundary** operation. Full compaction and full validation are appropriate here.
 

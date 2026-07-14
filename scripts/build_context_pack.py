@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a task-specific StudyDD context pack.
+"""Build a task-specific StudyState context pack.
 
 The context pack is the agent's normal runtime context. It loads compact state,
 relevant evidence, and task-specific files while skipping raw audit logs unless
@@ -534,7 +534,7 @@ def build_context_pack(
     generated_at = datetime.now(timezone.utc).isoformat()
 
     body_lines.extend([
-        "# StudyDD Context Pack",
+        "# StudyState Context Pack",
         "",
         f"- **Task:** {task}",
         f"- **Mode:** {metadata['mode']}",
@@ -881,7 +881,7 @@ def check_budget(metadata: dict) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build a task-specific StudyDD context pack")
+    parser = argparse.ArgumentParser(description="Build a task-specific StudyState context pack")
     parser.add_argument(
         "--task",
         required=True,
@@ -897,7 +897,7 @@ def main() -> int:
             "demo",
             "audit",
         ],
-        help="StudyDD agent task",
+        help="StudyState agent task",
     )
     parser.add_argument("--active-skill", help="Narrow context to this study skill ID")
     parser.add_argument("--active-question", help="Narrow context to this question ID")
@@ -921,7 +921,7 @@ def main() -> int:
     CONTEXT_PACK_DIR.mkdir(parents=True, exist_ok=True)
     CONTEXT_PACK_PATH.write_text(pack, encoding="utf-8")
 
-    print("StudyDD context pack built.")
+    print("StudyState context pack built.")
     print("")
     print(f"Task: {args.task}")
     print(f"Mode: {metadata['mode']}")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Question quality linter for StudyDD question banks.
+"""Question quality linter for StudyState question banks.
 
 Validates question files under targets/ and EXAMPLES/*/targets/ for schema,
 source freshness, answer-key leakage, option position bias, and quality-gate
@@ -533,7 +533,7 @@ def check_option_position_patterns(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Lint StudyDD question files")
+    parser = argparse.ArgumentParser(description="Lint StudyState question files")
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
     parser.add_argument("--target-id", help="Limit lint to a single target ID")
     parser.add_argument("--now", default=None, help="ISO 8601 timestamp with timezone for deterministic checks")

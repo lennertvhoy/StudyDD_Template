@@ -1,6 +1,6 @@
 # Question Bank Schema
 
-StudyDD supports an optional per-target question bank under:
+StudyState supports an optional per-target question bank under:
 
 ```text
 targets/<target_id>/questions/<question_id>.yaml
@@ -105,7 +105,7 @@ question_quality:
 
 ## Notes
 
-- The top-level `cognitive_level` uses StudyDD's routing taxonomy
+- The top-level `cognitive_level` uses StudyState's routing taxonomy
   (`recall`, `apply`, `troubleshoot`, `choose-best`, `explain`, `design`) to
   decide how the question should be delivered during a session.
 - `question_quality.cognitive_level` uses Bloom-style categories

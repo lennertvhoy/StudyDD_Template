@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test StudyDD context pack builder.
+"""Test StudyState context pack builder.
 
 Creates a temporary learner instance, runs scripts/build_context_pack.py for
 several tasks, and asserts inclusion/exclusion behavior.
@@ -250,7 +250,7 @@ def test_context_pack_shows_stale_source_freshness_when_relevant() -> None:
 
 
 def main() -> int:
-    print("StudyDD context pack test")
+    print("StudyState context pack test")
     print("=========================")
 
     target = build_instance()
