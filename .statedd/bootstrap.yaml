@@ -1,0 +1,119 @@
+formatVersion: studydd.bootstrap/v1
+templateId: studydd
+instanceMode: learner_instance
+seedModes:
+  - empty
+  - synthetic-demo
+fields:
+  - id: instance_id
+    type: string
+    required: true
+  - id: display_name
+    type: string
+    required: true
+  - id: owner_name
+    type: string
+    required: true
+  - id: owner_handle
+    type: string
+    required: false
+    default: local-owner
+  - id: target_id
+    type: identifier
+    required: true
+  - id: target_title
+    type: string
+    required: false
+    default: ""
+  - id: timezone
+    type: string
+    required: false
+    default: UTC
+  - id: learning_goal
+    type: string
+    required: false
+    default: ""
+  - id: seed_mode
+    type: enum
+    values: [empty, synthetic-demo]
+    required: false
+    default: empty
+writes:
+  - path: instance.yaml
+    format: yaml
+    document:
+      apiVersion: studydd.studydd.io/v1
+      kind: StudyDDInstance
+      metadata:
+        id: {field: instance_id}
+        name: {field: display_name}
+      spec:
+        mode: learner_instance
+        status: active
+        templateRef:
+          id: studydd
+          path: .
+        templateOrigin: https://github.com/lennertvhoy/StudyDD_Template.git
+        personalized: true
+        publicSafe: false
+        owner:
+          name: {field: owner_name}
+          handle: {field: owner_handle}
+        target:
+          id: {field: target_id}
+          title: {field: target_title}
+        timezone: {field: timezone}
+  - path: state/STUDY_STATE.yaml
+    format: yaml
+    document:
+      learner:
+        name: {field: owner_name}
+        current_context: StudyDD learner instance
+        preferred_language: ""
+        preferred_tutoring_style: ""
+      active_target_id: {field: target_id}
+      targets: [{field: target_id}]
+      study_target:
+        title: {field: target_title}
+        exam_or_goal: {field: learning_goal}
+        deadline: ""
+        current_readiness_estimate: Not assessed
+        readiness_confidence: Low
+        risk_level: Unknown
+      skills: []
+      active_focus:
+        current_topic: ""
+        reason: Initial learner instance
+        next_question: ""
+        blocking_confusions: []
+      review:
+        queue: reviews/REVIEW_QUEUE.md
+        due_count: 0
+      workflow:
+        happy_path_step: 1
+        stage: initialize_learner_profile
+        next_action_ref: NEXT_ACTIONS.md
+      metadata:
+        bootstrap_contract: studydd.bootstrap/v1
+        timezone: {field: timezone}
+        seed_mode: {field: seed_mode}
+  - path: state/STUDYDD_MODE.yaml
+    format: yaml
+    document:
+      schema_version: studydd.compatibility-view/v1
+      mode: learner_instance
+      template_remote: https://github.com/lennertvhoy/StudyDD_Template.git
+      personalized: true
+      public_safe: false
+  - path: NEXT_ACTIONS.md
+    format: text
+    template: "# NEXT_ACTIONS — Active Queue\n\n1. Start a StudyDD session for {target_id}.\n"
+  - path: targets/{target_id}/TARGET.yaml
+    format: yaml
+    document:
+      id: {field: target_id}
+      title: {field: target_title}
+      type: study_target
+      exam_or_goal: {field: learning_goal}
+      status: active
+      timezone: {field: timezone}
