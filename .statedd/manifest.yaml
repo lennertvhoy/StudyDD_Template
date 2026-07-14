@@ -39,6 +39,7 @@ modules:
       - bootstrap-contract
       - instance-descriptor
       - instance-layout-contract
+      - application-actions
       - root-gitignore
       - root-agents
       - root-contributing
@@ -213,6 +214,20 @@ assets:
     schema: studydd.instance-layout/v1
     sensitivity: public
     source: contracts/studydd.instance-layout.yaml
+    selectingModules:
+      - studydd.core
+
+  - id: application-actions
+    path: contracts/studydd.actions.yaml
+    kind: file
+    owner: template
+    role: typed_application_action_contracts
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: studydd.actions/v1
+    sensitivity: public
+    source: contracts/studydd.actions.yaml
     selectingModules:
       - studydd.core
 

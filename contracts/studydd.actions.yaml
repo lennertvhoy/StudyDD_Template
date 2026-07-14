@@ -1,0 +1,71 @@
+formatVersion: studydd.actions/v1
+application:
+  id: studydd
+  descriptorVersion: studydd.application/v1
+  privacyClassification: private_by_default
+actions:
+  - formatVersion: studydd.action/v1
+    id: studydd.plan-next-session/v1
+    displayName: Plan my next study session
+    purpose: Select one useful next activity from durable StudyDD state.
+    inputSchema:
+      type: object
+      additionalProperties: false
+      properties:
+        timeAvailableMinutes: {type: integer, minimum: 5, maximum: 240, default: 30}
+        intensity: {type: string, enum: [gentle, focused, demanding], default: focused}
+        focusArea: {type: [string, 'null'], maxLength: 120}
+        includeDueReviews: {type: boolean, default: true}
+        includeFastDrillProposal: {type: boolean, default: false}
+    outputSchema:
+      type: object
+      required: [actionId, selectedActivity, rationale, sourceFreshness, dueReviewReferences, weakAreaReferences, proposedDurationMinutes, evidenceRequirement, stateChangeProposals]
+    contextPolicy:
+      id: studydd.eager-action-context/v1
+      selection: eager
+      budgetTokens: 1800
+      includeCategories: [instance_descriptor, study_state, skill_map, activity_state, review_state, source_state, active_target, activity_templates]
+      excludeCategories: [raw_sessions, raw_transcripts, generated_context, credentials, engine_sessions]
+      sensitivity: private
+    requiredCapabilities: [structuredEvents, nonInteractiveExecution]
+    optionalCapabilities: [tokenTelemetry, costTelemetry, cancellation]
+    networkPolicy: disabled
+    toolPolicy: none
+    mutationPolicy: propose_only
+    validationPolicy:
+      command: python3 scripts/portable_actions.py --validate-output
+      proposalCommand: python3 scripts/portable_actions.py --validate-proposal
+    timeoutSeconds: 30
+    budgetDefaults: {token: 1800, costMinor: 0, timeSeconds: 30, steps: 3}
+    supportedEngineDegradations: [telemetry_unavailable, cancellation_unavailable]
+    expectedEvidenceArtifacts: [structured_result, context_manifest, proposal_plan]
+
+  - formatVersion: studydd.action/v1
+    id: studydd.inspect-due-reviews/v1
+    displayName: Inspect due review debt
+    purpose: Report due and overdue review items without changing durable state.
+    inputSchema:
+      type: object
+      additionalProperties: false
+      properties: {includeCompleted: {type: boolean, default: false}}
+    outputSchema:
+      type: object
+      required: [actionId, dueCount, overdueCount, items]
+    contextPolicy:
+      id: studydd.review-context/v1
+      selection: eager
+      budgetTokens: 900
+      includeCategories: [instance_descriptor, review_state, skill_map]
+      excludeCategories: [raw_sessions, raw_transcripts, credentials, engine_sessions]
+      sensitivity: private
+    requiredCapabilities: [structuredEvents, nonInteractiveExecution]
+    optionalCapabilities: [tokenTelemetry, costTelemetry]
+    networkPolicy: disabled
+    toolPolicy: none
+    mutationPolicy: none
+    validationPolicy:
+      command: python3 scripts/portable_actions.py --validate-output
+    timeoutSeconds: 15
+    budgetDefaults: {token: 900, costMinor: 0, timeSeconds: 15, steps: 2}
+    supportedEngineDegradations: [telemetry_unavailable]
+    expectedEvidenceArtifacts: [structured_result, context_manifest]
