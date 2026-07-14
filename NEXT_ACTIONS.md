@@ -4,16 +4,25 @@
 
 ## Current next action
 
-1. Open a pull request for `feat/fast-drill-mode` after confirming with the user, then merge it into `main` and continue with the agent-driven study loop slice.
+1. Review the pushed `agent/studydd-portable-actions-conformance` branch as the immutable StudyDD source candidate for StatePort portable execution.
 
 ## Pending actions
 
 - Run `python3 scripts/check_studydd.py` after initialization or any state change.
 - Add weak or uncertain skills to `reviews/REVIEW_QUEUE.md` after evidence exists.
-- Complete canonical StudyDD integration review and establish the immutable
-  source identity before StatePort profile adoption.
+- Keep the canonical action contracts, source freshness rules, and domain
+  validators authoritative while StatePort owns execution lifecycle and
+  approvals.
 - Keep hosted execution, private learner migration, and release claims out of
   this public template integration.
+
+## Portable execution handoff
+
+- Functional branch: `agent/studydd-portable-actions-conformance`
+- Functional commit: `a211a768eee573d8c2e94c3383ccc2132bfc1e7a`
+- Fresh validation: `132 passed`
+- Live engines and remote CI are intentionally outside this local evidence
+  slice.
 
 ## Recently completed
 

@@ -1,5 +1,15 @@
 # StudyDD Worklog
 
+## 2026-07-14 — Portable action conformance recovery
+
+- Reconciled the newer portable-action candidate without cherry-picking older
+  PR branches wholesale.
+- Hardened proposal application around the authoritative instance mode,
+  stable activity identity, transition locking, atomic writes, exact
+  pre-state digest binding, and rollback after validator failure.
+- Fresh StudyDD validation passed: 132 tests. StatePort remains the lifecycle,
+  approval, sandbox, audit, and portability authority.
+
 ## 2026-07-12 — GOLDEN-PATH-MEGA-001 lifecycle adoption
 
 - Adopted the external StateDD Lifecycle Manifest v2 boundary without copying
