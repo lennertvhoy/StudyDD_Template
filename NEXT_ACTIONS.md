@@ -19,7 +19,7 @@
 ## Portable execution handoff
 
 - Functional branch: `agent/studydd-portable-actions-conformance`
-- Functional commit: `a211a768eee573d8c2e94c3383ccc2132bfc1e7a`
+- Functional commit: `d4068da83b72ae839e9ca66793b8c7a4ffe3ae50`
 - Fresh validation: `132 passed`
 - Live engines and remote CI are intentionally outside this local evidence
   slice.

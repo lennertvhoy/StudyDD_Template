@@ -1,5 +1,12 @@
 # StudyDD Worklog
 
+## 2026-07-14 — Descriptor-bound portable action executors
+
+- Declared the canonical executor command on both portable StudyDD actions so
+  StatePort can invoke domain behavior through a generic action contract.
+- Pushed functional commit `d4068da83b72ae839e9ca66793b8c7a4ffe3ae50` and
+  revalidated the full StudyDD suite: 132 passed.
+
 ## 2026-07-14 — Portable action conformance recovery
 
 - Reconciled the newer portable-action candidate without cherry-picking older
