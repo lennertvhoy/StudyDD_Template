@@ -1,0 +1,8 @@
+{
+  "formatVersion": "studydd.evidence/v1",
+  "slice": "persistent-local-app",
+  "functionalCommit": "6d4691a9b07a05c0f986a0a09259663fa8066fd3",
+  "functionalTree": "b7adf91bf08775465efd48f2ab4e6af0d34fe55e",
+  "publicSafe": true,
+  "privateLearnerData": false
+}
