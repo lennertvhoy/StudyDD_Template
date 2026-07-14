@@ -39,6 +39,8 @@ AUTHORITY_ORDER = [
 
 AUTHORITATIVE_QUESTION_AUTHORITIES = {"official", "high_authority"}
 
+SOURCE_CHECK_OUTCOMES = {"fresh", "stale", "missing", "unverified", "unknown"}
+
 
 @dataclass(frozen=True)
 class TargetFreshnessSummary:

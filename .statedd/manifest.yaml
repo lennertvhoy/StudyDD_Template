@@ -22,8 +22,8 @@ source:
   resolvedTree: null
   # The resolver, not this upstream manifest, supplies immutable resolution.
 
-# These modules are complete on origin/main or are independently testable in
-# this template checkout. Deferred modules remain unselected.
+# These modules are complete and independently testable in this integration.
+# Question-bank-engine and integrations remain intentionally deferred.
 modules:
   - id: studydd.core
     contractVersion: "1.0"
