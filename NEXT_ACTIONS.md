@@ -4,7 +4,7 @@
 
 ## Current next action
 
-1. Review the pushed `agent/studydd-portable-actions-conformance` branch as the immutable StudyDD source candidate for StatePort portable execution.
+1. Human-review the pushed `agent/studydd-portable-actions-conformance` branch as the immutable StudyDD source candidate for StatePort portable execution.
 
 ## Pending actions
 
@@ -19,12 +19,15 @@
 ## Portable execution handoff
 
 - Functional branch: `agent/studydd-portable-actions-conformance`
-- Functional commit: `d4068da83b72ae839e9ca66793b8c7a4ffe3ae50`
+- Functional commit: `7b8a6449361578264952f985d70655233e870b4e`
 - Fresh validation: `132 passed`
 - Live engines and remote CI are intentionally outside this local evidence
   slice.
 
 ## Recently completed
+
+- 2026-07-14: Declared `contextPolicy.categoryPaths` on both portable actions
+  so StatePort can compile domain context from the source action contract.
 
 - 2026-06-29: Implemented Fast Drill Mode (`feat/fast-drill-mode`): added `docs/superpowers/specs/FAST_DRILL_MODE.md`, `scripts/fast_drill_mode.py`, and tests; wired the speed-layer checkpoint into AGENTS.md and the ask/grade/update/close protocols; added `fast_drill_mode` and `auto_state_update_during_drills` preferences; updated the state manifest, performance budget, context pack, and validator.
 - 2026-06-29: Closed the source-check completion flow (`feat/source-check-completion-flow`): refactored `scripts/record_source_check.py` into a reusable `record_source_check(...)` function and wired `scripts/record_activity_result.py` to call it automatically for completed `recent_info_check` activities when `--source-id` is supplied.

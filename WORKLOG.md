@@ -4,8 +4,15 @@
 
 - Declared the canonical executor command on both portable StudyDD actions so
   StatePort can invoke domain behavior through a generic action contract.
-- Pushed functional commit `d4068da83b72ae839e9ca66793b8c7a4ffe3ae50` and
+- Pushed functional commit `7b8a6449361578264952f985d70655233e870b4e` and
   revalidated the full StudyDD suite: 132 passed.
+
+## 2026-07-14 — Portable context ownership declaration
+
+- Added declarative `contextPolicy.categoryPaths` to the canonical portable
+  actions, preserving StudyDD ownership of context categories while StatePort
+  remains generic.
+- Revalidated the full StudyDD suite: 132 passed.
 
 ## 2026-07-14 — Portable action conformance recovery
 
