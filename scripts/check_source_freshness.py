@@ -28,6 +28,8 @@ VOLATILITY_MAX_AGE_DAYS = {
     "live": 1,
 }
 
+SOURCE_CHECK_OUTCOMES = {"fresh", "stale", "missing", "unverified", "unknown"}
+
 AUTHORITY_ORDER = [
     "official",
     "high_authority",
@@ -38,8 +40,6 @@ AUTHORITY_ORDER = [
 ]
 
 AUTHORITATIVE_QUESTION_AUTHORITIES = {"official", "high_authority"}
-
-SOURCE_CHECK_OUTCOMES = {"fresh", "stale", "missing", "unverified", "unknown"}
 
 
 @dataclass(frozen=True)
@@ -154,6 +154,15 @@ def classify_source(
         missing    — no expiry or check timestamp available.
         unknown    — malformed timestamps or classification error.
     """
+    last_check = source.get("last_check")
+    if isinstance(last_check, dict):
+        recorded_outcome = last_check.get("outcome")
+        if recorded_outcome in {"stale", "missing", "unverified", "unknown"}:
+            reason = "last recorded check outcome is " + str(recorded_outcome)
+            return str(recorded_outcome), reason
+        if recorded_outcome not in (None, "", "fresh"):
+            return "unknown", f"invalid last_check.outcome: {recorded_outcome!r}"
+
     if source.get("usable_for_questions") is False:
         return "unverified", "usable_for_questions is false"
 
