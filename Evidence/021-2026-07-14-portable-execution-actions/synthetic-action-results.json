@@ -1,0 +1,8 @@
+{
+  "action": "studydd.plan-next-session/v1",
+  "fixture": "synthetic-demo",
+  "resultSchema": "studydd.action-result/v1",
+  "valid": true,
+  "proposal": "typed set_active_activity proposal",
+  "privateContent": false
+}
