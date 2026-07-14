@@ -1,0 +1,8 @@
+{
+  "classification": "locally validated only",
+  "commit": "eba98fe91a610d3b42e26a7374195ab5f602206e",
+  "tree": "e5d7eb3c542dfe6699fe7b631386c02692565508",
+  "manifestDigest": "sha256:cc00cd20c0d79755ec51f9bcf223313b0a41635bf0ffa0805273e8d0c154d514",
+  "remoteCi": "skipped",
+  "mergedToMain": false
+}
