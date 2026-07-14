@@ -12,7 +12,9 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 from typing import Any
 
 import yaml
@@ -142,6 +144,46 @@ def validate_proposal(value: Any) -> None:
             raise ValueError("unsupported StudyDD proposal operation")
 
 
+def apply_proposal(root: Path, proposal: dict[str, Any]) -> dict[str, Any]:
+    """Apply only the typed activity operation, with byte restoration on failure."""
+    validate_proposal(proposal)
+    current_digest = state_digest(root)
+    if current_digest != proposal.get("preStateDigest"):
+        raise ValueError("proposal pre-state digest does not match the current instance")
+    target = root / "state/ACTIVITY_STATE.yaml"
+    before = target.read_bytes() if target.is_file() else None
+    activity_state = load_yaml(target)
+    operations = proposal.get("operations") or []
+    if len(operations) != 1:
+        raise ValueError("exactly one typed activity operation is required")
+    activity = dict(operations[0].get("activity") or {})
+    activity.setdefault("assigned_at", datetime.now(timezone.utc).isoformat())
+    recent = list(activity_state.get("recent_activities") or [])
+    current = activity_state.get("active_activity")
+    if isinstance(current, dict) and current.get("id"):
+        recent.insert(0, current)
+    activity_state["active_activity"] = activity
+    activity_state["recent_activities"] = recent[:10]
+    activity_state.setdefault("metadata", {})["last_updated"] = datetime.now(timezone.utc).isoformat()
+    encoded = yaml.safe_dump(activity_state, sort_keys=False).encode("utf-8")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".activity.", delete=False) as handle:
+        handle.write(encoded)
+        temporary = Path(handle.name)
+    try:
+        temporary.replace(target)
+        check = subprocess.run(["python3", "scripts/check_studydd.py"], cwd=root, capture_output=True, text=True, timeout=30)
+        if check.returncode != 0:
+            raise ValueError("StudyDD validation failed after proposal apply")
+    except Exception:
+        if before is None:
+            target.unlink(missing_ok=True)
+        else:
+            target.write_bytes(before)
+        raise
+    return {"formatVersion": "studydd.state-change-receipt/v1", "proposalId": proposal.get("proposalId"), "preStateDigest": current_digest, "postStateDigest": state_digest(root), "appliedOperation": "set_active_activity", "validation": "passed", "appliedAt": datetime.now(timezone.utc).isoformat()}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
@@ -149,11 +191,15 @@ def main() -> int:
     parser.add_argument("--inputs", default="{}")
     parser.add_argument("--validate-output", action="store_true")
     parser.add_argument("--validate-proposal", action="store_true")
+    parser.add_argument("--apply-proposal", action="store_true")
     args = parser.parse_args()
     if args.validate_output or args.validate_proposal:
         value = json.load(sys.stdin)
         (validate_output if args.validate_output else validate_proposal)(value)
         print(json.dumps({"valid": True, "formatVersion": FORMAT if args.validate_output else PROPOSAL_FORMAT}, sort_keys=True))
+        return 0
+    if args.apply_proposal:
+        print(json.dumps(apply_proposal(args.root, json.load(sys.stdin)), sort_keys=True, separators=(",", ":")))
         return 0
     inputs = json.loads(args.inputs)
     result = action_plan(args.root, inputs) if args.action == "plan-next-session" else review_plan(args.root, inputs)
