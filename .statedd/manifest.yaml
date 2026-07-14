@@ -36,6 +36,7 @@ modules:
     assets:
       - lifecycle-manifest
       - lifecycle-lock
+      - bootstrap-contract
       - instance-descriptor
       - instance-layout-contract
       - root-gitignore
