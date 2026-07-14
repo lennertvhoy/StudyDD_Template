@@ -8,6 +8,7 @@ actions:
     id: studydd.plan-next-session/v1
     displayName: Plan my next study session
     purpose: Select one useful next activity from durable StudyDD state.
+    executorCommand: scripts/portable_actions.py
     inputSchema:
       type: object
       additionalProperties: false
@@ -44,6 +45,7 @@ actions:
     id: studydd.inspect-due-reviews/v1
     displayName: Inspect due review debt
     purpose: Report due and overdue review items without changing durable state.
+    executorCommand: scripts/portable_actions.py
     inputSchema:
       type: object
       additionalProperties: false
