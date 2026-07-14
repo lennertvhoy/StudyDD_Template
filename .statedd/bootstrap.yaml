@@ -42,8 +42,8 @@ writes:
   - path: instance.yaml
     format: yaml
     document:
-      apiVersion: studydd.studydd.io/v1
-      kind: StudyDDInstance
+      apiVersion: statedd.stateport.io/v1alpha1
+      kind: Instance
       metadata:
         id: {field: instance_id}
         name: {field: display_name}
