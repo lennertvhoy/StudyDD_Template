@@ -27,6 +27,17 @@ actions:
       budgetTokens: 1800
       includeCategories: [instance_descriptor, study_state, skill_map, activity_state, review_state, source_state, active_target, activity_templates]
       excludeCategories: [raw_sessions, raw_transcripts, generated_context, credentials, engine_sessions]
+      categoryPaths:
+        instance_descriptor: [instance.yaml]
+        study_state: [state/STUDY_STATE.yaml]
+        skill_map: [state/SKILL_MAP.yaml]
+        activity_state: [state/ACTIVITY_STATE.yaml]
+        review_state: [reviews/REVIEW_STATE.yaml]
+        source_state: [sources/SOURCE_STATE.yaml]
+        active_target: [targets/TARGET.yaml]
+        activity_templates: [activities/ACTIVITY_TEMPLATES.yaml]
+        raw_sessions: [sessions/SESSION_LOG.md, sessions/SESSION_SUMMARIES.md]
+        generated_context: [state/CURRENT_CONTEXT.md, .studydd/context_pack.md]
       sensitivity: private
     requiredCapabilities: [structuredEvents, nonInteractiveExecution]
     optionalCapabilities: [tokenTelemetry, costTelemetry, cancellation]
@@ -59,6 +70,11 @@ actions:
       budgetTokens: 900
       includeCategories: [instance_descriptor, review_state, skill_map]
       excludeCategories: [raw_sessions, raw_transcripts, credentials, engine_sessions]
+      categoryPaths:
+        instance_descriptor: [instance.yaml]
+        review_state: [reviews/REVIEW_STATE.yaml]
+        skill_map: [state/SKILL_MAP.yaml]
+        raw_sessions: [sessions/SESSION_LOG.md, sessions/SESSION_SUMMARIES.md]
       sensitivity: private
     requiredCapabilities: [structuredEvents, nonInteractiveExecution]
     optionalCapabilities: [tokenTelemetry, costTelemetry]
