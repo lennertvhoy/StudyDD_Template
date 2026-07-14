@@ -38,6 +38,39 @@ fields:
     values: [empty, synthetic-demo]
     required: false
     default: empty
+seeds:
+  - path: targets/README.md
+    source: targets/README.md
+  - path: reviews/README.md
+    source: reviews/README.md
+  - path: reviews/REVIEW_QUEUE.md
+    source: reviews/REVIEW_QUEUE.md
+  - path: reviews/REVIEW_STATE.yaml
+    source: reviews/REVIEW_STATE.yaml
+  - path: reviews/REVIEW_OVERRIDES.md
+    source: reviews/REVIEW_OVERRIDES.md
+  - path: sessions/README.md
+    source: sessions/README.md
+  - path: sessions/SESSION_LOG.md
+    source: sessions/SESSION_LOG.md
+  - path: sessions/SESSION_SUMMARIES.md
+    source: sessions/SESSION_SUMMARIES.md
+  - path: sources/README.md
+    source: sources/README.md
+  - path: sources/SOURCE_INDEX.md
+    source: sources/SOURCE_INDEX.md
+  - path: sources/SOURCE_STATE.yaml
+    source: sources/SOURCE_STATE.yaml
+  - path: state/SKILL_MAP.yaml
+    source: state/SKILL_MAP.yaml
+  - path: state/LEARNER_PROFILE.yaml
+    source: state/LEARNER_PROFILE.yaml
+  - path: state/ACTIVITY_STATE.yaml
+    source: state/ACTIVITY_STATE.yaml
+  - path: state/EVIDENCE_LOG.md
+    source: state/EVIDENCE_LOG.md
+  - path: activities/ACTIVITY_LOG.md
+    source: activities/ACTIVITY_LOG.md
 writes:
   - path: instance.yaml
     format: yaml
@@ -89,10 +122,19 @@ writes:
       review:
         queue: reviews/REVIEW_QUEUE.md
         due_count: 0
+      sources:
+        index: sources/SOURCE_INDEX.md
+        trusted_source_policy: Prefer official or authoritative sources
+      session_history: []
       workflow:
         happy_path_step: 1
         stage: initialize_learner_profile
         next_action_ref: NEXT_ACTIONS.md
+      rules:
+        no_readiness_inflation: true
+        one_question_at_a_time: true
+        evidence_required_for_mastery: true
+        corrections_must_update_state: true
       metadata:
         bootstrap_contract: studydd.bootstrap/v1
         timezone: {field: timezone}
@@ -107,7 +149,7 @@ writes:
       public_safe: false
   - path: NEXT_ACTIONS.md
     format: text
-    template: "# NEXT_ACTIONS — Active Queue\n\n1. Start a StudyDD session for {target_id}.\n"
+    template: "# NEXT_ACTIONS — Active Queue\n\n## Current next action\n\n1. Start a StudyDD session for {target_id}.\n"
   - path: targets/{target_id}/TARGET.yaml
     format: yaml
     document:
