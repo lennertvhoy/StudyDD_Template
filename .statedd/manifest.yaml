@@ -175,6 +175,20 @@ assets:
     selectingModules:
       - studydd.core
 
+  - id: bootstrap-contract
+    path: .statedd/bootstrap.yaml
+    kind: file
+    owner: template
+    role: typed_instance_bootstrap_contract
+    provisionPolicy: copy_from_template
+    updatePolicy: replace_if_unmodified
+    required: true
+    schema: studydd.bootstrap/v1
+    sensitivity: public
+    source: .statedd/bootstrap.yaml
+    selectingModules:
+      - studydd.core
+
   - id: instance-descriptor
     path: instance.yaml
     kind: file
