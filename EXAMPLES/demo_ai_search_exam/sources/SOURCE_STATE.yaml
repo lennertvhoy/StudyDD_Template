@@ -10,5 +10,5 @@ sources:
     last_checked_at: "2026-06-24T12:00:00+00:00"
     expires_at: "2026-07-24T12:00:00+00:00"
     checked_by: "demo_replay"
-    notes: "Demo fixture. Timestamp is deterministic test metadata, not a live source refresh."
+    notes: "Historical development-fixture metadata only. The runnable replay materializes source timestamps from an explicit logical clock; this file is not a live source refresh."
     usable_for_questions: true

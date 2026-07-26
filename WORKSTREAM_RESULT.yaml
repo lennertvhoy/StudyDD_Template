@@ -1,0 +1,39 @@
+---
+workstream: studystate_deterministic_domain_candidate
+inputStatePortSource: 2be6f03b8538c14092f20b62e11e58dc6f0fbdd4
+inputStudyDDCommit: 7b8a6449361578264952f985d70655233e870b4e
+outputBranch: agent/private-alpha-study-fixture-repair-001
+outputCommit: resolved_from_git_at_handoff
+outputTree: resolved_from_git_at_handoff
+filesChanged:
+  - scripts/run_demo_replay.py
+  - scripts/test_demo_replay.py
+  - scripts/test_private_alpha_studystate_fixture.py
+  - EXAMPLES/demo_ai_search_exam/DEVELOPMENT_CANDIDATE.yaml
+  - EXAMPLES/demo_ai_search_exam/sources/SOURCE_STATE.yaml
+  - EXAMPLES/demo_ai_search_exam/targets/demo-ai-search-exam/questions/Q-DEMO-001.yaml
+  - docs/STUDYSTATE_CLOCK_CONTRACT.md
+  - docs/STUDYSTATE_PRIVATE_ALPHA_CANDIDATE.yaml
+behaviorChanged:
+  - "Demo scheduling and fixture timestamps derive from explicit evaluation time."
+  - "The fixture question is practice-only; production authoritative-current freshness stays strict."
+  - "The due-review adaptation is documented as human-on-the-loop and reversible."
+assumptions:
+  - "StudyDD_Template is the canonical public source; this branch remains local-only."
+tests:
+  - scripts/test_private_alpha_studystate_fixture.py
+  - scripts/test_demo_replay.py
+  - scripts/check_studydd.py
+limitations:
+  - productionEligible_false
+  - no_tag_release_or_publication
+  - "StatePort owns end-to-end harness-session destruction acceptance."
+rollback:
+  - "Retain this branch and omit its descriptor from Candidate 003."
+unresolvedRisks:
+  - "The final StatePort descriptor must pin exact commit and tree after integration."
+externalActionsNotPerformed:
+  - no_push
+  - no_tag
+  - no_release
+  - no_publication

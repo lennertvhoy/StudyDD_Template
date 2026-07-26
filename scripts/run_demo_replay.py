@@ -18,6 +18,23 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_EVALUATION_TIME = "2026-07-26T12:00:00+00:00"
+
+
+def parse_evaluation_time(value: str) -> datetime:
+    """Return an explicit UTC logical time for the public demo scenario.
+
+    The replay is a development fixture.  Its scheduling and source metadata
+    must be driven by a supplied logical clock, never by the machine clock.
+    """
+    result = datetime.fromisoformat(value)
+    if result.tzinfo is None:
+        raise ValueError("--evaluation-time must include a timezone")
+    return result.astimezone(timezone.utc)
+
+
+def iso(value: datetime) -> str:
+    return value.isoformat()
 
 
 def run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess:
@@ -88,7 +105,7 @@ def initialize_learner_profile(target: Path) -> None:
     save_yaml(study_state_path, study_state)
 
 
-def initialize_sources(target: Path) -> None:
+def initialize_sources(target: Path, evaluation_time: datetime) -> None:
     source_index_path = target / "sources" / "SOURCE_INDEX.md"
     source_index_path.write_text(
         "# Source Index\n\n"
@@ -98,11 +115,12 @@ def initialize_sources(target: Path) -> None:
         "  - **Authority:** high\n"
         "  - **Title:** AI Search Fundamentals Official Guide\n"
         "  - **URL:** https://example.com/demo-source\n"
-        "  - **Last checked:** 2026-06-24\n",
+        f"  - **Last checked:** {evaluation_time.date().isoformat()} (logical scenario time; not a live refresh)\n",
         encoding="utf-8",
     )
 
     source_state_path = target / "sources" / "SOURCE_STATE.yaml"
+    source_expiry = evaluation_time + timedelta(days=7)
     source_state_path.write_text(
         "---\n"
         "sources:\n"
@@ -113,10 +131,10 @@ def initialize_sources(target: Path) -> None:
         "    target_ids:\n"
         "      - demo-ai-search-exam\n"
         "    volatility: volatile\n"
-        "    last_checked_at: \"2026-06-24T12:00:00+00:00\"\n"
-        "    expires_at: \"2026-07-24T12:00:00+00:00\"\n"
+        f"    last_checked_at: \"{iso(evaluation_time)}\"\n"
+        f"    expires_at: \"{iso(source_expiry)}\"\n"
         "    checked_by: \"demo_replay\"\n"
-        "    notes: \"Demo fixture. Timestamp is deterministic test metadata, not a live source refresh.\"\n"
+        "    notes: \"Development demo only. Timestamps are materialized from the explicit evaluation clock, not a live source refresh.\"\n"
         "    usable_for_questions: true\n",
         encoding="utf-8",
     )
@@ -181,11 +199,11 @@ def initialize_target(target: Path) -> None:
         "source_ids:\n"
         "  - mslearn_ai_search_overview\n"
         "volatility: volatile\n"
-        "question_mode: authoritative_current\n"
+        "question_mode: conceptual_practice\n"
         "question_quality:\n"
         "  generated_from_memory_allowed: false\n"
         "  quality_gate: pass\n"
-        "  quality_gate_reason: \"Fresh official source available.\"\n"
+        "  quality_gate_reason: \"Development scenario uses stable retrieval concepts; live source assertions remain outside this fixture.\"\n"
         "public_prompt: >\n"
         "  Explain the difference between keyword search and vector search, and describe one situation\n"
         "  where you would combine them.\n"
@@ -250,12 +268,12 @@ def plan_and_record_activity(target: Path) -> None:
     print("StudyDD reviewed the submitted evidence, updated skill state, scheduled review, and recorded the next action.")
 
 
-def record_evidence(target: Path) -> None:
+def record_evidence(target: Path, evaluation_time: datetime) -> None:
     evidence_path = target / "state" / "EVIDENCE_LOG.md"
     evidence_text = evidence_path.read_text(encoding="utf-8")
     entry = (
         "\n- **Evidence ID:** ev_demo_001\n"
-        "- **Date:** 2026-06-24\n"
+        f"- **Date:** {evaluation_time.date().isoformat()}\n"
         "- **Target ID:** demo-ai-search-exam\n"
         "- **Skill ID:** demo-search-basics\n"
         "- **Question ID:** Q-DEMO-001\n"
@@ -269,7 +287,7 @@ def record_evidence(target: Path) -> None:
     evidence_path.write_text(evidence_text + entry, encoding="utf-8")
 
 
-def schedule_review(target: Path) -> str:
+def schedule_review(target: Path, evaluation_time: datetime) -> str:
     result = run(
         [
             sys.executable,
@@ -285,7 +303,7 @@ def schedule_review(target: Path) -> str:
             "--confidence",
             "medium",
             "--now",
-            "2026-06-24T10:00:00+00:00",
+            iso(evaluation_time),
             "--prompt",
             "Describe a concrete hybrid-retrieval scenario and explain why it beats either search alone.",
             "--source",
@@ -321,10 +339,10 @@ def select_next_action(target: Path, now: str) -> str:
 
 
 def print_source_freshness_check() -> None:
-    print("StudyDD checks source freshness before generating product-current questions.")
-    print("The demo uses a demo official source marked fresh.")
-    print("The agent does not search the web because the cached source is fresh enough.")
-    print("If the source were stale, StudyDD would ask to refresh or choose a stable review instead.")
+    print("StudyDD keeps source freshness strict for product-current questions.")
+    print("This development scenario is conceptual practice and uses an explicit logical clock.")
+    print("The agent does not treat fixture metadata as a live source refresh.")
+    print("A product-current question would require a fresh source at its actual evaluation time.")
 
 
 def check_source_freshness(target: Path, now: str) -> None:
@@ -370,7 +388,7 @@ def build_and_show_context_pack(target: Path) -> None:
         print(f"  {line}")
 
 
-def record_override(target: Path, review_id: str) -> None:
+def record_override(target: Path, review_id: str, evaluation_time: datetime) -> None:
     review_state_path = target / "reviews" / "REVIEW_STATE.yaml"
     review_state = load_yaml(review_state_path)
     for item in review_state.get("review_items", []):
@@ -381,7 +399,7 @@ def record_override(target: Path, review_id: str) -> None:
     overrides_path = target / "reviews" / "REVIEW_OVERRIDES.md"
     overrides_text = overrides_path.read_text(encoding="utf-8")
     entry = (
-        "\n- **Timestamp:** 2026-06-25T12:05:00+00:00\n"
+        f"\n- **Timestamp:** {iso(evaluation_time + timedelta(days=1, minutes=5))}\n"
         f"- **Learner:** Demo Learner\n"
         f"- **Skipped review IDs:** {review_id}\n"
         "- **Reason:** learner wanted to see a new topic in the demo\n"
@@ -396,11 +414,11 @@ def record_override(target: Path, review_id: str) -> None:
     overrides_path.write_text(overrides_text, encoding="utf-8")
 
 
-def update_session_and_next_action(target: Path, review_id: str) -> None:
+def update_session_and_next_action(target: Path, review_id: str, evaluation_time: datetime) -> None:
     session_path = target / "sessions" / "SESSION_LOG.md"
     session_text = session_path.read_text(encoding="utf-8")
     session_entry = (
-        "\n- **Date:** 2026-06-24\n"
+        f"\n- **Date:** {evaluation_time.date().isoformat()}\n"
         "- **Target ID:** demo-ai-search-exam\n"
         "- **Focus:** keyword vs vector search\n"
         "- **Questions asked:** Q-DEMO-001\n"
@@ -461,10 +479,11 @@ def validate(target: Path) -> None:
         raise subprocess.CalledProcessError(result.returncode, ["scripts/check_studydd.py"])
 
 
-def print_transcript(review_id: str, before_due: str, when_due: str) -> None:
+def print_transcript(review_id: str, before_due: str, when_due: str, evaluation_time: datetime) -> None:
     print("StudyDD demo replay")
     print("===================")
     print("")
+    print(f"Logical evaluation time: {iso(evaluation_time)}")
     print("1. Created learner instance from template.")
     print("2. Initialized learner profile: Demo Learner.")
     print("3. Initialized target: AI Search Fundamentals Demo.")
@@ -520,6 +539,11 @@ def main() -> int:
         default=None,
         help="Copy the final demo instance to this path (e.g. EXAMPLES/demo_ai_search_exam)",
     )
+    parser.add_argument(
+        "--evaluation-time",
+        default=DEFAULT_EVALUATION_TIME,
+        help="ISO-8601 logical scenario time with timezone; never defaults to the system clock",
+    )
     args = parser.parse_args()
 
     try:
@@ -528,6 +552,12 @@ def main() -> int:
         print("Error: PyYAML is required.")
         return 1
 
+    try:
+        evaluation_time = parse_evaluation_time(args.evaluation_time)
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        return 2
+
     with tempfile.TemporaryDirectory(prefix="studydd-demo-") as tmp:
         target = Path(tmp) / "StudyDD_Demo"
         remote = "https://github.com/example/StudyDD_Demo.git"
@@ -535,24 +565,24 @@ def main() -> int:
         create_instance(target, remote)
         switch_to_learner_instance(target)
         initialize_learner_profile(target)
-        initialize_sources(target)
+        initialize_sources(target, evaluation_time)
         initialize_target(target)
         print_source_freshness_check()
-        check_source_freshness(target, "2026-06-24T12:00:00+00:00")
+        check_source_freshness(target, iso(evaluation_time))
         build_and_show_context_pack(target)
-        record_evidence(target)
+        record_evidence(target, evaluation_time)
         print_learner_adaptation()
         plan_and_record_activity(target)
-        review_id = schedule_review(target)
+        review_id = schedule_review(target, evaluation_time)
 
-        before_due = select_next_action(target, "2026-06-24T12:00:00+00:00")
-        when_due = select_next_action(target, "2026-06-25T12:00:00+00:00")
+        before_due = select_next_action(target, iso(evaluation_time))
+        when_due = select_next_action(target, iso(evaluation_time + timedelta(days=1)))
 
-        record_override(target, review_id)
-        update_session_and_next_action(target, review_id)
+        record_override(target, review_id, evaluation_time)
+        update_session_and_next_action(target, review_id, evaluation_time)
         compact_state(target)
         validate(target)
-        print_transcript(review_id, before_due, when_due)
+        print_transcript(review_id, before_due, when_due, evaluation_time)
 
         if args.dump_fixture:
             fixture_path = Path(args.dump_fixture).resolve()

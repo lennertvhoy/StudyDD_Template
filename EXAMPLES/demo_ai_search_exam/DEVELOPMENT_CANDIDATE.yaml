@@ -1,0 +1,37 @@
+---
+classification: development_candidate
+productionEligible: false
+scenarioId: private-alpha-due-review-recovery
+scenarioEpoch: "2026-07-26T12:00:00+00:00"
+clockContract: explicit_evaluation_time_only
+sourceSemantics:
+  fixtureMetadataIsLiveSourceRefresh: false
+  productionSourceFreshness: strict
+  conceptualPracticeQuestion: Q-DEMO-001
+privacy:
+  publicSafe: true
+  learnerData: fictional_only
+  prohibitedInputs:
+    - Study_Lenny
+journey:
+  goal: "Strengthen retrieval-design reasoning through a due review."
+  noticed:
+    reviewId: rev_demo-search-basics_20260726_120000
+    reason: "A prior partial answer omitted a concrete hybrid-retrieval scenario."
+  priorPlan:
+    nextAction: "Begin Q-DEMO-002 on hybrid retrieval design."
+  reversibleAdaptation:
+    action: "Place the due review ahead of Q-DEMO-002."
+    authority: human_on_the_loop
+    autoApply: false
+    userOptions:
+      - accept
+      - pause
+      - redirect
+      - undo
+  restoredPlan:
+    nextAction: "Begin Q-DEMO-002 on hybrid retrieval design."
+limitations:
+  - "This is a private-alpha development candidate, not a release."
+  - "StatePort, not the StudyDD harness, owns canonical application acceptance."
+  - "No production source freshness claim is made by this fixture."

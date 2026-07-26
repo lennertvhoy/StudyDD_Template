@@ -1,0 +1,22 @@
+---
+classification: development_candidate
+productionEligible: false
+branch: agent/private-alpha-study-fixture-repair-001
+sourceRole: local_private_alpha_fixture_repair
+canonicalRepository: StudyDD_Template
+licenceFile: LICENSE
+stateSpecCompatibility: "StudyDD template; StatePort source descriptor must pin the resulting commit and tree."
+scenario:
+  path: EXAMPLES/demo_ai_search_exam/DEVELOPMENT_CANDIDATE.yaml
+  evaluationTimeDefault: "2026-07-26T12:00:00+00:00"
+  clockContract: docs/STUDYSTATE_CLOCK_CONTRACT.md
+  publicSafe: true
+  privateLearnerDataIncluded: false
+identity:
+  commit: resolved_from_git_at_handoff
+  tree: resolved_from_git_at_handoff
+knownLimitations:
+  - no_release_tag
+  - no_production_eligibility
+  - no_publication_authorized
+  - "StatePort end-to-end session-destruction proof is owned by Candidate 003 acceptance."
