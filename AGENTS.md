@@ -280,7 +280,7 @@ Do not generate authoritative questions on volatile topics from memory. Run the 
 - **Prefer local virtual environments.** Create and activate a `.venv` before installing packages. Avoid global installs unless the learner explicitly asks and understands the change.
 - **Never use `sudo` or system package managers** (`apt`, `dnf`, `brew`, `choco`, etc.) unless the human explicitly asks and understands the change.
 - **Keep scripts cross-platform.** Write code that works on Linux, macOS, and Windows PowerShell.
-- **Avoid hardcoded machine paths.** Do not hardcode `/home/ff`, `/Users/<name>`, `C:\`, or any other machine-specific path.
+- **Avoid hardcoded machine paths.** Do not hardcode `/home/<name>`, `/Users/<name>`, `C:\`, or any other machine-specific path.
 - **Use `pathlib` for paths.** Prefer `pathlib.Path` over string concatenation or `os.path` when building file paths.
 
 ## Learning Science as Agent Rules
@@ -477,8 +477,8 @@ At the end of every agent session, leave a concise handoff that includes:
 - Mentioning or seeding private learner state from another repo.
 - Installing dependencies without explicit user consent.
 - Using `sudo`, `apt`, `dnf`, `brew`, `choco`, or other system package managers without explicit instruction.
-- Hardcoding machine-specific paths such as `/home/ff`, `/Users/<name>`, or `C:\`.
-- Editing `/home/ff/Study_Lenny` or any repo outside the current StudyState root.
+- Hardcoding machine-specific paths such as `/home/<name>`, `/Users/<name>`, or `C:\`.
+- Editing any learner-instance repo (for example a personal `Study_Lenny` checkout) outside the current StudyState root.
 
 ## Worked State-Update Example
 

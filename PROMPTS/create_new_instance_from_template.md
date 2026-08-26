@@ -12,7 +12,8 @@ You are creating a new StudyState learner instance from the public template. **D
 ## Before You Start
 
 1. Confirm the source template:
-   - repo path: `/home/ff/Documents/Projects/StudyState`
+   - repo path: the local checkout of the template (folder
+     `StudyState_Template`; older checkouts may say `StudyDD_Template`)
    - remote: `https://github.com/lennertvhoy/StudyState_Template.git`
    - `state/STUDYDD_MODE.yaml` says `mode: template`
 2. Ask the learner for the new instance directory and remote.
@@ -24,12 +25,12 @@ You are creating a new StudyState learner instance from the public template. **D
 Run exactly:
 
 ```bash
-git clone https://github.com/lennertvhoy/StudyState_Template.git /home/ff/Study_Lenny
-cd /home/ff/Study_Lenny
+git clone https://github.com/lennertvhoy/StudyState_Template.git ~/Study_Me
+cd ~/Study_Me
 rm -rf .git
 git init
 git branch -M main
-git remote add origin https://github.com/lennertvhoy/Study_Lenny.git
+git remote add origin https://github.com/lennertvhoy/Study_Me.git
 
 # Verify location and remote before any edit
 pwd
@@ -38,7 +39,7 @@ git remote -v
 cat state/STUDYDD_MODE.yaml
 ```
 
-Replace `/home/ff/Study_Lenny` and the remote URL with the learner's actual values.
+Replace `~/Study_Me` and the remote URL with the learner's actual values.
 
 ## Switch To Bootstrap Mode
 

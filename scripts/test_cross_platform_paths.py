@@ -52,6 +52,28 @@ def test_setup_docs_have_no_hardcoded_paths() -> None:
         assert pattern not in text, f"docs/setup.md contains hardcoded path: {pattern!r}"
 
 
+def test_user_facing_docs_have_no_hardcoded_paths() -> None:
+    """The no-machine-paths law applies beyond setup.md.
+
+    Scans every current user-facing Markdown surface. Historical records
+    (Evidence/, docs/superpowers/) are exempt; AGENTS.md is exempt because its
+    rule text quotes example paths when forbidding them.
+    """
+    doc_paths: list[Path] = [
+        ROOT / "README.md",
+        ROOT / "CONTRIBUTING.md",
+        *sorted((ROOT / "docs").glob("*.md")),
+        *sorted((ROOT / "protocols").glob("*.md")),
+        *sorted((ROOT / "PROMPTS").glob("*.md")),
+    ]
+    assert doc_paths, "expected user-facing docs to exist"
+    for path in doc_paths:
+        text = path.read_text(encoding="utf-8")
+        rel = path.relative_to(ROOT).as_posix()
+        for pattern in FORBIDDEN_PATH_PATTERNS:
+            assert pattern not in text, f"{rel} contains hardcoded path: {pattern!r}"
+
+
 def test_setup_helper_has_no_hardcoded_paths() -> None:
     setup_script = ROOT / "scripts" / "setup_studydd.py"
     text = setup_script.read_text(encoding="utf-8")
@@ -126,6 +148,7 @@ def main() -> int:
     tests = [
         test_setup_docs_cover_all_platforms,
         test_setup_docs_have_no_hardcoded_paths,
+        test_user_facing_docs_have_no_hardcoded_paths,
         test_setup_helper_has_no_hardcoded_paths,
         test_environment_checker_has_no_hardcoded_paths,
         test_repo_scripts_use_pathlib,

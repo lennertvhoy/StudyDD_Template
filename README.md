@@ -86,12 +86,12 @@ Run these commands to cast the mold into a new learner repo:
 
 ```bash
 # Clone and detach from the template history
-git clone https://github.com/lennertvhoy/StudyState_Template.git Study_Lenny
-cd Study_Lenny
+git clone https://github.com/lennertvhoy/StudyState_Template.git Study_Me
+cd Study_Me
 rm -rf .git
 git init
 git branch -M main
-git remote add origin https://github.com/lennertvhoy/Study_Lenny.git
+git remote add origin https://github.com/lennertvhoy/Study_Me.git
 
 # Switch to bootstrap mode before running learner-instance validation
 # Edit state/STUDYDD_MODE.yaml:
@@ -101,7 +101,7 @@ git remote add origin https://github.com/lennertvhoy/Study_Lenny.git
 #   public_safe: false_or_review_required
 python3 scripts/check_studydd.py
 
-# Now initialize the learner profile and first target inside Study_Lenny.
+# Now initialize the learner profile and first target inside Study_Me.
 # Only then switch state/STUDYDD_MODE.yaml to mode: learner_instance.
 
 python3 scripts/check_studydd.py
@@ -110,7 +110,7 @@ git commit -m "chore: initialize StudyState learner instance"
 git push -u origin main
 ```
 
-Replace `Study_Lenny` and the remote URL with your own learner/project name.
+Replace `Study_Me` and the remote URL with your own learner/project name.
 
 **Warning:** Do not personalize the template repo. The commands above remove the template Git history and reinitialize Git so the new directory becomes a separate learner instance.
 
