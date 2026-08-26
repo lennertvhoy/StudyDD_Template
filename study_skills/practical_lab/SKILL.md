@@ -1,4 +1,4 @@
-# StudyDD Skill: Practical Lab
+# StudyState Skill: Practical Lab
 
 ## Use when
 

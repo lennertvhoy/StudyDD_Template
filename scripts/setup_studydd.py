@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""StudyDD setup helper with explicit consent.
+"""StudyState setup helper with explicit consent.
 
 This script checks the environment and, with explicit user confirmation,
 installs the dependencies from requirements.txt into the active Python
@@ -31,7 +31,7 @@ def in_virtual_environment() -> bool:
 
 
 def run_check() -> int:
-    print("StudyDD setup check")
+    print("StudyState setup check")
     print("===================")
     print("")
     print("This script will:")
@@ -103,7 +103,7 @@ def ask_confirm(message: str, auto_confirm: bool) -> bool:
 
 
 def run_install(auto_confirm: bool) -> int:
-    print("StudyDD setup install")
+    print("StudyState setup install")
     print("=====================")
     print("")
 
@@ -150,7 +150,7 @@ def run_install(auto_confirm: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="StudyDD setup helper with explicit consent"
+        description="StudyState setup helper with explicit consent"
     )
     parser.add_argument(
         "--check",
@@ -174,7 +174,7 @@ def main() -> int:
         return 1
 
     if not args.check and not args.install:
-        print("StudyDD setup helper")
+        print("StudyState setup helper")
         print("")
         print("Run with --check to see what would be installed.")
         print("Run with --install to install after explicit confirmation.")

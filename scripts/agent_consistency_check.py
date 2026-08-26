@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-file StudyDD consistency check.
+"""Cross-file StudyState consistency check.
 
 Checks that skills duplicated between the root state and target folders do not
 have contradictory readiness or status values.
@@ -36,7 +36,7 @@ def skill_map(rel: str) -> dict[str, dict]:
 
 
 def main() -> int:
-    print("StudyDD Consistency Check")
+    print("StudyState Consistency Check")
     print("=========================")
 
     root_skills = skill_map("state/SKILL_MAP.yaml")

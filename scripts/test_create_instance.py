@@ -22,7 +22,7 @@ def run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedPr
 
 
 def main() -> int:
-    print("StudyDD create-instance test")
+    print("StudyState create-instance test")
     print("============================")
 
     try:

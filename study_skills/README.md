@@ -1,4 +1,4 @@
-# StudyDD Study Skills
+# StudyState Study Skills
 
 Study skills are tutoring policies, not learner records.
 

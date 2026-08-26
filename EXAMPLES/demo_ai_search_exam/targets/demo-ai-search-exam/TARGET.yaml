@@ -2,6 +2,6 @@
 id: demo-ai-search-exam
 type: skill
 title: AI Search Fundamentals Demo
-description: A fictional, public-safe demo target for showing the StudyDD learning loop.
+description: A fictional, public-safe demo target for showing the StudyState learning loop.
 volatility: volatile
 study_skill: it_certification

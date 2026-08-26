@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test StudyDD fast-path performance policy.
+"""Test StudyState fast-path performance policy.
 
 Checks that the performance budget file exists, context packs report file counts,
 fast paths skip raw logs, and stale-check avoids unnecessary writes.
@@ -106,7 +106,7 @@ def build_instance() -> Path:
 
 
 def main() -> int:
-    print("StudyDD performance policy test")
+    print("StudyState performance policy test")
     print("===============================")
 
     try:

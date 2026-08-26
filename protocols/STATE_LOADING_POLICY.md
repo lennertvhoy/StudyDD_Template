@@ -1,6 +1,6 @@
 # STATE_LOADING_POLICY — Intelligent State Loading
 
-> **Agent rule.** StudyDD should remember everything, but only load what matters.
+> **Agent rule.** StudyState should remember everything, but only load what matters.
 
 ## Doctrine
 

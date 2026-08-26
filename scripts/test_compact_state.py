@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test StudyDD state compaction.
+"""Test StudyState state compaction.
 
 Creates a temporary learner instance, adds fake evidence and session entries,
 runs scripts/compact_state.py, and asserts the derived summaries are correct.
@@ -26,7 +26,7 @@ def run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedPr
 
 
 def main() -> int:
-    print("StudyDD compact state test")
+    print("StudyState compact state test")
     print("==========================")
 
     try:

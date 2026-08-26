@@ -1,14 +1,14 @@
-# AGENTS.md — StudyDD Agent-Operated Learning Loop
+# AGENTS.md — StudyState Agent-Operated Learning Loop
 
 **Read this file before you act.**
 
-> **If this repo's remote is `https://github.com/lennertvhoy/StudyDD_Template.git`, you are editing the mold, not the learner.**
+> **If this repo's remote is `https://github.com/lennertvhoy/StudyState_Template.git`, you are editing the mold, not the learner.**
 >
 > This is the public template repo. It must stay generic and public-safe. Do not personalize learner state here. Personalization happens only in a learner-instance repo created by cloning this template, removing `.git/`, reinitializing Git, and setting a new remote.
 
-StudyDD is a repo-native study brain operated by coding agents. It is not a human-facing app. A coding agent — Codex, Kimi Code, Claude Code, ChatGPT agent, or similar — runs the learning loop inside the repository.
+StudyState is a repo-native study brain operated by coding agents. It is not a human-facing app. A coding agent — Codex, Kimi Code, Claude Code, ChatGPT agent, or similar — runs the learning loop inside the repository.
 
-The human says: **"Start a StudyDD session."**
+The human says: **"Start a StudyState session."**
 
 The agent then runs the full lifecycle: verify, read, choose, ask, wait, grade, update, validate, hand off.
 
@@ -16,9 +16,9 @@ This public template must stay generic. Do not seed a real learner, target, exam
 
 ## Template vs Instance Law
 
-`StudyDD_Template` is a factory mold, not a learner's active study repo.
+`StudyState_Template` is a factory mold, not a learner's active study repo.
 
-- **Template repo** — `https://github.com/lennertvhoy/StudyDD_Template.git`
+- **Template repo** — `https://github.com/lennertvhoy/StudyState_Template.git`
   - Purpose: reusable starter kit, public template, generic operating system.
   - Must remain public-safe and unpersonalized.
   - Edits are limited to generic docs, scripts, protocols, prompts, examples, and validation.
@@ -31,16 +31,16 @@ This public template must stay generic. Do not seed a real learner, target, exam
 ### Agent Rules
 
 1. Check `state/STUDYDD_MODE.yaml` and `git remote -v` before any state change.
-2. If `mode` is `template` or the remote is `StudyDD_Template`, you are in template mode.
+2. If `mode` is `template` or the remote is `StudyState_Template`, you are in template mode.
 3. In template mode, never personalize learner state, never answer study questions, never record evidence, never update readiness, never create active targets.
 4. In template mode, only edit generic template files.
 5. If the user asks to study, initialize a learner, answer a question, update readiness, or record evidence, first confirm the repo is a learner instance. If it is the template, stop and explain the instantiation workflow from `protocols/INSTANTIATE_TEMPLATE.md`.
-6. If the user asks to create a new StudyDD repo, use `protocols/INSTANTIATE_TEMPLATE.md` to clone/copy → remove `.git` → `git init` → new remote → first commit → then initialize learner state.
+6. If the user asks to create a new StudyState repo, use `protocols/INSTANTIATE_TEMPLATE.md` to clone/copy → remove `.git` → `git init` → new remote → first commit → then initialize learner state.
 7. Never apply learner-state changes to the template repo.
 
 ## What the Agent Does
 
-When the human asks for a StudyDD session, the agent must:
+When the human asks for a StudyState session, the agent must:
 
 1. **Verify repo path and remote** — confirm the repo root and remote match expectations; stop if they do not.
 2. **Run validator** — run `python3 scripts/check_studydd.py` and report the result.
@@ -76,7 +76,7 @@ When the human asks for a StudyDD session, the agent must:
 
 ## Required First Actions
 
-Before every StudyDD session, read:
+Before every StudyState session, read:
 
 1. `AGENTS.md` (this file)
 2. `state/STUDYDD_MODE.yaml`
@@ -186,6 +186,13 @@ Use this architecture. Do not offer architecture choices inside the repo.
 
 ## Template Lifecycle References
 
+- **Naming and compatibility** — `docs/naming-and-compatibility.md`: public
+  name is StudyState (legacy StudyDD); the repository is
+  `StudyState_Template` with the old URL redirecting; machine identifiers
+  keep legacy spellings until a versioned migration.
+- **StatePort integration** — `docs/stateport-integration.md`: how this
+  template maps to the StatePort framework and which contracts must stay
+  stable.
 - **Template version tracking** — `state/STUDYDD_TEMPLATE_VERSION.yaml` records the template version, instance origin, and last upgrade.
 - **Create a learner instance** — use `scripts/create_instance.py` or follow `protocols/INSTANTIATE_TEMPLATE.md`.
 - **Upgrade an existing instance** — follow `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md` and paste `PROMPTS/upgrade_instance_from_template.md` into the agent.
@@ -193,7 +200,7 @@ Use this architecture. Do not offer architecture choices inside the repo.
 - **Privacy review** — follow `protocols/PRIVACY_REVIEW.md` and run `scripts/agent_privacy_check.py` before pushing a learner instance publicly.
 - **Wrong-repo recovery** — if path, remote, branch, or mode looks wrong, follow `protocols/WRONG_REPO_RECOVERY.md`.
 - **Study-loop smoke test** — `scripts/test_study_loop_smoke.py` proves one full question/grade/update cycle without corrupting state.
-- **Public demo replay** — `scripts/run_demo_replay.py` and `docs/demo-walkthrough.md` demonstrate the StudyDD learning loop with fake, public-safe data. The replay creates a temporary instance and never touches private learner repos. `EXAMPLES/demo_ai_search_exam/` shows the resulting static fixture.
+- **Public demo replay** — `scripts/run_demo_replay.py` and `docs/demo-walkthrough.md` demonstrate the StudyState learning loop with fake, public-safe data. The replay creates a temporary instance and never touches private learner repos. `EXAMPLES/demo_ai_search_exam/` shows the resulting static fixture.
 - **Spaced repetition** — `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, `scripts/select_next_study_action.py`, `reviews/REVIEW_STATE.yaml`, and `reviews/REVIEW_OVERRIDES.md` make time-aware review-first behavior explicit and overrideable.
 - **CI validation** — `.github/workflows/validate.yml` runs the validator, smoke tests, and demo replay test on every push and pull request.
 
@@ -330,7 +337,7 @@ See `protocols/LOW_ENERGY_MODE.md`.
 
 ## Learning Activities
 
-StudyDD is a learning activity orchestrator, not only a question generator. The agent chooses the best next activity from the supported types in `activities/ACTIVITY_TEMPLATES.yaml`, explains why, states expected evidence, and lets the learner accept, modify, or override it.
+StudyState is a learning activity orchestrator, not only a question generator. The agent chooses the best next activity from the supported types in `activities/ACTIVITY_TEMPLATES.yaml`, explains why, states expected evidence, and lets the learner accept, modify, or override it.
 
 Supported activity types include:
 
@@ -471,7 +478,7 @@ At the end of every agent session, leave a concise handoff that includes:
 - Installing dependencies without explicit user consent.
 - Using `sudo`, `apt`, `dnf`, `brew`, `choco`, or other system package managers without explicit instruction.
 - Hardcoding machine-specific paths such as `/home/ff`, `/Users/<name>`, or `C:\`.
-- Editing `/home/ff/Study_Lenny` or any repo outside the current StudyDD root.
+- Editing `/home/ff/Study_Lenny` or any repo outside the current StudyState root.
 
 ## Worked State-Update Example
 

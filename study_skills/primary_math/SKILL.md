@@ -1,4 +1,4 @@
-# StudyDD Skill: Primary Maths
+# StudyState Skill: Primary Maths
 
 ## Use when
 

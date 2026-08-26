@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the expected touched files for a StudyDD state update operation.
+"""Print the expected touched files for a StudyState state update operation.
 
 Use this before writing state to stay on the fast path. The script does not
 modify any files.
@@ -143,12 +143,12 @@ def print_plan(operation: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Plan a StudyDD state update")
+    parser = argparse.ArgumentParser(description="Plan a StudyState state update")
     parser.add_argument(
         "--operation",
         required=True,
         choices=sorted(PLANS),
-        help="StudyDD operation to plan",
+        help="StudyState operation to plan",
     )
     args = parser.parse_args()
     return print_plan(args.operation)

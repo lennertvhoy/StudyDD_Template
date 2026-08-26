@@ -1,4 +1,4 @@
-# StudyDD Skill: Interview Prep
+# StudyState Skill: Interview Prep
 
 ## Use when
 

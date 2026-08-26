@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent preflight summary for StudyDD.
+"""Agent preflight summary for StudyState.
 
 Prints a quick orientation: required files, active target, current next action,
 due reviews, and last session summary.
@@ -133,7 +133,7 @@ def last_session() -> str:
 
 
 def main() -> int:
-    print("StudyDD Agent Preflight")
+    print("StudyState Agent Preflight")
     print("=======================")
     print(f"Repo root: {ROOT}")
 

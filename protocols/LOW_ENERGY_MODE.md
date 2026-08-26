@@ -1,6 +1,6 @@
 # LOW_ENERGY_MODE — Real Learner Sessions
 
-> **Agent rule.** StudyDD supports real learners, not ideal learners.
+> **Agent rule.** StudyState supports real learners, not ideal learners.
 
 ## When To Use Low-Energy Mode
 

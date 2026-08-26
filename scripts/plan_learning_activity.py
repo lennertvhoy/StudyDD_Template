@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan the next StudyDD learning activity.
+"""Plan the next StudyState learning activity.
 
 Inspects current state, reviews, learner profile, and study skill, then
 recommends one activity with a reason, expected evidence, and learner-control
@@ -37,7 +37,7 @@ MODE_PATH = ROOT / "state" / "STUDYDD_MODE.yaml"
 SOURCE_STATE_PATH = ROOT / "sources" / "SOURCE_STATE.yaml"
 TARGETS_DIR = ROOT / "targets"
 
-DEMO_OUTPUT = """StudyDD recommendation: paper exercise.
+DEMO_OUTPUT = """StudyState recommendation: paper exercise.
 
 Reason:
 The learner has missed this skill twice and answered too quickly. A short written exercise is more useful than another chat question.
@@ -95,11 +95,22 @@ def format_evidence(evidence: list[str]) -> str:
     return " or ".join(evidence)
 
 
+def parse_now(value: str | None) -> Any:
+    """Parse an ISO 8601 timestamp; naive values are assumed UTC."""
+    if not value:
+        return datetime.now(timezone.utc)
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
 def plan_activity(
     task: str,
     skill_id: str | None,
     low_energy: bool,
     demo: bool,
+    now: Any | None = None,
 ) -> tuple[str, dict[str, Any] | None]:
     if demo:
         return DEMO_OUTPUT, None
@@ -111,7 +122,7 @@ def plan_activity(
     mode_data = load_yaml(MODE_PATH)
     templates_data = load_yaml(ACTIVITY_TEMPLATES_PATH)
     source_state = load_yaml(SOURCE_STATE_PATH)
-    now = datetime.now(timezone.utc)
+    now = now or datetime.now(timezone.utc)
 
     active_target_id = study_state.get("active_target_id")
     due_reviews = count_due_reviews(review_state)
@@ -167,7 +178,7 @@ def plan_activity(
     }.get(activity_type, "Complete the suggested learning activity.")
 
     output = (
-        f"StudyDD recommendation: {activity_type}.\n\n"
+        f"StudyState recommendation: {activity_type}.\n\n"
         f"Reason:\n{reason}\n\n"
         f"Source freshness: {freshness_status}\n"
         f"Rule ID: {freshness_rule_id}\n\n"
@@ -211,11 +222,16 @@ def update_activity_state(proposed_activity: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Plan the next StudyDD learning activity")
+    parser = argparse.ArgumentParser(description="Plan the next StudyState learning activity")
     parser.add_argument("--task", default="start_session", help="Agent task context")
     parser.add_argument("--skill-id", help="Focus on a specific skill ID")
     parser.add_argument("--low-energy", action="store_true", help="Plan a low-energy activity")
     parser.add_argument("--demo", action="store_true", help="Print deterministic demo recommendation")
+    parser.add_argument(
+        "--now",
+        help="Evaluate time-based rules (e.g. source freshness) as this UTC ISO 8601 timestamp",
+        default=None,
+    )
     args = parser.parse_args()
 
     output, proposed = plan_activity(
@@ -223,6 +239,7 @@ def main() -> int:
         skill_id=args.skill_id,
         low_energy=args.low_energy,
         demo=args.demo,
+        now=parse_now(args.now),
     )
     print(output, end="")
 

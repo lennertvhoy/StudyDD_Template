@@ -1,6 +1,6 @@
 # LEARNER_FEEDBACK_POLICY — Learner Feedback Rules
 
-This policy defines when and how StudyDD asks the learner for feedback about the study process itself.
+This policy defines when and how StudyState asks the learner for feedback about the study process itself.
 
 ## When to Ask for Feedback
 
@@ -18,4 +18,4 @@ Do not ask for feedback during every ordinary question.
 
 - "Is this question style helping you learn, or should I make the next one more practical, more conceptual, or shorter?"
 - "You are getting the facts right but missing scenario tradeoffs. Want to switch to short case questions for the next few sessions?"
-- "StudyDD recommends review first, but you have overridden this twice. Is the timing bad, or should we change the review schedule?"
+- "StudyState recommends review first, but you have overridden this twice. Is the timing bad, or should we change the review schedule?"

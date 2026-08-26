@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Targeted StudyDD validator for fast-path state updates.
+"""Targeted StudyState validator for fast-path state updates.
 
 Validates only the IDs touched by an ordinary tutoring turn. This is the fast-path
 gate after small updates. It is not a replacement for the full validator, which
@@ -46,7 +46,7 @@ def parse_iso(value: str | None) -> datetime | None:
         return None
     try:
         dt = datetime.fromisoformat(value)
-        # Date-only values are valid for evidence/review timestamps in StudyDD.
+        # Date-only values are valid for evidence/review timestamps in StudyState.
         if dt.hour == 0 and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0 and dt.tzinfo is None:
             return dt
         if dt.tzinfo is None:
@@ -225,7 +225,7 @@ def validate_active_question(question_id: str) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate only the StudyDD IDs touched in a fast-path update")
+    parser = argparse.ArgumentParser(description="Validate only the StudyState IDs touched in a fast-path update")
     parser.add_argument("--skill-id", help="Skill ID to validate")
     parser.add_argument("--evidence-id", help="Evidence ID to validate")
     parser.add_argument("--review-id", help="Review ID to validate")

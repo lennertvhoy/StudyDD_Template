@@ -27,7 +27,7 @@ def run(cmd: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedPr
 
 
 def main() -> int:
-    print("StudyDD study-loop smoke test")
+    print("StudyState study-loop smoke test")
     print("=============================")
 
     try:

@@ -1,6 +1,6 @@
 # AI Search Fundamentals Demo
 
-This is a fully fake, public-safe example of what a StudyDD learner instance looks like after one tutoring session.
+This is a fully fake, public-safe example of what a StudyState learner instance looks like after one tutoring session.
 
 It demonstrates:
 

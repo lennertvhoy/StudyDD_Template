@@ -1,8 +1,8 @@
-# How To Use StudyDD With Kimi Code
+# How To Use StudyState With Kimi Code
 
 ## Setup
 
-1. Clone or copy `StudyDD_Template` into a folder.
+1. Clone or copy `StudyState_Template` into a folder.
 2. Open the folder in Kimi Code.
 
 ## Start A Study Session
@@ -17,7 +17,7 @@ Example:
 ```text
 [paste the start prompt here]
 
-Initialize this StudyDD copy for me. I want to learn a professional skill. Ask only the essential setup questions first.
+Initialize this StudyState copy for me. I want to learn a professional skill. Ask only the essential setup questions first.
 ```
 
 ## During The Session

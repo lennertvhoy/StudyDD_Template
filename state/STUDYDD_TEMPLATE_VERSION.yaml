@@ -1,5 +1,5 @@
 ---
-# StudyDD template version tracking.
+# StudyState template version tracking.
 #
 # This file is required in both the public template and every learner instance.
 #
@@ -17,8 +17,19 @@
 # Do not edit template_version manually in a learner instance. Use the upgrade
 # protocol in protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md.
 
-template_version: "0.10.0"
+template_version: "0.11.0"
 template_commit: ""
+naming:
+  public_name: StudyState
+  legacy_name: StudyDD
+  repository: "https://github.com/lennertvhoy/StudyState_Template.git"
+  legacy_repository: "https://github.com/lennertvhoy/StudyDD_Template.git"
+  renamed_on: "2026-08-26"
+  note: >-
+    Public prose and the repository name moved to StudyState in 0.11.0.
+    Machine identifiers (state/STUDYDD_*.yaml, .studydd/, script filenames,
+    schema IDs) intentionally keep their legacy spellings until a separately
+    versioned migration. See docs/naming-and-compatibility.md.
 instance_created_from_template_version: ""
 instance_created_from_template_commit: ""
 last_template_upgrade_version: ""

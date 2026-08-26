@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file is the append-only audit trail for StudyDD learning activities. It records every assigned activity, learner response, submitted evidence, override, and result. It is not default runtime context; agents normally load the compact `state/ACTIVITY_STATE.yaml` and the task-specific context pack instead.
+This file is the append-only audit trail for StudyState learning activities. It records every assigned activity, learner response, submitted evidence, override, and result. It is not default runtime context; agents normally load the compact `state/ACTIVITY_STATE.yaml` and the task-specific context pack instead.
 
 ## Activity entry format
 

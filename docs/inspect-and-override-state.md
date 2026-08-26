@@ -1,6 +1,6 @@
 # Inspect And Override State
 
-StudyDD keeps your learning state in plain files so you can always audit, correct, or override the agent.
+StudyState keeps your learning state in plain files so you can always audit, correct, or override the agent.
 
 ## How To Inspect The State
 

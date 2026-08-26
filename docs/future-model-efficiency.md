@@ -1,8 +1,8 @@
 # Future model efficiency note
 
-> StudyDD should become cheaper over time by making easy tasks explicit, deterministic, and tool-like. The strongest model should only be needed at the moments where teaching judgment actually matters.
+> StudyState should become cheaper over time by making easy tasks explicit, deterministic, and tool-like. The strongest model should only be needed at the moments where teaching judgment actually matters.
 
-This document is a future architecture direction, not a runtime feature. StudyDD currently does not route tasks by model.
+This document is a future architecture direction, not a runtime feature. StudyState currently does not route tasks by model.
 
 ## Task complexity classes
 

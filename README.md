@@ -1,8 +1,8 @@
-# StudyDD_Template
+# StudyState_Template
 
 **Repo-native study brain for coding agents.**
 
-StudyDD is not a human-facing app. It is a study brain operated by coding agents such as Codex, Kimi Code, Claude Code, or ChatGPT agents. The human says "Start a StudyDD session" and the agent runs the learning loop inside the repo.
+StudyState is not a human-facing app. It is a study brain operated by coding agents such as Codex, Kimi Code, Claude Code, or ChatGPT agents. The human says "Start a StudyState session" and the agent runs the learning loop inside the repo.
 
 Give the repo to a coding agent, tell it who you are and what you want to learn, and it maintains your study library, tutor memory, readiness tracker, spaced-repetition queue, source registry, and next-action engine in plain files.
 
@@ -10,15 +10,15 @@ Your progress is never hidden inside an app database or chat history.
 
 ### Source-grounded question quality
 
-StudyDD does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source freshness is tracked in `sources/SOURCE_STATE.yaml`. When freshness is missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the next-activity router chooses a `recent_info_check` instead of an authoritative question; fresh source state suppresses repeated source-check recommendations. Due reviews still take priority.
+StudyState does not treat AI memory as current truth. Stable topics can use local state, but volatile topics such as cloud services, vendor certifications, pricing, preview features, and product names require fresh source metadata before authoritative questions. Source freshness is tracked in `sources/SOURCE_STATE.yaml`. When freshness is missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the next-activity router chooses a `recent_info_check` instead of an authoritative question; fresh source state suppresses repeated source-check recommendations. Due reviews still take priority.
 
 ### Learning activities and evidence intake
 
-StudyDD is not only a question generator. It can recommend the best next learning activity: a question, review, paper exercise, external resource, lab, interview rehearsal, presentation rehearsal, voice note, diagram, or upload-and-review task. The learner stays in control, and readiness only changes when submitted evidence demonstrates competence.
+StudyState is not only a question generator. It can recommend the best next learning activity: a question, review, paper exercise, external resource, lab, interview rehearsal, presentation rehearsal, voice note, diagram, or upload-and-review task. The learner stays in control, and readiness only changes when submitted evidence demonstrates competence.
 
 ### Learner adaptation with learner control
 
-StudyDD adapts question style, review strategy, and study recommendations from evidence and learner feedback. It may suggest better approaches, but the learner can accept, modify, or override them. Overrides are recorded so the study state remains honest.
+StudyState adapts question style, review strategy, and study recommendations from evidence and learner feedback. It may suggest better approaches, but the learner can accept, modify, or override them. Overrides are recorded so the study state remains honest.
 
 ## The Promise
 
@@ -35,7 +35,7 @@ AI tutors and coding agents are useful study companions, but they often:
 - drift into generic encouragement instead of exam-style challenge
 - make mistakes and never update the learning state
 
-StudyDD fixes this by making learning state explicit, evidence-based, and auditable.
+StudyState fixes this by making learning state explicit, evidence-based, and auditable.
 
 ## The Happy Path
 
@@ -72,21 +72,21 @@ There is no architecture menu in the core template. The default path is intentio
 
 ## Three Modes
 
-StudyDD has three modes:
+StudyState has three modes:
 
-1. **Template mode** — maintain the reusable educational operating system in `StudyDD_Template`. Must stay generic and public-safe.
+1. **Template mode** — maintain the reusable educational operating system in `StudyState_Template`. Must stay generic and public-safe.
 2. **Bootstrap mode** — the repo has left the template remote and Git history has been reset, but the learner profile and first target are not initialized yet.
 3. **Learner instance mode** — the repo is a personal study brain with learner profile, targets, evidence, sessions, reviews, and next action.
 
 Do not personalize the template repo. Personalization happens only after reinitializing a learner instance and moving it through bootstrap mode.
 
-## How To Create A New StudyDD Learner Instance
+## How To Create A New StudyState Learner Instance
 
 Run these commands to cast the mold into a new learner repo:
 
 ```bash
 # Clone and detach from the template history
-git clone https://github.com/lennertvhoy/StudyDD_Template.git Study_Lenny
+git clone https://github.com/lennertvhoy/StudyState_Template.git Study_Lenny
 cd Study_Lenny
 rm -rf .git
 git init
@@ -96,7 +96,7 @@ git remote add origin https://github.com/lennertvhoy/Study_Lenny.git
 # Switch to bootstrap mode before running learner-instance validation
 # Edit state/STUDYDD_MODE.yaml:
 #   mode: bootstrap
-#   template_origin: "https://github.com/lennertvhoy/StudyDD_Template.git"
+#   template_origin: "https://github.com/lennertvhoy/StudyState_Template.git"
 #   personalized: false
 #   public_safe: false_or_review_required
 python3 scripts/check_studydd.py
@@ -106,7 +106,7 @@ python3 scripts/check_studydd.py
 
 python3 scripts/check_studydd.py
 git add .
-git commit -m "chore: initialize StudyDD learner instance"
+git commit -m "chore: initialize StudyState learner instance"
 git push -u origin main
 ```
 
@@ -124,13 +124,13 @@ Replace `Study_Lenny` and the remote URL with your own learner/project name.
 
 Example:
 
-> Initialize this StudyDD instance for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
+> Initialize this StudyState instance for me. I want to prepare for a certification exam. Ask me only the essential setup questions first.
 
 The agent will read `AGENTS.md`, inspect the current state, initialize the learner profile and first target, build a conservative skill map from trusted sources, and set the first next action.
 
 ## Template Maintenance
 
-If you are editing `StudyDD_Template` itself, you are maintaining the mold. Keep the repo generic and public-safe. Do not seed learner state, active targets, or private data.
+If you are editing `StudyState_Template` itself, you are maintaining the mold. Keep the repo generic and public-safe. Do not seed learner state, active targets, or private data.
 
 ## What The Agent Maintains
 
@@ -151,7 +151,7 @@ You can inspect or override any of these files. They are plain Markdown and YAML
 
 ## Quick setup
 
-StudyDD runs on Linux, macOS, and Windows PowerShell with Python 3.10+. It does
+StudyState runs on Linux, macOS, and Windows PowerShell with Python 3.10+. It does
 not install dependencies without your explicit consent.
 
 ```bash
@@ -215,7 +215,7 @@ Then open the new instance in your coding agent and paste the contents of
 `PROMPTS/coding_agent_start_prompt.md`.
 
 The script leaves the instance in `bootstrap` mode, detaches it from the
-`StudyDD_Template` Git history, records the template origin in
+`StudyState_Template` Git history, records the template origin in
 `state/STUDYDD_TEMPLATE_VERSION.yaml`, and runs the validator before handing
 off.
 
@@ -229,7 +229,7 @@ When the public template improves, apply generic upgrades safely:
 
 ## Public/Private Safety
 
-- The `StudyDD_Template` repo itself must stay generic and public-safe.
+- The `StudyState_Template` repo itself must stay generic and public-safe.
 - Learner instances may contain private data; run `scripts/agent_privacy_check.py`
   before pushing a learner instance to a public or shared remote.
 - Never push a learner instance publicly without the learner's explicit consent.
@@ -259,19 +259,19 @@ test, and `git diff --check` on every push and pull request. See
 
 ### Intelligent state loading
 
-StudyDD keeps long audit logs, but agents do not load everything by default. Before a session, the repo builds a compact context pack from canonical state, indexes, summaries, due reviews, relevant evidence, and the next activity recommendation with its auditable `Rule: ...` reason. Raw logs stay available for audit and repair.
+StudyState keeps long audit logs, but agents do not load everything by default. Before a session, the repo builds a compact context pack from canonical state, indexes, summaries, due reviews, relevant evidence, and the next activity recommendation with its auditable `Rule: ...` reason. Raw logs stay available for audit and repair.
 
 See `protocols/STATE_LOADING_POLICY.md`, `scripts/compact_state.py`, and `scripts/build_context_pack.py`.
 
 ### Fast path state updates
 
-StudyDD keeps a full audit trail, but ordinary tutoring turns use a fast path. The agent loads the current context pack, touches only the relevant skill/evidence/review records, and runs targeted validation. Full compaction and full validation happen at session boundaries, CI, audit, or repair.
+StudyState keeps a full audit trail, but ordinary tutoring turns use a fast path. The agent loads the current context pack, touches only the relevant skill/evidence/review records, and runs targeted validation. Full compaction and full validation happen at session boundaries, CI, audit, or repair.
 
 See `protocols/PERFORMANCE_POLICY.md`, `protocols/STATE_WRITE_POLICY.md`, `scripts/validate_touched_state.py`, and `scripts/plan_state_update.py`.
 
 ### Study skills
 
-StudyDD uses `study_skills/<id>/SKILL.md` files to adapt tutoring to the target. IT certifications, philosophy, primary maths, language learning, interview prep, and practical labs need different question styles, grading rules, evidence standards, and review strategies.
+StudyState uses `study_skills/<id>/SKILL.md` files to adapt tutoring to the target. IT certifications, philosophy, primary maths, language learning, interview prep, and practical labs need different question styles, grading rules, evidence standards, and review strategies.
 
 A target declares its study skill in `TARGET.yaml`:
 
@@ -283,7 +283,7 @@ See `study_skills/README.md`.
 
 ### Spaced repetition by default
 
-StudyDD treats due review as learning debt. At the start of a session, the agent
+StudyState treats due review as learning debt. At the start of a session, the agent
 checks the current time and recommends due or overdue review before new
 material. The learner can override, but the override is recorded so the study
 state remains honest.
@@ -293,7 +293,7 @@ See `protocols/SPACED_REPETITION_POLICY.md`, `scripts/schedule_review.py`, and
 
 ### How the agent chooses the next activity
 
-StudyDD recommends one activity at a time using protocol-driven rules:
+StudyState recommends one activity at a time using protocol-driven rules:
 
 1. **Due reviews first** — spaced retrieval is the highest-retention move.
 2. **Recent-info check** — for `moderate`, `volatile`, or `live` topics whose `sources/SOURCE_STATE.yaml` freshness is missing, stale, or unknown.
@@ -305,7 +305,7 @@ The same shared decision logic powers `scripts/plan_learning_activity.py` and th
 
 ## Five-minute demo
 
-Run the public demo replay to see the full StudyDD learning loop in under a
+Run the public demo replay to see the full StudyState learning loop in under a
 minute:
 
 ```bash
@@ -325,7 +325,7 @@ fixture in `EXAMPLES/demo_ai_search_exam/`.
 These are intentionally backlog items, not part of the core slice:
 
 - `addon-telegram-study-bot` — daily review prompt, answer capture, reminders, low-energy study mode.
-- `addon-containerized-studydd` — Docker, Podman, devcontainer, or compose setup for portable local execution.
+- `addon-containerized-studystate` — Docker, Podman, devcontainer, or compose setup for portable local execution.
 
 ## License
 
@@ -333,4 +333,14 @@ This project is licensed under the MIT License. See `LICENSE.md` for the full te
 
 ## Status
 
-v0.10.0 — cross-platform setup and dependency consent (`requirements.txt`, `docs/setup.md`, `scripts/check_environment.py`, `scripts/setup_studydd.py`, `scripts/test_cross_platform_paths.py`, `.github/workflows/validate.yml` matrix) layered on top of the learning activity orchestrator.
+v0.11.0 — StudyState public naming: the repository is now
+`StudyState_Template` (the old `StudyDD_Template` URL redirects), public prose
+says StudyState, and machine identifiers keep their legacy `studydd`
+spellings for instance compatibility. See
+[`docs/naming-and-compatibility.md`](docs/naming-and-compatibility.md) and
+[`docs/stateport-integration.md`](docs/stateport-integration.md). Also fixes
+the demo-freshness time bomb: expired reference fixtures under `EXAMPLES/` no
+longer fail wall-clock validation, and `scripts/check_studydd.py` plus
+`scripts/plan_learning_activity.py` accept a deterministic `--now` clock.
+Layered on top of the cross-platform setup matrix and the learning activity
+orchestrator.

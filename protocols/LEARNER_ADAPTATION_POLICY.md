@@ -1,11 +1,11 @@
 # LEARNER_ADAPTATION_POLICY — Learner Adaptation Rules
 
-This policy governs how StudyDD adapts its tutoring approach to the learner without manipulating them.
+This policy governs how StudyState adapts its tutoring approach to the learner without manipulating them.
 
 ## Doctrine
 
 ```text
-StudyDD should adapt to the learner, but not manipulate the learner.
+StudyState should adapt to the learner, but not manipulate the learner.
 
 The system may recommend better study methods.
 The learner has the final decision.

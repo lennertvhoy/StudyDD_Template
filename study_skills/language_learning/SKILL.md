@@ -1,4 +1,4 @@
-# StudyDD Skill: Language Learning
+# StudyState Skill: Language Learning
 
 ## Use when
 

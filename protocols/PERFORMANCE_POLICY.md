@@ -1,6 +1,6 @@
-# PERFORMANCE_POLICY — StudyDD Fast Path State Policy v1
+# PERFORMANCE_POLICY — StudyState Fast Path State Policy v1
 
-> **Agent rule.** StudyDD should remember everything, but every tutoring turn should touch as little as possible.
+> **Agent rule.** StudyState should remember everything, but every tutoring turn should touch as little as possible.
 
 ## Doctrine
 

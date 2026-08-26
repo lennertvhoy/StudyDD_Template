@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recommend the next StudyDD action based on current time and review state.
+"""Recommend the next StudyState action based on current time and review state.
 
 Usage:
     python3 scripts/select_next_study_action.py \
@@ -79,7 +79,7 @@ def skill_label(skill_id: str, skill_map: dict) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Select the next StudyDD study action")
+    parser = argparse.ArgumentParser(description="Select the next StudyState study action")
     parser.add_argument("--now", default=None, help="ISO 8601 timestamp with timezone")
     args = parser.parse_args()
 
@@ -100,7 +100,7 @@ def main() -> int:
     total_due = len(due) + len(overdue)
 
     if total_due == 0:
-        print("StudyDD recommendation: new material is allowed.")
+        print("StudyState recommendation: new material is allowed.")
         print("")
         print("Due reviews: 0")
         print("Overdue reviews: 0")
@@ -116,7 +116,7 @@ def main() -> int:
     chosen_skill = chosen.get("skill_id", "<unknown>")
     label = skill_label(chosen_skill, skill_map)
 
-    print("StudyDD recommendation: review first.")
+    print("StudyState recommendation: review first.")
     print("")
     print(f"Due reviews: {len(due)}")
     print(f"Overdue reviews: {len(overdue)}")
@@ -131,7 +131,7 @@ def main() -> int:
     print('Override allowed:')
     print('Say "override review because <reason>" and the agent must record the override.')
     print("")
-    print('Recommended by StudyDD: review first. You can override, but this is the highest-retention move.')
+    print('Recommended by StudyState: review first. You can override, but this is the highest-retention move.')
 
     # Surface in NEXT_ACTIONS.md if an overdue item is not already mentioned.
     if NEXT_ACTIONS_PATH.is_file() and overdue:

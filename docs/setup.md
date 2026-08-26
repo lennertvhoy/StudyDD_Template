@@ -1,8 +1,8 @@
-# StudyDD Setup Guide
+# StudyState Setup Guide
 
-StudyDD runs on Linux, macOS, and Windows PowerShell. It uses plain Python and a small set of Python packages. This guide shows how to create a local virtual environment, install dependencies, and run validation.
+StudyState runs on Linux, macOS, and Windows PowerShell. It uses plain Python and a small set of Python packages. This guide shows how to create a local virtual environment, install dependencies, and run validation.
 
-> **No surprise installs.** StudyDD will never install software without your explicit consent. The helper scripts only check your environment and print next steps unless you explicitly run the install command.
+> **No surprise installs.** StudyState will never install software without your explicit consent. The helper scripts only check your environment and print next steps unless you explicitly run the install command.
 
 ## Supported platforms
 
@@ -104,7 +104,7 @@ python scripts/test_learner_adaptation.py
 
 ## Run the demo replay
 
-The demo replay creates a temporary learner instance and walks through one full StudyDD learning loop. It does not touch your repo state.
+The demo replay creates a temporary learner instance and walks through one full StudyState learning loop. It does not touch your repo state.
 
 ```bash
 python scripts/run_demo_replay.py
@@ -122,7 +122,7 @@ Use `python -m pip` or `python3 -m pip` instead of running `pip` directly. This 
 
 ### PyYAML install fails
 
-StudyDD requires PyYAML for YAML parsing. If installation fails:
+StudyState requires PyYAML for YAML parsing. If installation fails:
 
 1. Make sure you are inside the virtual environment.
 2. Upgrade pip: `python -m pip install --upgrade pip`
@@ -140,7 +140,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 
 ### Git is not found
 
-Install Git from your platform package manager or from <https://git-scm.com/downloads>. StudyDD uses Git only for local provenance checks and CI; it does not require a specific Git version.
+Install Git from your platform package manager or from <https://git-scm.com/downloads>. StudyState uses Git only for local provenance checks and CI; it does not require a specific Git version.
 
 ### Files inside `.studydd/` are showing as untracked
 
@@ -148,4 +148,4 @@ The `.studydd/` directory contains generated context packs and cache files. It i
 
 ## Consent policy
 
-StudyDD does not install dependencies, change system settings, or modify files outside the repo without your explicit consent. The setup helper explains every change and asks before writing anything. You can inspect `scripts/setup_studydd.py` and `requirements.txt` before running them.
+StudyState does not install dependencies, change system settings, or modify files outside the repo without your explicit consent. The setup helper explains every change and asks before writing anything. You can inspect `scripts/setup_studydd.py` and `requirements.txt` before running them.

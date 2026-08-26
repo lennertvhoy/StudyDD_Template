@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test StudyDD targeted (fast-path) validator.
+"""Test StudyState targeted (fast-path) validator.
 
 Creates a temporary learner instance, adds a skill/evidence/review, and checks
 that validate_touched_state.py passes for valid IDs and fails for broken
@@ -135,7 +135,7 @@ def build_instance() -> Path:
 
 
 def main() -> int:
-    print("StudyDD targeted validator test")
+    print("StudyState targeted validator test")
     print("===============================")
 
     target = build_instance()

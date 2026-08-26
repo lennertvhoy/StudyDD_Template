@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""StudyDD repo health and educational-drift validator.
+"""StudyState repo health and educational-drift validator.
 
 Supports the agent workflow by checking that required files exist,
 YAML parses, required keys are present, and common educational drift
@@ -12,6 +12,7 @@ Install PyYAML for full validation:
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from datetime import datetime, timedelta, timezone
@@ -19,6 +20,12 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# Reference fixtures under EXAMPLES/ are historical snapshots. Their source
+# timestamps are deterministic test metadata, not live freshness claims, so the
+# wall-clock staleness gate does not apply to them (see
+# protocols/SOURCE_FRESHNESS_POLICY.md and the demo fixture's SOURCE_STATE).
+REFERENCE_SNAPSHOT_ROOT = "EXAMPLES"
 
 REQUIRED_ROOT_FILES = [
     "README.md",
@@ -447,7 +454,12 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
         return errors
 
     remotes = get_git_remotes()
-    is_template_remote = "StudyDD_Template" in remotes
+    # The public template repo is StudyState_Template. The legacy
+    # StudyDD_Template remote name remains accepted as a compatibility alias:
+    # GitHub redirects the old URL, and older checkouts may still carry it.
+    is_template_remote = (
+        "StudyState_Template" in remotes or "StudyDD_Template" in remotes
+    )
     has_remote = bool(remotes.strip())
 
     study_state_path = ROOT / "state/STUDY_STATE.yaml"
@@ -462,7 +474,7 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
     if mode == "template":
         if has_remote and not is_template_remote:
             errors.append(
-                "Template mode should use the StudyDD_Template remote. "
+                "Template mode should use the StudyState_Template remote. "
                 "If this is a new learner instance, switch mode to bootstrap first."
             )
         if is_template_remote and not mode_data.get("public_safe", True):
@@ -488,7 +500,7 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
     elif mode == "bootstrap":
         if is_template_remote:
             errors.append(
-                "Bootstrap mode cannot use the StudyDD_Template remote. "
+                "Bootstrap mode cannot use the StudyState_Template remote. "
                 "Set the learner's remote before leaving bootstrap."
             )
         if mode_data.get("personalized", False):
@@ -507,7 +519,7 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
     elif mode == "learner_instance":
         if is_template_remote:
             errors.append(
-                "Learner instance mode cannot use the StudyDD_Template remote. "
+                "Learner instance mode cannot use the StudyState_Template remote. "
                 "Set a new remote for the learner instance."
             )
         if not mode_data.get("personalized", False):
@@ -1707,7 +1719,9 @@ def check_learner_profile(yaml: object) -> list[str]:
     return errors
 
 
-def check_volatile_target_freshness(yaml: object, warnings: list[str]) -> list[str]:
+def check_volatile_target_freshness(
+    yaml: object, warnings: list[str], now: datetime | None = None
+) -> list[str]:
     """Ensure volatile/live targets have a fresh authoritative usable source.
 
     Hard error in learner_instance mode; warning only in template/bootstrap modes.
@@ -1727,7 +1741,8 @@ def check_volatile_target_freshness(yaml: object, warnings: list[str]) -> list[s
     if not targets_dir.is_dir():
         return errors
 
-    now = datetime.now(timezone.utc)
+    if now is None:
+        now = datetime.now(timezone.utc)
 
     for target_dir in targets_dir.iterdir():
         if not target_dir.is_dir() or target_dir.name.startswith("."):
@@ -1763,6 +1778,15 @@ def check_volatile_target_freshness(yaml: object, warnings: list[str]) -> list[s
     return errors
 
 
+def _is_reference_snapshot(path: Path) -> bool:
+    """Return True when path is a fixture under the EXAMPLES/ snapshot root."""
+    try:
+        rel_parts = path.relative_to(ROOT).parts
+    except ValueError:
+        return False
+    return len(rel_parts) >= 1 and rel_parts[0] == REFERENCE_SNAPSHOT_ROOT
+
+
 def _source_state_for_question(path: Path, yaml: object) -> tuple[list[dict[str, Any]], set[str]]:
     """Return (sources, known_source_ids) for the repo root that contains the question.
 
@@ -1780,13 +1804,22 @@ def _source_state_for_question(path: Path, yaml: object) -> tuple[list[dict[str,
     return sources, known_source_ids
 
 
-def check_question_quality_records(yaml: object) -> list[str]:
-    """Validate question-quality metadata and source grounding for question banks."""
+def check_question_quality_records(
+    yaml: object, now: datetime | None = None, snapshot_clock_explicit: bool = False
+) -> list[str]:
+    """Validate question-quality metadata and source grounding for question banks.
+
+    ``now`` defaults to the wall clock. When ``snapshot_clock_explicit`` is True
+    (an --now override was provided), reference fixtures under EXAMPLES/ are
+    evaluated with that clock too; otherwise their timestamps are treated as
+    deterministic test metadata and only time-independent structure is enforced.
+    """
     errors: list[str] = []
     if yaml is None:
         return errors
 
-    now = datetime.now(timezone.utc)
+    if now is None:
+        now = datetime.now(timezone.utc)
 
     for path in _discover_question_files():
         data = _load_yaml(path, yaml)
@@ -1861,12 +1894,17 @@ def check_question_quality_records(yaml: object) -> list[str]:
                         continue
                     status, reason = _classify_source_freshness(source, now, volatility)
                     if status != "fresh":
+                        if _is_reference_snapshot(path) and not snapshot_clock_explicit:
+                            # Reference fixture: timestamps are deterministic test
+                            # metadata, not a live freshness claim.
+                            continue
                         detail = f" ({reason})" if reason else ""
                         errors.append(
                             f"Question {qid} ({rel}) authoritative_current source '{sid}' "
                             f"is {status}{detail}"
                         )
-                    elif source.get("authority") not in ("official", "high_authority"):
+                        continue
+                    if source.get("authority") not in ("official", "high_authority"):
                         errors.append(
                             f"Question {qid} ({rel}) authoritative_current source '{sid}' "
                             f"has authority {source.get('authority')!r}"
@@ -1912,9 +1950,34 @@ def check_stale_practice_overrides(yaml: object) -> list[str]:
     return errors
 
 
-def main() -> int:
-    print("StudyDD validation")
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="StudyState repo health and educational-drift validator."
+    )
+    parser.add_argument(
+        "--now",
+        help=(
+            "Evaluate time-based checks (source freshness) as if it were this "
+            "UTC ISO 8601 timestamp. Also applies the explicit clock to EXAMPLES/ "
+            "reference fixtures instead of exempting them from wall-clock staleness."
+        ),
+        default=None,
+    )
+    args = parser.parse_args(argv)
+
+    now_override: datetime | None = None
+    if args.now is not None:
+        try:
+            parsed = datetime.fromisoformat(str(args.now))
+        except ValueError:
+            print(f"Invalid --now value: {args.now!r} (expected ISO 8601)")
+            return 2
+        now_override = parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+    print("StudyState validation")
     print("==================")
+    if now_override is not None:
+        print(f"Evaluation clock: {now_override.isoformat()}")
 
     errors = check_files()
     errors.extend(check_target_folders())
@@ -1960,8 +2023,10 @@ def main() -> int:
         errors.extend(check_generated_freshness(warnings))
         errors.extend(check_source_state(yaml))
         errors.extend(check_learner_profile(yaml))
-        errors.extend(check_volatile_target_freshness(yaml, warnings))
-        errors.extend(check_question_quality_records(yaml))
+        errors.extend(check_volatile_target_freshness(yaml, warnings, now=now_override))
+        errors.extend(check_question_quality_records(
+            yaml, now=now_override, snapshot_clock_explicit=now_override is not None
+        ))
         errors.extend(check_stale_practice_overrides(yaml))
     else:
         print("\nNote: PyYAML not installed. Skipping state-aware checks.")
@@ -1982,7 +2047,7 @@ def main() -> int:
     print("\nAll required files present.")
     print("YAML validation passed.")
     print("No forbidden mentions found.")
-    print("StudyDD state looks healthy.")
+    print("StudyState state looks healthy.")
     return 0
 
 

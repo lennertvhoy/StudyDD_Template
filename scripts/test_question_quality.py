@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for scripts/lint_questions.py.
 
-Creates temporary question banks, SOURCE_STATE.yaml fixtures, and StudyDD mode
+Creates temporary question banks, SOURCE_STATE.yaml fixtures, and StudyState mode
 files, then invokes the linter via subprocess. No network calls are made.
 """
 

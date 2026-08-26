@@ -1,11 +1,11 @@
 # Update State Prompt
 
-Apply a StudyDD state update based on new evidence or a completed session.
+Apply a StudyState state update based on new evidence or a completed session.
 
 ## Path Verification
 
 1. Run `pwd` and `git rev-parse --show-toplevel`. Confirm the repo root.
-2. Run `git remote -v` and confirm it matches the learner's StudyDD repo.
+2. Run `git remote -v` and confirm it matches the learner's StudyState repo.
 3. Run `python3 scripts/check_studydd.py`.
 
 ## Inputs

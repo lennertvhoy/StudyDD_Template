@@ -1,6 +1,6 @@
 # SPACED_REPETITION_POLICY — Time-Aware Review-First Doctrine
 
-> **Agent action.** Apply this policy at the start of every StudyDD session.
+> **Agent action.** Apply this policy at the start of every StudyState session.
 
 ## Doctrine
 
@@ -30,7 +30,7 @@ The active study skill may prefer certain review modes (e.g., scenario for IT ce
 Use this language when recommending review:
 
 ```text
-Recommended by StudyDD: review first. You can override, but this is the highest-retention move.
+Recommended by StudyState: review first. You can override, but this is the highest-retention move.
 ```
 
 ## When new material is allowed

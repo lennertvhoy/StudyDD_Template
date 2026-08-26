@@ -1,7 +1,7 @@
 ---
 review_items: []
 
-# Machine-readable review state for StudyDD.
+# Machine-readable review state for StudyState.
 #
 # This file is the reliable agent/validator surface. Keep it in sync with the
 # human-readable `reviews/REVIEW_QUEUE.md` and `reviews/REVIEW_OVERRIDES.md`.

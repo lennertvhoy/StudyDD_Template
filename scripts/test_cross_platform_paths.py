@@ -118,7 +118,7 @@ def test_dependency_manifest_exists() -> None:
 
 def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
-        print("Cross-platform portability smoke tests for StudyDD")
+        print("Cross-platform portability smoke tests for StudyState")
         print("")
         print("Usage: python scripts/test_cross_platform_paths.py")
         return 0

@@ -1,11 +1,11 @@
-# LEARNING_ACTIVITY_POLICY — StudyDD Learning Activity Orchestrator
+# LEARNING_ACTIVITY_POLICY — StudyState Learning Activity Orchestrator
 
 > **Agent rule.** A question is one teaching move, not the whole system.
 
 ## Doctrine
 
 ```text
-StudyDD recommends the best next learning activity, explains why,
+StudyState recommends the best next learning activity, explains why,
 lets the learner accept/modify/override, and records evidence from the result.
 ```
 

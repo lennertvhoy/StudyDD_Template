@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic public demo replay for StudyDD.
+"""Deterministic public demo replay for StudyState.
 
 Creates a temporary learner instance, simulates one question/answer/grade
 cycle, schedules a review, demonstrates review-first selection, records an
@@ -126,7 +126,7 @@ def initialize_target(target: Path) -> None:
         "id: demo-ai-search-exam\n"
         "type: skill\n"
         "title: AI Search Fundamentals Demo\n"
-        "description: A fictional, public-safe demo target for showing the StudyDD learning loop.\n"
+        "description: A fictional, public-safe demo target for showing the StudyState learning loop.\n"
         "volatility: volatile\n"
         "study_skill: it_certification\n",
         encoding="utf-8",
@@ -202,7 +202,7 @@ def initialize_target(target: Path) -> None:
 
 
 def plan_and_record_activity(target: Path) -> None:
-    print("StudyDD is not only a question generator. It can assign activities and review evidence.")
+    print("StudyState is not only a question generator. It can assign activities and review evidence.")
     print("Planning the next learning activity based on current state...")
     result = run(
         [sys.executable, "scripts/plan_learning_activity.py", "--task", "start_session"],
@@ -243,7 +243,7 @@ def plan_and_record_activity(target: Path) -> None:
         print(result.stdout)
         print(result.stderr)
         raise subprocess.CalledProcessError(result.returncode, ["scripts/record_activity_result.py"])
-    print("StudyDD reviewed the submitted evidence, updated skill state, scheduled review, and recorded the next action.")
+    print("StudyState reviewed the submitted evidence, updated skill state, scheduled review, and recorded the next action.")
 
 
 def record_evidence(target: Path) -> None:
@@ -317,10 +317,10 @@ def select_next_action(target: Path, now: str) -> str:
 
 
 def print_source_freshness_check() -> None:
-    print("StudyDD checks source freshness before generating product-current questions.")
+    print("StudyState checks source freshness before generating product-current questions.")
     print("The demo uses a demo official source marked fresh.")
     print("The agent does not search the web because the cached source is fresh enough.")
-    print("If the source were stale, StudyDD would ask to refresh or choose a stable review instead.")
+    print("If the source were stale, StudyState would ask to refresh or choose a stable review instead.")
 
 
 def check_source_freshness(target: Path, now: str) -> None:
@@ -344,14 +344,14 @@ def check_source_freshness(target: Path, now: str) -> None:
 
 
 def print_learner_adaptation() -> None:
-    print("StudyDD suggestion:")
+    print("StudyState suggestion:")
     print("You missed a scenario tradeoff. Next time, use a short comparison drill.")
     print("Learner control:")
     print("You can accept, modify, or override this.")
 
 
 def build_and_show_context_pack(target: Path) -> None:
-    print("Building StudyDD context pack instead of loading every file...")
+    print("Building StudyState context pack instead of loading every file...")
     result = run(
         [sys.executable, "scripts/build_context_pack.py", "--task", "start_session"],
         target,
@@ -449,8 +449,12 @@ def compact_state(target: Path) -> None:
         raise subprocess.CalledProcessError(result.returncode, ["scripts/compact_state.py"])
 
 
-def validate(target: Path) -> None:
-    result = run([sys.executable, "scripts/check_studydd.py"], target, check=False)
+def validate(target: Path, now: str) -> None:
+    result = run(
+        [sys.executable, "scripts/check_studydd.py", "--now", now],
+        target,
+        check=False,
+    )
     if result.returncode != 0:
         print(result.stdout)
         print(result.stderr)
@@ -458,7 +462,7 @@ def validate(target: Path) -> None:
 
 
 def print_transcript(review_id: str, before_due: str, when_due: str) -> None:
-    print("StudyDD demo replay")
+    print("StudyState demo replay")
     print("===================")
     print("")
     print("1. Created learner instance from template.")
@@ -466,7 +470,7 @@ def print_transcript(review_id: str, before_due: str, when_due: str) -> None:
     print("3. Initialized target: AI Search Fundamentals Demo.")
     print("4. Active study skill: it_certification.")
     print("5. Built a context pack instead of loading every file.")
-    print("6. StudyDD uses the fast path during ordinary tutoring turns.")
+    print("6. StudyState uses the fast path during ordinary tutoring turns.")
     print("7. Only relevant state is loaded.")
     print("8. Only touched files are updated.")
     print("9. Full validation runs at session boundary.")
@@ -474,9 +478,9 @@ def print_transcript(review_id: str, before_due: str, when_due: str) -> None:
     print("11. Learner answered: distinguished keyword and vector search, no scenario.")
     print("12. Agent graded honestly: partial.")
     print("13. Evidence recorded: ev_demo_001.")
-    print("14. StudyDD planned a non-question activity based on the weak skill.")
+    print("14. StudyState planned a non-question activity based on the weak skill.")
     print("15. Learner completed the activity outside the chat and submitted evidence.")
-    print("16. StudyDD reviewed the submitted evidence and updated state.")
+    print("16. StudyState reviewed the submitted evidence and updated state.")
     print(f"17. Review scheduled: {review_id} due in 1 day.")
     print("18. Selector before due: new material is allowed.")
     print("   ", before_due.splitlines()[0])
@@ -508,7 +512,7 @@ def copy_fixture(source: Path, destination: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run the StudyDD public demo replay")
+    parser = argparse.ArgumentParser(description="Run the StudyState public demo replay")
     parser.add_argument(
         "--dump-to",
         "--dump-fixture",
@@ -525,8 +529,8 @@ def main() -> int:
         return 1
 
     with tempfile.TemporaryDirectory(prefix="studydd-demo-") as tmp:
-        target = Path(tmp) / "StudyDD_Demo"
-        remote = "https://github.com/example/StudyDD_Demo.git"
+        target = Path(tmp) / "StudyState_Demo"
+        remote = "https://github.com/example/StudyState_Demo.git"
 
         create_instance(target, remote)
         switch_to_learner_instance(target)
@@ -547,7 +551,7 @@ def main() -> int:
         record_override(target, review_id)
         update_session_and_next_action(target, review_id)
         compact_state(target)
-        validate(target)
+        validate(target, "2026-06-24T12:00:00+00:00")
         print_transcript(review_id, before_due, when_due)
 
         if args.dump_fixture:

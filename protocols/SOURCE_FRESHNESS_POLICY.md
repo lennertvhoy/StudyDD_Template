@@ -46,3 +46,5 @@ Freshness rules depend on source authority. Use the following levels, consistent
 - Stale sources may be used only with explicit learner override. Questions built from stale sources must be labelled as practice-only and not treated as authoritative.
 - The agent must not hide uncertainty. If source freshness is unknown or borderline, the agent must disclose that to the learner.
 - The learner may override freshness recommendations. Any override must be recorded in `state/EVIDENCE_LOG.md` and `sessions/SESSION_LOG.md`.
+- Reference fixtures under `EXAMPLES/` are historical snapshots: their source timestamps are deterministic test metadata, not live freshness claims. The validator enforces structure there, but wall-clock staleness errors apply only to real targets under `targets/`, or everywhere when an explicit `--now` clock is passed to `scripts/check_studydd.py`.
+- Deterministic tooling (`run_demo_replay.py`, tests) should pin its own clock with `--now` instead of editing fixture timestamps to chase the wall clock.

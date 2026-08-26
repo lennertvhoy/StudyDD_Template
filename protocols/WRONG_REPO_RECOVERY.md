@@ -19,7 +19,7 @@ immediately.
 4. Report every file you have touched in this session.
 5. Revert touched files only if it is clearly safe or the learner explicitly
    approves.
-6. If you are inside `StudyDD_Template` and were asked to do learner work, stop
+6. If you are inside `StudyState_Template` and were asked to do learner work, stop
    and explain the instantiation workflow from
    `protocols/INSTANTIATE_TEMPLATE.md`.
 7. Never repair learner state inside the public template.

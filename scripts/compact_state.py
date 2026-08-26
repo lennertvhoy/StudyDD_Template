@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compact StudyDD append-only audit logs into derived summaries and indexes.
+"""Compact StudyState append-only audit logs into derived summaries and indexes.
 
 This script preserves the audit trail while producing compact working-memory
 files that agents can load quickly:
@@ -471,7 +471,7 @@ def compact(force: bool = False, dry_run: bool = False) -> tuple[bool, dict]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Compact StudyDD state into derived summaries")
+    parser = argparse.ArgumentParser(description="Compact StudyState state into derived summaries")
     parser.add_argument(
         "--force",
         action="store_true",
@@ -492,7 +492,7 @@ def main() -> int:
         print("State is up to date. No compaction needed.")
         return 0
 
-    print("Compacting StudyDD state...")
+    print("Compacting StudyState state...")
     did_work, _ = compact(force=args.force)
     if not did_work:
         print("(Use --force to rebuild anyway.)")

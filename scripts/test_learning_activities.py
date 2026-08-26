@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test StudyDD learning activity and evidence intake orchestration.
+"""Test StudyState learning activity and evidence intake orchestration.
 
 Validates new files, helper scripts, demo output, and context-pack integration.
 """
@@ -70,8 +70,8 @@ def save_yaml(path: Path, data: dict) -> None:
 
 
 def create_temp_instance(tmp: str, name: str, target_id: str, target_yaml: str) -> Path:
-    target = Path(tmp) / f"StudyDD_{name}"
-    remote = f"https://github.com/example/StudyDD_{name}.git"
+    target = Path(tmp) / f"StudyState_{name}"
+    remote = f"https://github.com/example/StudyState_{name}.git"
     run([sys.executable, "scripts/create_instance.py", "--target", str(target), "--remote", remote])
 
     mode_path = target / "state" / "STUDYDD_MODE.yaml"
@@ -247,7 +247,15 @@ def test_plan_includes_source_freshness_for_fresh_volatile_target() -> None:
         }
         save_yaml(target / "sources" / "SOURCE_STATE.yaml", source_state)
 
-        result = run([sys.executable, "scripts/plan_learning_activity.py"], cwd=target)
+        result = run(
+            [
+                sys.executable,
+                "scripts/plan_learning_activity.py",
+                "--now",
+                "2026-06-27T11:00:00+00:00",
+            ],
+            cwd=target,
+        )
         assert "retrieval_question" in result.stdout, "Fresh volatile source should allow retrieval question"
         assert "Source freshness: fresh" in result.stdout, "Output should report fresh freshness"
         assert "source_freshness_satisfied" in result.stdout, "Rule ID should be source_freshness_satisfied"
@@ -256,7 +264,7 @@ def test_plan_includes_source_freshness_for_fresh_volatile_target() -> None:
 def test_plan_learning_activity_demo() -> None:
     result = run([sys.executable, "scripts/plan_learning_activity.py", "--demo"])
     stdout = result.stdout
-    assert "StudyDD recommendation:" in stdout, "Demo must contain a recommendation"
+    assert "StudyState recommendation:" in stdout, "Demo must contain a recommendation"
     assert "Reason:" in stdout, "Demo must contain a reason"
     assert "Task:" in stdout, "Demo must contain a task"
     assert "Expected evidence:" in stdout, "Demo must contain expected evidence"
@@ -310,8 +318,8 @@ def test_demo_replay_mentions_non_question_activity() -> None:
 
 def test_record_activity_result_on_temp_instance() -> None:
     with tempfile.TemporaryDirectory(prefix="studydd-activity-test-") as tmp:
-        target = Path(tmp) / "StudyDD_ActivityTest"
-        remote = "https://github.com/example/StudyDD_ActivityTest.git"
+        target = Path(tmp) / "StudyState_ActivityTest"
+        remote = "https://github.com/example/StudyState_ActivityTest.git"
         run([sys.executable, "scripts/create_instance.py", "--target", str(target), "--remote", remote])
 
         # Switch to learner instance.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Question quality linter for StudyDD question banks.
+"""Question quality linter for StudyState question banks.
 
 Validates question files under targets/ and EXAMPLES/*/targets/ for schema,
 source freshness, answer-key leakage, option position bias, and quality-gate
@@ -368,8 +368,15 @@ def lint_question(
     target_root: Path,
     sources: list[dict[str, Any]],
     now: datetime,
+    snapshot_exempt: bool = False,
 ) -> tuple[list[str], list[str]]:
-    """Return (failures, warnings) for a single question."""
+    """Return (failures, warnings) for a single question.
+
+    ``snapshot_exempt`` marks reference fixtures under EXAMPLES/ evaluated
+    without an explicit --now clock: their timestamps are deterministic test
+    metadata, so wall-clock "stale" results are not failures. Structural
+    problems (missing timestamps, unusable sources) still fail.
+    """
     failures: list[str] = []
     warnings: list[str] = []
 
@@ -412,6 +419,8 @@ def lint_question(
             statuses = source_statuses(question, sources, volatility, now)
             stale_or_missing = [(sid, status, reason) for sid, status, reason in statuses if status != "fresh"]
             for sid, status, reason in stale_or_missing:
+                if snapshot_exempt and status == "stale":
+                    continue
                 failures.append(
                     f"authoritative_current volatile/live question source '{sid}' is {status}"
                     + (f" ({reason})" if reason else "")
@@ -497,7 +506,7 @@ def check_option_position_patterns(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Lint StudyDD question files")
+    parser = argparse.ArgumentParser(description="Lint StudyState question files")
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
     parser.add_argument("--target-id", help="Limit lint to a single target ID")
     parser.add_argument("--now", default=None, help="ISO 8601 timestamp with timezone for deterministic checks")
@@ -526,7 +535,12 @@ def main() -> int:
         sources = read_source_state(target_root)
         target_id = question.get("target_id") or question_file.parent.parent.name
         qid = question.get("id") or question_file.stem
-        failures, warnings = lint_question(question, target_id, target_root, sources, now)
+        snapshot_exempt = (
+            EXAMPLES_DIR in question_file.parents and args.now is None
+        )
+        failures, warnings = lint_question(
+            question, target_id, target_root, sources, now, snapshot_exempt=snapshot_exempt
+        )
         per_question_results.append((qid, failures, warnings))
         loaded_questions.append((question, target_id, target_root))
 

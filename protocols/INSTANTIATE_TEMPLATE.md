@@ -1,10 +1,10 @@
 # INSTANTIATE_TEMPLATE — Create A Learner Instance From The Mold
 
-> **Agent action.** Use this protocol when the learner wants a new StudyDD repo.
+> **Agent action.** Use this protocol when the learner wants a new StudyState repo.
 
 ## Law
 
-`StudyDD_Template` is the factory mold. A learner instance is a cast made from that mold.
+`StudyState_Template` is the factory mold. A learner instance is a cast made from that mold.
 
 - Do not personalize the template repo.
 - Do not put private learner state into the template repo.
@@ -15,8 +15,11 @@
 
 Before copying, confirm the source template:
 
-- repo path: `/home/ff/Documents/Projects/StudyDD`
-- remote: `https://github.com/lennertvhoy/StudyDD_Template.git`
+- repo path: the local checkout of the template (folder name
+  `StudyState_Template`; older checkouts may say `StudyDD_Template`)
+- remote: `https://github.com/lennertvhoy/StudyState_Template.git`
+  (the legacy `https://github.com/lennertvhoy/StudyDD_Template.git` URL
+  redirects to it and is still accepted)
 - `state/STUDYDD_MODE.yaml` says `mode: template`
 
 If the source repo does not look like the template, stop and ask the learner for the correct template path/remote.
@@ -34,7 +37,7 @@ Run these commands exactly:
 
 ```bash
 # 1. Clone the template into the new learner directory
-git clone https://github.com/lennertvhoy/StudyDD_Template.git /home/ff/Study_Lenny
+git clone https://github.com/lennertvhoy/StudyState_Template.git /home/ff/Study_Lenny
 
 # 2. Enter the new directory
 cd /home/ff/Study_Lenny
@@ -64,7 +67,7 @@ Edit `state/STUDYDD_MODE.yaml` to:
 
 ```yaml
 mode: bootstrap
-template_origin: "https://github.com/lennertvhoy/StudyDD_Template.git"
+template_origin: "https://github.com/lennertvhoy/StudyState_Template.git"
 personalized: false
 public_safe: false_or_review_required
 ```
@@ -86,7 +89,7 @@ Edit `state/STUDYDD_MODE.yaml` to:
 
 ```yaml
 mode: learner_instance
-template_origin: "https://github.com/lennertvhoy/StudyDD_Template.git"
+template_origin: "https://github.com/lennertvhoy/StudyState_Template.git"
 personalized: true
 public_safe: false_or_review_required
 ```
@@ -99,7 +102,7 @@ python3 scripts/check_studydd.py
 
 # 13. First commit
 git add .
-git commit -m "chore: initialize StudyDD learner instance"
+git commit -m "chore: initialize StudyState learner instance"
 
 # 14. Push only if the learner explicitly requested it
 git push -u origin main
@@ -140,6 +143,6 @@ The smoke test creates a temporary copy, reinitializes Git, runs bootstrap valid
 - Do not edit the template repo during instantiation except to read it.
 - Do not leave the template `.git/` history in the new instance.
 - Do not initialize learner state before `.git/` is removed and Git is reinitialized.
-- Do not set the new instance remote to `StudyDD_Template`.
+- Do not set the new instance remote to `StudyState_Template`.
 - Do not run learner-instance validation until learner profile and first target are initialized.
 - Do not switch directly from `template` to `learner_instance`; always use `bootstrap` first.

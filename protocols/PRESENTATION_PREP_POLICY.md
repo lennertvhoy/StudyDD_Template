@@ -12,7 +12,7 @@ Presentation prep helps the learner structure a talk, rehearse it, and review th
 
 ## Tracked state
 
-StudyDD tracks presentation prep state in `state/ACTIVITY_STATE.yaml` and `activities/ACTIVITY_LOG.md`. The canonical structure is:
+StudyState tracks presentation prep state in `state/ACTIVITY_STATE.yaml` and `activities/ACTIVITY_LOG.md`. The canonical structure is:
 
 ```yaml
 presentation_prep_state:

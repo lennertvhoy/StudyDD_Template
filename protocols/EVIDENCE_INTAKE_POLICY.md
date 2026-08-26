@@ -1,6 +1,6 @@
 # EVIDENCE_INTAKE_POLICY — Evidence From Outside the Chat
 
-> **Agent rule.** StudyDD can review evidence submitted from outside the chat, but it grades the evidence, not the effort.
+> **Agent rule.** StudyState can review evidence submitted from outside the chat, but it grades the evidence, not the effort.
 
 ## Doctrine
 
@@ -9,7 +9,7 @@ Submitted evidence is real evidence. Effort is acknowledged.
 Readiness only changes from demonstrated competence.
 ```
 
-Learners may complete a StudyDD activity outside the chat and submit the result. The agent reviews the submitted evidence according to the active study skill, records the result, and updates state conservatively.
+Learners may complete a StudyState activity outside the chat and submit the result. The agent reviews the submitted evidence according to the active study skill, records the result, and updates state conservatively.
 
 ## Accepted evidence formats
 

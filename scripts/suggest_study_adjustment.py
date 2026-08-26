@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Suggest at most one StudyDD adaptation based on recent evidence and reviews.
+"""Suggest at most one StudyState adaptation based on recent evidence and reviews.
 
 Usage:
     python3 scripts/suggest_study_adjustment.py
@@ -28,7 +28,7 @@ _WEAK_VERDICT_RE = re.compile(
 )
 RECENT_DAYS = 30
 
-DEMO_OUTPUT = """StudyDD suggestion:
+DEMO_OUTPUT = """StudyState suggestion:
 
 You missed a scenario tradeoff. Next time, use a short comparison drill.
 
@@ -175,7 +175,7 @@ def build_evidence_recommendation(tag: str, count: int) -> str:
     why = why_for_tag(tag, count)
 
     return (
-        f"StudyDD suggestion:\n\n"
+        f"StudyState suggestion:\n\n"
         f"You keep missing {topic} questions. Recommended adjustment:\n"
         f"{adjustment}\n\n"
         f"Why:\n"
@@ -213,7 +213,7 @@ def build_review_recommendation(overdue_count: int) -> str:
     else:
         why = f"There are {overdue_count} review items past their due date."
     return (
-        f"StudyDD suggestion:\n\n"
+        f"StudyState suggestion:\n\n"
         f"You have overdue reviews. Recommended adjustment:\n"
         f"Do your due reviews before adding new material.\n\n"
         f"Why:\n"
@@ -225,7 +225,7 @@ def build_review_recommendation(overdue_count: int) -> str:
 
 
 def no_recommendation() -> str:
-    return "StudyDD suggestion:\nNo recommendation: insufficient evidence."
+    return "StudyState suggestion:\nNo recommendation: insufficient evidence."
 
 
 def load_evidence_text() -> str:
@@ -239,7 +239,7 @@ def load_evidence_text() -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Suggest at most one StudyDD adaptation"
+        description="Suggest at most one StudyState adaptation"
     )
     parser.add_argument(
         "--demo", action="store_true", help="Print deterministic demo output"
